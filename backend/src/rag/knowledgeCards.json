@@ -1,0 +1,20 @@
+{
+  "cards": [
+    {
+      "id": "headache_low_risk_care",
+      "symptoms": ["headache"],
+      "riskLevelAllowed": "LOW",
+      "stepsNowBn": [
+        "আরাম নিন এবং শান্ত জায়গায় থাকুন",
+        "পর্যাপ্ত পানি পান",
+        "হালকা খাবার খান"
+      ],
+      "warningsToMonitorBn": [
+        "চোখে ঝাপসা দেখা",
+        "মুখ বা হাত ফুলে যাওয়া"
+      ],
+      "source": "WHO Antenatal Care Guidelines",
+      "prohibitedAdvice": ["medicine_prescription", "diagnosis"]
+    }
+  ]
+}

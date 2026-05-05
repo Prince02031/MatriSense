@@ -1,0 +1,30 @@
+{
+  "engine": "json-rules-engine",
+  "rules": [
+    {
+      "name": "headache_with_blurred_vision_high_risk",
+      "conditions": {
+        "all": [
+          {
+            "fact": "symptoms",
+            "operator": "contains",
+            "value": "headache"
+          },
+          {
+            "fact": "symptoms",
+            "operator": "contains",
+            "value": "blurred_vision"
+          }
+        ]
+      },
+      "event": {
+        "type": "riskLevel",
+        "params": {
+          "level": "HIGH",
+          "action": "URGENT_CLINIC_VISIT",
+          "reason": "Headache with blurred vision is a danger sign in pregnancy"
+        }
+      }
+    }
+  ]
+}
