@@ -1,0 +1,181 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\title{\textbf{Rural Maternal Healthcare Support System}\\
+\large Feature and Module Outline for Infinity AI BuildFest}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+This project is a strong fit for the HealthTech track of Infinity AI BuildFest because it focuses on maternal health, AI triage, rural telehealth, and risk prediction. The solution should feel like an AI-augmented health system rather than a general navigation or city-management platform. The main goal is to help rural mothers and health workers detect risk early, communicate clearly in Bangla, and reach the right care faster.
+
+\section{High-Level Feature Outline}
+
+\subsection{A. Maternal Record and Case Management}
+
+\subsubsection{1. Maternal Profile + Pregnancy Timeline}
+A core account area for the pregnant user or the health worker to store pregnancy stage, expected delivery date, last checkup date, known risk factors, and emergency contact information. This acts as the system's memory for each patient and helps the AI triage assistant make better decisions.
+
+\textbf{Tech:} React, Node.js, Express, MongoDB, JWT auth, bcrypt, React Hook Form, Zod or Joi.
+
+\subsubsection{2. Health Worker Dashboard}
+A separate panel for the community health worker to view patient lists, prioritize high-risk cases, update status, and track follow-ups. The dashboard should make it easy to see which mothers need attention first and which cases are stable.
+
+\textbf{Tech:} React admin dashboard, Express APIs, MongoDB, role-based access control, chart library like Recharts or Chart.js.
+
+\subsubsection{3. Referral and Case Notes}
+Lets the health worker record what happened: advised rest, referred to clinic, transport arranged, emergency escalation, and follow-up date. This creates a simple but important care trail for continuity and accountability.
+
+\textbf{Tech:} React forms, Express CRUD APIs, MongoDB, timestamps, audit trail fields.
+
+\subsection{B. AI-Assisted Maternal Triage}
+
+\subsubsection{4. AI Maternal Triage Assistant}
+This is the main AI module of the app. It analyzes pregnancy stage, symptoms, and basic risk factors to estimate urgency, ask follow-up questions when needed, and return a structured recommendation. The assistant should behave more like a guided triage system than a free-form chatbot so that the output remains fast, predictable, and reliable during the buildfest.
+
+The base system returns:
+\begin{itemize}
+    \item Risk level (low / medium / high)
+    \item Short Bangla explanation
+    \item Recommended next action (rest, clinic visit, urgent referral)
+\end{itemize}
+
+A practical implementation is a hybrid approach:
+\begin{itemize}
+    \item Rule-based checks for critical danger signs such as bleeding, severe pain, or reduced fetal movement
+    \item LLM or structured prompt for generating simple Bangla guidance
+\end{itemize}
+
+\textbf{Tech:} Node/Express API, MongoDB or a small rules dataset, structured output responses, optional Python microservice with scikit-learn, or an API-based AI layer.
+
+\textbf{If additional time remains:}  
+The AI can also consider care-access context such as clinic availability or travel difficulty if it directly affects urgency. This makes the triage more context-aware without turning the project into a navigation platform.
+
+\subsubsection{5. Symptom Triage Assistant}
+A guided questionnaire that asks simple questions after the user submits symptoms. The flow narrows down whether the case needs rest, clinic visit, or urgent referral, and it feeds directly into the AI triage output.
+
+\textbf{Tech:} React step-by-step form, Express route logic, conditional UI, scoring rules, MongoDB for symptom logs.
+
+\subsubsection{6. Risk Explanation and Priority Labeling}
+A small AI-supported module that explains why a case was marked as risky and turns that into a clear priority label for the mother and the health worker. This improves trust and makes the system easier to understand.
+
+\textbf{Tech:} Rule-based explanation engine, LLM-generated Bangla summaries, structured JSON responses, React risk cards.
+
+\subsection{C. Bangla Accessibility and Human-Centered Interaction}
+
+\subsubsection{7. Bangla Text Input and Output}
+The app should support Bangla written input and Bangla display text throughout the mother panel. This is very important for usability and makes the app realistic for rural users.
+
+\textbf{Tech:} Unicode Bangla support in React/MongoDB, proper font rendering, Bangla localization files, backend text handling in UTF-8.
+
+\subsubsection{8. Bangla Voice Input for Symptoms}
+The mother speaks her symptoms in Bangla, and the app converts speech into structured text for the system to process. This is one of the most important accessibility features for rural users.
+
+\textbf{Tech:} React frontend, Web Speech API for browser-based speech recognition, or Whisper API / another STT service if stronger Bangla support is needed, Node/Express endpoint for processing, MongoDB for storing transcripts.
+
+\subsubsection{9. Bangla Voice Output / Read-Aloud Guidance}
+After the system evaluates the case, it reads out simple Bangla instructions such as ``rest,'' ``visit clinic,'' or ``urgent referral needed.'' This makes the app usable for low-literacy users and keeps the mother-facing flow accessible.
+
+\textbf{Tech:} Web Speech Synthesis API for browser TTS, Bangla text generation from backend, React UI controls for play/pause/repeat.
+
+\subsubsection{10. Human-in-the-Loop Confirmation}
+A simple confirmation step where the user or health worker verifies the symptom summary before final triage is shown. This helps reduce misunderstandings and supports safer AI use.
+
+\textbf{Tech:} React review screen, editable summary fields, Express validation, audit log storage.
+
+\subsection{D. Rural Care Access and Telehealth Support}
+
+\subsubsection{11. Nearby Maternity Clinic Finder}
+Shows the closest relevant care center based on the user’s location, with contact details and basic availability information. This should be framed as referral support rather than full navigation.
+
+\textbf{Tech:} OpenStreetMap + Leaflet, geolocation API, backend location matching, MongoDB for clinic database.
+
+\subsubsection{12. Emergency Referral Shortcut}
+A simple feature that helps the user or health worker move directly from high-risk triage to the nearest care option. The goal is fast escalation, not route optimization.
+
+\textbf{Tech:} React action buttons, clinic lookup logic, Express APIs, optional map pin selection.
+
+\subsubsection{13. Telehealth Follow-Up / Contact Support}
+Provides a quick way to record follow-up advice or contact a health worker after triage. This supports rural telehealth and continuity of care.
+
+\textbf{Tech:} React forms, Socket.IO or notification API, MongoDB follow-up records, Express endpoints.
+
+\subsection{E. Safety, Ethics, and Reliability}
+
+\subsubsection{14. Clinical Validation and Safety Rules}
+The system should use simple safety rules to detect critical danger signs and avoid unsafe or misleading outputs. This is important because the project is a health system, not a general chatbot.
+
+\textbf{Tech:} Rule engine, conditional logic, validation checks, safe-response templates.
+
+\subsubsection{15. Data Privacy and Secure Storage}
+Maternal data should be stored securely, with controlled access for health workers and minimal exposure of sensitive information.
+
+\textbf{Tech:} JWT, bcrypt, role-based access control, secure MongoDB schema design, environment variables.
+
+\subsubsection{16. Offline-Friendly / Low-Bandwidth Interface}
+A lightweight UI should load quickly and still remain usable in low-connectivity rural settings.
+
+\textbf{Tech:} React optimization, minimal assets, cached static data, simple responsive layout.
+
+\subsection{F. What to Exclude or Keep Secondary}
+To keep the project aligned with the HealthTech track, the following should be excluded from the core build or treated only as future scope:
+
+\begin{itemize}
+    \item Full SmartCity navigation or traffic optimization
+    \item Broad EarthCare dashboards that are not directly tied to maternal care
+    \item Complex route optimization as a major feature
+    \item City-wide emergency management systems
+    \item Non-health modules that do not support triage, referral, or care access
+\end{itemize}
+
+\section{Best Build Set for the Preliminary Round}
+For the first-round prototype, I would prioritize these five:
+
+\begin{enumerate}
+    \item Maternal Profile + Pregnancy Timeline
+    \item Bangla Text Input and Output
+    \item AI Maternal Triage Assistant
+    \item Risk Explanation and Priority Labeling
+    \item Health Worker Dashboard + Referral Notes
+\end{enumerate}
+
+That gives you a focused HealthTech MVP that is realistic to finish, easy to demonstrate, and aligned with the competition’s AI-augmented health emphasis.
+
+\section{If Additional Time Remains}
+If development progresses faster than expected, the following enhancements can strengthen the system without changing its core identity:
+
+\begin{itemize}
+    \item Add weather or access-risk signals only when they affect urgency
+    \item Show a clinic availability indicator on the referral screen
+    \item Add SMS or notification support for follow-up reminders
+    \item Improve Bangla speech recognition and read-aloud quality
+    \item Add a compact care-history timeline for health workers
+\end{itemize}
+
+\section{Suggested Overall Stack}
+Since the project should feel AI-augmented and production-minded, the main stack can be:
+
+\begin{itemize}
+    \item \textbf{Frontend:} React
+    \item \textbf{Backend:} Node.js + Express
+    \item \textbf{Database:} MongoDB
+    \item \textbf{Auth:} JWT + bcrypt
+    \item \textbf{AI Layer:} Rule-based triage engine, LLM API for Bangla guidance, structured output responses
+    \item \textbf{Speech:} Web Speech API, with Whisper API fallback if needed
+    \item \textbf{Maps for clinic lookup:} Leaflet + OpenStreetMap
+    \item \textbf{Real-time updates:} Socket.IO
+    \item \textbf{Styling:} Tailwind CSS
+    \item \textbf{Optional model support:} Python microservice with scikit-learn
+\end{itemize}
+
+\section{Conclusion}
+This is a good shape for Infinity AI BuildFest because the project becomes a focused, AI-augmented HealthTech solution with maternal triage at its core. It remains practical for a preliminary prototype while still leaving room for ethical safeguards, offline resilience, and future expansion.
+
+\end{document}
