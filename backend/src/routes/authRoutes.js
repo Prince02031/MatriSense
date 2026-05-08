@@ -7,7 +7,11 @@ const router = express.Router();
 
 // Generate JWT
 const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured');
+    }
+    return jwt.sign({ id }, secret, { expiresIn: '7d' });
 };
 
 // @route   POST /api/auth/register

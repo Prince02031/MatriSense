@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
+import LanguageToggle from '../components/LanguageToggle';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -36,6 +37,9 @@ export default function LoginPage() {
         <div className="auth-page">
             <div className="auth-container">
                 <div className="auth-header">
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <LanguageToggle compact />
+                    </div>
                     <Link href="/" className="auth-logo">
                         <span className="logo-icon">🩺</span>
                         MatriSense

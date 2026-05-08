@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 
 const AuthContext = createContext(null);
 
@@ -10,17 +11,55 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
+    const pathname = usePathname();
+
+    const clearSession = useCallback(() => {
+        localStorage.removeItem('matrisense_token');
+        localStorage.removeItem('matrisense_user');
+        setToken(null);
+        setUser(null);
+    }, []);
+
+    const verifySession = useCallback(
+        async (activeToken) => {
+            if (!activeToken) {
+                clearSession();
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { Authorization: `Bearer ${activeToken}` },
+                });
+                if (!res.ok) throw new Error('Invalid token');
+                const data = await res.json();
+                setUser(data.user);
+                localStorage.setItem('matrisense_user', JSON.stringify(data.user));
+            } catch (error) {
+                clearSession();
+            } finally {
+                setLoading(false);
+            }
+        },
+        [clearSession]
+    );
 
     // Hydrate from localStorage on mount
     useEffect(() => {
         const savedToken = localStorage.getItem('matrisense_token');
-        const savedUser = localStorage.getItem('matrisense_user');
-        if (savedToken && savedUser) {
+        if (savedToken) {
             setToken(savedToken);
-            setUser(JSON.parse(savedUser));
+            verifySession(savedToken);
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
-    }, []);
+    }, [verifySession]);
+
+    useEffect(() => {
+        if (!token) return;
+        verifySession(token);
+    }, [pathname, token, verifySession]);
 
     const register = async (name, email, password, role, phone) => {
         const res = await fetch(`${API_BASE}/api/auth/register`, {
@@ -57,14 +96,26 @@ export function AuthProvider({ children }) {
     };
 
     const logout = () => {
-        localStorage.removeItem('matrisense_token');
-        localStorage.removeItem('matrisense_user');
-        setToken(null);
-        setUser(null);
+        clearSession();
+    };
+
+    const authFetch = (url, options = {}) => {
+        const headers = {
+            ...(options.headers || {}),
+            Authorization: token ? `Bearer ${token}` : undefined,
+        };
+
+        if (!headers.Authorization) {
+            delete headers.Authorization;
+        }
+
+        return fetch(url, { ...options, headers });
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAuthenticated: !!token }}>
+        <AuthContext.Provider
+            value={{ user, token, loading, login, register, logout, authFetch, isAuthenticated: !!token }}
+        >
             {children}
         </AuthContext.Provider>
     );
