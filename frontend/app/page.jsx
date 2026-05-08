@@ -1,57 +1,56 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import Link from 'next/link';
+import { useAuth } from './context/AuthContext';
 
 export default function Home() {
-  const [status, setStatus] = useState('Loading backend status...');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [healthRes, messageRes] = await Promise.all([
-          fetch(`${apiBase}/health`),
-          fetch(`${apiBase}/api/message`),
-        ]);
-
-        const healthData = await healthRes.json();
-        const messageData = await messageRes.json();
-
-        setStatus(`${healthData.service} is ${healthData.status}`);
-        setMessage(messageData.message);
-      } catch (err) {
-        setError('Could not connect to the backend. Start the Express server first.');
-      }
-    };
-
-    load();
-  }, []);
+  const { isAuthenticated, user } = useAuth();
 
   return (
-    <main className="page">
-      <section className="hero">
-        <span className="badge">MatriSense</span>
-        <h1>Next.js frontend connected to an Express API</h1>
-        <p>
-          A clean starter setup for building the MatriSense app with a React-based UI and a Node.js backend.
-        </p>
-      </section>
+    <main className="landing">
+      <span className="landing-badge">🩺 MatriSense</span>
 
-      <section className="grid">
-        <article className="card">
-          <h2>Backend status</h2>
-          <p>{status}</p>
-          {error ? <p className="error">{error}</p> : <p className="success">Backend reachable at {apiBase}</p>}
-        </article>
+      <h1>Safe Motherhood,<br />Powered by AI</h1>
 
-        <article className="card accent">
-          <h2>API message</h2>
-          <p>{message || 'Waiting for response...'}</p>
-        </article>
-      </section>
+      <p className="landing-subtitle">
+        AI-driven maternal health triage for rural Bangladesh. Report symptoms in Bangla,
+        get instant risk assessment, and connect with health workers.
+      </p>
+
+      <div className="landing-actions">
+        {isAuthenticated ? (
+          <Link href={`/dashboard/${user.role}`} className="btn btn-primary btn-lg">
+            Go to Dashboard →
+          </Link>
+        ) : (
+          <>
+            <Link href="/login" className="btn btn-primary btn-lg">
+              Get Started
+            </Link>
+            <Link href="/register" className="btn btn-outline btn-lg">
+              Create Account
+            </Link>
+          </>
+        )}
+      </div>
+
+      <div className="landing-features">
+        <div className="feature-card">
+          <div className="icon">🗣️</div>
+          <h3>Bangla Input</h3>
+          <p>Report symptoms naturally in Bangla text</p>
+        </div>
+        <div className="feature-card">
+          <div className="icon">🤖</div>
+          <h3>AI Triage</h3>
+          <p>Intelligent risk classification powered by AI</p>
+        </div>
+        <div className="feature-card">
+          <div className="icon">👩‍⚕️</div>
+          <h3>Health Workers</h3>
+          <p>Cases routed to workers for follow-up</p>
+        </div>
+      </div>
     </main>
   );
 }
