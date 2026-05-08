@@ -1,57 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import { useAuth } from './context/AuthContext';
+import HomeGuest from './components/home/HomeGuest';
+import HomePatient from './components/home/HomePatient';
+import HomeWorker from './components/home/HomeWorker';
+import HomeAdmin from './components/home/HomeAdmin';
 
 export default function Home() {
-  const [status, setStatus] = useState('Loading backend status...');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const { isAuthenticated, user, loading } = useAuth();
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [healthRes, messageRes] = await Promise.all([
-          fetch(`${apiBase}/health`),
-          fetch(`${apiBase}/api/message`),
-        ]);
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-matri-soft text-slate-900">
+        <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6">
+          <div className="rounded-2xl bg-white px-6 py-4 shadow-soft">
+            <p className="text-sm text-slate-600">লোড হচ্ছে...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-        const healthData = await healthRes.json();
-        const messageData = await messageRes.json();
+  if (!isAuthenticated || !user) {
+    return <HomeGuest />;
+  }
 
-        setStatus(`${healthData.service} is ${healthData.status}`);
-        setMessage(messageData.message);
-      } catch (err) {
-        setError('Could not connect to the backend. Start the Express server first.');
-      }
-    };
+  if (user.role === 'worker') {
+    return <HomeWorker user={user} />;
+  }
 
-    load();
-  }, []);
+  if (user.role === 'admin') {
+    return <HomeAdmin user={user} />;
+  }
 
-  return (
-    <main className="page">
-      <section className="hero">
-        <span className="badge">MatriSense</span>
-        <h1>Next.js frontend connected to an Express API</h1>
-        <p>
-          A clean starter setup for building the MatriSense app with a React-based UI and a Node.js backend.
-        </p>
-      </section>
-
-      <section className="grid">
-        <article className="card">
-          <h2>Backend status</h2>
-          <p>{status}</p>
-          {error ? <p className="error">{error}</p> : <p className="success">Backend reachable at {apiBase}</p>}
-        </article>
-
-        <article className="card accent">
-          <h2>API message</h2>
-          <p>{message || 'Waiting for response...'}</p>
-        </article>
-      </section>
-    </main>
-  );
+  return <HomePatient user={user} />;
 }
