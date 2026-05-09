@@ -1,5 +1,27 @@
 require('dotenv').config();
 
+// Validate Environment Variables
+const validateEnv = () => {
+  const provider = process.env.LLM_PROVIDER;
+  if (!provider) {
+    console.error('❌ STARTUP ERROR: LLM_PROVIDER is missing in environment variables.');
+    process.exit(1);
+  }
+
+  const supportedProviders = ['gemini', 'local'];
+  if (!supportedProviders.includes(provider.toLowerCase())) {
+    console.error(`❌ STARTUP ERROR: Unsupported LLM_PROVIDER "${provider}". Must be one of: ${supportedProviders.join(', ')}`);
+    process.exit(1);
+  }
+
+  if (provider.toLowerCase() === 'gemini' && !process.env.GEMINI_API_KEY) {
+    console.error('❌ STARTUP ERROR: LLM_PROVIDER is set to gemini, but GEMINI_API_KEY is missing.');
+    process.exit(1);
+  }
+};
+
+validateEnv();
+
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');

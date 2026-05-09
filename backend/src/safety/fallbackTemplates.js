@@ -1,7 +1,42 @@
-// Placeholder fallback templates. Populate after prompts are provided.
+const { REQUIRED_DISCLAIMER_BN } = require('./safetyRules');
+
+const fallbackTemplates = {
+  LOW: {
+    motherExplanationBn: "আপনার লক্ষণগুলো সাধারণ বলে মনে হচ্ছে। এটি গর্ভাবস্থায় স্বাভাবিক হতে পারে।",
+    stepsNowBn: [
+      "পর্যাপ্ত বিশ্রাম নিন।",
+      "প্রচুর পরিমাণে পানি পান করুন।",
+      "পুষ্টিকর খাবার খান।"
+    ],
+    monitorBn: [
+      "আপনার শরীরের দিকে নজর রাখুন। লক্ষণগুলো বাড়ে কি না তা খেয়াল করুন।"
+    ],
+    urgentWarningBn: ["যদি আপনার তীব্র পেট ব্যথা, রক্তপাত বা অন্য কোনো নতুন ক্ষতিকর লক্ষণ দেখা দেয়, তবে সাথে সাথে স্বাস্থ্যকর্মীর সাথে যোগাযোগ করুন।"],
+    safetyDisclaimerBn: REQUIRED_DISCLAIMER_BN
+  },
+  MEDIUM: {
+    motherExplanationBn: "আপনার কিছু লক্ষণ দেখা যাচ্ছে যা নজরে রাখা প্রয়োজন। আপনার একজন স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+    stepsNowBn: [
+      "দ্রুত একজন স্বাস্থ্যকর্মী বা ডাক্তারের সাথে যোগাযোগ করুন এবং আপনার লক্ষণগুলো জানান।"
+    ],
+    monitorBn: [
+      "লক্ষণগুলো কোনোভাবেই অবহেলা করবেন না। ডাক্তারের পরামর্শ ছাড়া কোনো ওষুধ খাবেন না।"
+    ],
+    urgentWarningBn: ["লক্ষণগুলো যদি দ্রুত খারাপের দিকে যায় বা নতুন কোনো সমস্যা দেখা দেয়, তবে অবিলম্বে হাসপাতালে যান।"],
+    safetyDisclaimerBn: REQUIRED_DISCLAIMER_BN
+  },
+  HIGH: {
+    motherExplanationBn: "আপনার লক্ষণগুলো অত্যন্ত ঝুঁকিপূর্ণ বলে মনে হচ্ছে। আপনার বা আপনার গর্ভের শিশুর নিরাপত্তার জন্য এখনই ডাক্তারি সাহায্য প্রয়োজন।",
+    stepsNowBn: [
+      "দেরি না করে অবিলম্বে নিকটস্থ স্বাস্থ্য কেন্দ্রে যান বা হাসপাতালে যোগাযোগ করুন।",
+      "যাওয়ার পথে কাউকে সাথে নিন।"
+    ],
+    monitorBn: [],
+    urgentWarningBn: ["এটি একটি জরুরি অবস্থা। দয়া করে বাসায় অপেক্ষা করবেন না।"],
+    safetyDisclaimerBn: REQUIRED_DISCLAIMER_BN
+  }
+};
 
 module.exports = {
-  // highRiskFallbackBn,
-  // mediumRiskFallbackBn,
-  // lowRiskFallbackBn,
+  fallbackTemplates
 };

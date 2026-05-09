@@ -1,4 +1,5 @@
 const { retrieveEvidence } = require('./evidenceRetriever');
+const { ALWAYS_BLOCKED_ADVICE } = require('../safety/safetyRules');
 
 const dedupeText = (items = []) => Array.from(
   new Set(items.map((item) => (typeof item === 'string' ? item.trim() : '')))
@@ -40,13 +41,19 @@ const assembleCareGuidanceContext = ({ decision, caseState, knowledgeCards } = {
     retrievedCards.map((card) => card.citation || card.sourceName)
   );
 
+  // Merge retriever's dynamic blocks with global safety blocks
+  const finalBlockedAdvice = [
+    ...ALWAYS_BLOCKED_ADVICE,
+    ...blockedAdvice.map(b => typeof b === 'object' ? b.reason : b)
+  ];
+
   return {
     retrievedCards,
     stepsNowBn,
     monitorBn,
     urgentWarningBn,
     sources,
-    blockedAdvice,
+    blockedAdvice: finalBlockedAdvice,
   };
 };
 

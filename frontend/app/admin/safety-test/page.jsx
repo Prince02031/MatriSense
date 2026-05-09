@@ -211,7 +211,7 @@ export default function SafetyTestPage() {
             <textarea
               style={styles.textarea}
               rows={6}
-              placeholder={'{"symptoms": [...], "dangerSigns": [...], "negations": [...]}'}
+              placeholder={'{"riskLevel": "LOW", "stepsNowBn": ["বিশ্রাম নিন"], "urgentWarningBn": "জ্বর হলে জানাবেন", "safetyDisclaimerBn": "রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন"}'}
               value={rawLLM}
               onChange={(e) => { setRawLLM(e.target.value); setLlmSafetyResult(null); }}
             />

@@ -231,23 +231,18 @@ router.post('/safety-test/extract', async (req, res) => {
       note: 'Stub response. Implement extractionService.js to get real results.',
     };
 
-    // Safety check on input text (basic keyword scan until safetyValidator.js is implemented)
+    // Safety check on input text
     const violations = [];
     const warnings = [];
 
-    const diagnosisKeywords = ['প্রি-এক্লাম্পসিয়া', 'এক্লাম্পসিয়া', 'গর্ভপাত', 'ক্যান্সার'];
-    const medicineKeywords = ['প্যারাসিটামল', 'আইবুপ্রোফেন', 'ওষুধ খান', 'ট্যাবলেট'];
+    const { FORBIDDEN_BANGLA_PATTERNS } = require('../safety');
 
-    for (const kw of diagnosisKeywords) {
+    for (const kw of FORBIDDEN_BANGLA_PATTERNS) {
       if (inputBn.includes(kw)) {
-        violations.push({ rule: 'NO_DIAGNOSIS', reason: `Input contains diagnosis term: "${kw}"`, snippet: kw });
+        violations.push({ rule: 'SAFETY_VIOLATION', reason: `Input contains forbidden term: "${kw}"`, snippet: kw });
       }
     }
-    for (const kw of medicineKeywords) {
-      if (inputBn.includes(kw)) {
-        violations.push({ rule: 'NO_MEDICINE_ADVICE', reason: `Input requests medicine: "${kw}"`, snippet: kw });
-      }
-    }
+
     if (inputBn.length < 5) {
       warnings.push({ rule: 'EXTRACTION_CONFIDENCE', reason: 'Input is very short; extraction confidence will be low.' });
     }
@@ -262,23 +257,23 @@ router.post('/safety-test/extract', async (req, res) => {
 router.post('/safety-test/validate-output', (req, res) => {
   try {
     const { llmOutput } = req.body;
-    const violations = [];
+    const { validateLLMOutput, ALWAYS_BLOCKED_ADVICE } = require('../safety');
 
-    // Basic structural safety checks on LLM JSON output
-    const forbidden = ['diagnose', 'diagnosis', 'medicine', 'drug', 'tablet', 'mg', 'dose'];
-    const outputStr = JSON.stringify(llmOutput).toLowerCase();
+    // Create a permissive mock context so the sandbox doesn't strictly block step values
+    const mockDecision = { riskLevel: llmOutput.riskLevel || 'MEDIUM' };
+    const mockContext = {
+      stepsNowBn: Array.isArray(llmOutput.stepsNowBn) ? llmOutput.stepsNowBn : [],
+      blockedAdvice: ALWAYS_BLOCKED_ADVICE
+    };
 
-    for (const term of forbidden) {
-      if (outputStr.includes(term)) {
-        violations.push({ rule: 'NO_MEDICINE_ADVICE', reason: `Output contains forbidden term: "${term}"` });
-      }
-    }
+    const validation = validateLLMOutput(llmOutput, mockDecision, mockContext);
 
-    if (!llmOutput.symptoms && !llmOutput.dangerSigns) {
-      violations.push({ rule: 'MISSING_REQUIRED_FIELDS', reason: 'LLM output must include "symptoms" and "dangerSigns" arrays.' });
-    }
+    const violations = validation.issues.map(issue => ({
+      rule: 'SAFETY_VIOLATION',
+      reason: issue
+    }));
 
-    res.json({ safe: violations.length === 0, violations });
+    res.json({ safe: validation.valid, violations });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

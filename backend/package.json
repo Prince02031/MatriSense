@@ -8,9 +8,15 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "lint": "echo \"No lint configured for backend yet\""
+    "lint": "echo \"No lint configured for backend yet\"",
+    "test:safety": "node src/safety/tests/runSafetyTests.js",
+    "test:pipeline": "node src/tests/runFullPipelineTest.js",
+    "test:safety:llm": "node src/safety/tests/runPostLlmSafetyDemo.js",
+    "test:ai:mock": "node src/ai/tests/runExplanationValidationMock.js",
+    "test:ai:gemini": "node src/ai/tests/runGeminiExplanationSmokeTest.js"
   },
   "dependencies": {
+    "@google/genai": "^2.0.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
