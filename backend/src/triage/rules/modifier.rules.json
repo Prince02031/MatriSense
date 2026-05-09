@@ -6,7 +6,7 @@
       "priority": 40,
       "conditions": {
         "all": [
-          { "fact": "riskFactors.hypertension", "operator": "equal", "value": true }
+          { "fact": "riskFactors", "path": "$.hypertension", "operator": "equal", "value": true }
         ]
       },
       "event": {
@@ -26,7 +26,7 @@
       "priority": 35,
       "conditions": {
         "all": [
-          { "fact": "riskFactors.anemia", "operator": "equal", "value": true }
+          { "fact": "riskFactors", "path": "$.anemia", "operator": "equal", "value": true }
         ]
       },
       "event": {
@@ -46,7 +46,7 @@
       "priority": 35,
       "conditions": {
         "all": [
-          { "fact": "riskFactors.diabetes", "operator": "equal", "value": true }
+          { "fact": "riskFactors", "path": "$.diabetes", "operator": "equal", "value": true }
         ]
       },
       "event": {
@@ -66,7 +66,7 @@
       "priority": 35,
       "conditions": {
         "all": [
-          { "fact": "riskFactors.previousHighRiskPregnancy", "operator": "equal", "value": true }
+          { "fact": "riskFactors", "path": "$.previousHighRiskPregnancy", "operator": "equal", "value": true }
         ]
       },
       "event": {
@@ -86,7 +86,7 @@
       "priority": 35,
       "conditions": {
         "all": [
-          { "fact": "riskFactors.previousMiscarriage", "operator": "equal", "value": true }
+          { "fact": "riskFactors", "path": "$.previousMiscarriage", "operator": "equal", "value": true }
         ]
       },
       "event": {

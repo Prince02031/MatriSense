@@ -128,6 +128,27 @@
           "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment"
         }
       }
+    },
+    {
+      "name": "CDC_REDUCED_FETAL_MOVEMENT_MEDIUM",
+      "priority": 55,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "reduced_fetal_movement" },
+          { "fact": "trimester", "operator": "notEqual", "value": "third" }
+        ]
+      },
+      "event": {
+        "type": "MEDIUM_RISK",
+        "params": {
+          "riskLevel": "MEDIUM",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Reduced baby movement is a warning sign that should be reviewed by a health worker.",
+          "displayReasonBn": "বাচ্চার নড়াচড়া কমে গেলে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "CDC_HEAR_HER",
+          "sourceRef": "CDC HEAR HER Urgent Maternal Warning Signs"
+        }
+      }
     }
   ]
 }

@@ -61,7 +61,7 @@
           "reason": "Headache with blurred vision is a danger sign in pregnancy.",
           "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
           "sourceRef": "WHO Counselling for Maternal and Newborn Health Care (Danger Signs)",
-          "displayReasonBn": "মাথাব্যথার সঙ্গে চোখে ঝাপসা দেখা গর্ভাবস্থায় বিপদ সংকেত।"
+          "displayReasonBn": "মাথাব্যথার সঙ্গে চোখে ঝাপসা দেখা গর্ভাবস্থায় বিপদ সংকেত হতে পারে।"
         }
       }
     },
@@ -125,7 +125,7 @@
           "reason": "Fast or difficult breathing during pregnancy requires urgent care.",
           "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
           "sourceRef": "WHO Counselling for Maternal and Newborn Health Care (Danger Signs)",
-          "displayReasonBn": "শ্বাস দ্রুত হওয়া বা শ্বাস নিতে কষ্ট হওয়া গর্ভাবস্থায় বিপদ সংকেত।"
+          "displayReasonBn": "শ্বাস দ্রুত হওয়া বা শ্বাস নিতে কষ্ট হওয়া গর্ভাবস্থায় বিপদ সংকেত হতে পারে।"
         }
       }
     },
@@ -146,7 +146,7 @@
           "reason": "Fainting or loss of consciousness requires urgent assessment.",
           "evidenceTag": "WHO_PCPNC_QUICK_CHECK",
           "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment",
-          "displayReasonBn": "অজ্ঞান হওয়া বা জ্ঞান হারানো জরুরিভাবে দেখানোর প্রয়োজন।"
+          "displayReasonBn": "অজ্ঞান হওয়া বা জ্ঞান হারানো হলে জরুরিভাবে দেখানো প্রয়োজন হতে পারে।"
         }
       }
     },
@@ -168,7 +168,28 @@
           "reason": "Reduced baby movement in late pregnancy needs urgent evaluation.",
           "evidenceTag": "CDC_HEAR_HER",
           "sourceRef": "CDC HEAR HER Urgent Maternal Warning Signs",
-          "displayReasonBn": "গর্ভাবস্থার শেষ দিকে বাচ্চার নড়াচড়া কমে গেলে দ্রুত স্বাস্থ্যকর্মীর সঙ্গে যোগাযোগ করুন।"
+          "displayReasonBn": "গর্ভাবস্থার শেষ দিকে বাচ্চার নড়াচড়া কমে গেলে দ্রুত স্বাস্থ্যকর্মীর সঙ্গে যোগাযোগ করা জরুরি হতে পারে।"
+        }
+      }
+    },
+    {
+      "name": "WHO_PCPNC_CANNOT_KEEP_WATER_HIGH",
+      "priority": 95,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "cannot_keep_water_down" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+          "reason": "Unable to keep fluids down is a danger sign in pregnancy.",
+          "evidenceTag": "WHO_PCPNC_QUICK_CHECK",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment",
+          "displayReasonBn": "পানি রাখতে না পারা গর্ভাবস্থায় বিপদ সংকেত হতে পারে।"
         }
       }
     }
