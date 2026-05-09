@@ -31,6 +31,12 @@ const PAGES = [
     title: 'Safety Test',
     desc: 'Run Bangla input through LLM extraction and the safety validator. Check for diagnosis/medicine violations.',
   },
+  {
+    path: '/admin/ai-explanation',
+    icon: '💬',
+    title: 'AI Explanation',
+    desc: 'Test the end-to-end AI generation pipeline (Rules -> RAG -> Gemini -> Safety) using clinical scenarios.',
+  },
 ];
 
 export default function AdminIndexPage() {

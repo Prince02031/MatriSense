@@ -279,4 +279,64 @@ router.post('/safety-test/validate-output', (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────
+// AI EXPLANATION TESTER
+// ─────────────────────────────────────────────
+
+// POST /api/admin/ai-explanation/test
+router.post('/ai-explanation/test', async (req, res) => {
+  try {
+    const { scenario } = req.body;
+    const { runRules, buildDecision } = getTriageModules();
+    const { assembleCareGuidanceContext, knowledgeCards } = getRagModules();
+    const { generateTriageExplanation } = require('../ai');
+
+    // 1. Define scenario state
+    let caseState = {};
+    if (scenario === 'HIGH_RISK') {
+      caseState = {
+        symptoms: ['severe_abdominal_pain'],
+        dangerSignsChecked: ['severe_abdominal_pain'],
+        trimester: 'third',
+        gestationalWeek: 32,
+        meta: {}
+      };
+    } else if (scenario === 'MEDIUM_RISK') {
+      caseState = {
+        symptoms: ['fever', 'headache'],
+        dangerSignsChecked: [],
+        trimester: 'second',
+        gestationalWeek: 20,
+        meta: {}
+      };
+    } else {
+      caseState = {
+        symptoms: ['feeling_tired'],
+        dangerSignsChecked: [],
+        trimester: 'first',
+        gestationalWeek: 10,
+        meta: {}
+      };
+    }
+
+    // 2. Run Pipeline
+    const runResult = await runRules(caseState);
+    const events = Array.isArray(runResult) ? runResult : (runResult?.events || []);
+    const decision = buildDecision(events, caseState);
+    const careGuidanceContext = assembleCareGuidanceContext({ decision, caseState, knowledgeCards });
+
+    // 3. Generate Explanation
+    const aiResult = await generateTriageExplanation({ decision, careGuidanceContext, caseState });
+
+    res.json({
+      caseState,
+      decision,
+      careGuidanceContext,
+      aiResult
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

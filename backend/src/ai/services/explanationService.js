@@ -17,6 +17,20 @@ const generateTriageExplanation = async ({ decision, careGuidanceContext, caseSt
 
   const { systemInstruction, userPrompt } = buildExplanationPrompt({ decision, careGuidanceContext, caseState });
 
+  // Early exit if API key is missing to avoid crashing or unnecessary API overhead
+  if (provider === 'gemini' && !process.env.GEMINI_API_KEY) {
+    return {
+      llmOutput: null,
+      safetyValidation: {
+        valid: false,
+        issues: ['LLM_PROVIDER is gemini but GEMINI_API_KEY is missing. Falling back to safe templates.']
+      },
+      safeOutput: getSafeFallback(decision?.riskLevel),
+      provider,
+      model
+    };
+  }
+
   try {
     const rawLlmOutput = await generateJson({
       systemInstruction,

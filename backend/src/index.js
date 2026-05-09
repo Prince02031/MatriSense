@@ -2,21 +2,16 @@ require('dotenv').config();
 
 // Validate Environment Variables
 const validateEnv = () => {
-  const provider = process.env.LLM_PROVIDER;
-  if (!provider) {
-    console.error('❌ STARTUP ERROR: LLM_PROVIDER is missing in environment variables.');
-    process.exit(1);
-  }
-
+  let provider = process.env.LLM_PROVIDER || 'gemini';
+  
   const supportedProviders = ['gemini', 'local'];
   if (!supportedProviders.includes(provider.toLowerCase())) {
-    console.error(`❌ STARTUP ERROR: Unsupported LLM_PROVIDER "${provider}". Must be one of: ${supportedProviders.join(', ')}`);
-    process.exit(1);
+    console.warn(`⚠️  Unsupported LLM_PROVIDER "${provider}". Defaulting to "gemini" with fallback templates.`);
+    provider = 'gemini';
   }
 
   if (provider.toLowerCase() === 'gemini' && !process.env.GEMINI_API_KEY) {
-    console.error('❌ STARTUP ERROR: LLM_PROVIDER is set to gemini, but GEMINI_API_KEY is missing.');
-    process.exit(1);
+    console.warn('⚠️  LLM_PROVIDER is set to gemini, but GEMINI_API_KEY is missing. AI explanations will use fallback templates.');
   }
 };
 
@@ -27,6 +22,7 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/admin.routes');
+const triageRoutes = require('./routes/triage.routes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -44,6 +40,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/triage', triageRoutes);
 
 app.get('/api/message', (_req, res) => {
   res.json({ message: 'Backend is running successfully.' });
