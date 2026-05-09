@@ -1,0 +1,176 @@
+{
+  "engine": "json-rules-engine",
+  "rules": [
+    {
+      "name": "WHO_DANGER_SIGN_VAGINAL_BLEEDING_HIGH",
+      "priority": 100,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "vaginal_bleeding" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "URGENT_CLINIC_VISIT",
+          "reason": "Vaginal bleeding during pregnancy can be a danger sign.",
+          "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
+          "sourceRef": "WHO Counselling for Maternal and Newborn Health Care (Danger Signs)",
+          "displayReasonBn": "গর্ভাবস্থায় রক্তপাত একটি বিপদ সংকেত হতে পারে।"
+        }
+      }
+    },
+    {
+      "name": "WHO_PCPNC_CONVULSION_HIGH",
+      "priority": 100,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "convulsion" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+          "reason": "Convulsions or fits during pregnancy require urgent care.",
+          "evidenceTag": "WHO_PCPNC_QUICK_CHECK",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment",
+          "displayReasonBn": "খিঁচুনি বা ফিট হলে দ্রুত স্বাস্থ্যকর্মীর সঙ্গে যোগাযোগ করা জরুরি।"
+        }
+      }
+    },
+    {
+      "name": "WHO_DANGER_SIGN_HEADACHE_VISION_HIGH",
+      "priority": 95,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "headache" },
+          { "fact": "symptoms", "operator": "contains", "value": "blurred_vision" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "URGENT_CLINIC_VISIT",
+          "reason": "Headache with blurred vision is a danger sign in pregnancy.",
+          "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
+          "sourceRef": "WHO Counselling for Maternal and Newborn Health Care (Danger Signs)",
+          "displayReasonBn": "মাথাব্যথার সঙ্গে চোখে ঝাপসা দেখা গর্ভাবস্থায় বিপদ সংকেত।"
+        }
+      }
+    },
+    {
+      "name": "WHO_PCPNC_SEVERE_ABDOMINAL_PAIN_HIGH",
+      "priority": 95,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "severe_abdominal_pain" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "URGENT_CLINIC_VISIT",
+          "reason": "Severe abdominal pain can indicate an emergency in pregnancy.",
+          "evidenceTag": "WHO_PCPNC_SEVERE_ABDOMINAL_PAIN",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment",
+          "displayReasonBn": "তীব্র পেটব্যথা গর্ভাবস্থায় জরুরি বিপদ সংকেত হতে পারে।"
+        }
+      }
+    },
+    {
+      "name": "WHO_DANGER_SIGN_FEVER_WITH_WEAKNESS_HIGH",
+      "priority": 90,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "fever" },
+          { "fact": "symptoms", "operator": "contains", "value": "severe_weakness" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+          "reason": "Fever with severe weakness is a danger sign in pregnancy.",
+          "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
+          "sourceRef": "WHO Counselling for Maternal and Newborn Health Care (Danger Signs)",
+          "displayReasonBn": "জ্বরের সঙ্গে খুব দুর্বল লাগা বিপদ সংকেত হতে পারে।"
+        }
+      }
+    },
+    {
+      "name": "WHO_DANGER_SIGN_BREATHING_DIFFICULTY_HIGH",
+      "priority": 95,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "difficulty_breathing" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+          "reason": "Fast or difficult breathing during pregnancy requires urgent care.",
+          "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
+          "sourceRef": "WHO Counselling for Maternal and Newborn Health Care (Danger Signs)",
+          "displayReasonBn": "শ্বাস দ্রুত হওয়া বা শ্বাস নিতে কষ্ট হওয়া গর্ভাবস্থায় বিপদ সংকেত।"
+        }
+      }
+    },
+    {
+      "name": "WHO_PCPNC_FAINTING_HIGH",
+      "priority": 100,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "fainting" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+          "reason": "Fainting or loss of consciousness requires urgent assessment.",
+          "evidenceTag": "WHO_PCPNC_QUICK_CHECK",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment",
+          "displayReasonBn": "অজ্ঞান হওয়া বা জ্ঞান হারানো জরুরিভাবে দেখানোর প্রয়োজন।"
+        }
+      }
+    },
+    {
+      "name": "CDC_REDUCED_FETAL_MOVEMENT_THIRD_TRIMESTER_HIGH",
+      "priority": 90,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "reduced_fetal_movement" },
+          { "fact": "trimester", "operator": "equal", "value": "third" }
+        ]
+      },
+      "event": {
+        "type": "HIGH_RISK",
+        "params": {
+          "riskLevel": "HIGH",
+          "priority": "URGENT",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+          "reason": "Reduced baby movement in late pregnancy needs urgent evaluation.",
+          "evidenceTag": "CDC_HEAR_HER",
+          "sourceRef": "CDC HEAR HER Urgent Maternal Warning Signs",
+          "displayReasonBn": "গর্ভাবস্থার শেষ দিকে বাচ্চার নড়াচড়া কমে গেলে দ্রুত স্বাস্থ্যকর্মীর সঙ্গে যোগাযোগ করুন।"
+        }
+      }
+    }
+  ]
+}

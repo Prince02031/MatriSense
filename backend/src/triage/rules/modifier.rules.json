@@ -1,0 +1,145 @@
+{
+  "engine": "json-rules-engine",
+  "rules": [
+    {
+      "name": "MODIFIER_KNOWN_HYPERTENSION",
+      "priority": 40,
+      "conditions": {
+        "all": [
+          { "fact": "riskFactors.hypertension", "operator": "equal", "value": true }
+        ]
+      },
+      "event": {
+        "type": "RISK_MODIFIER",
+        "params": {
+          "modifierScore": 2,
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Known hypertension increases pregnancy risk and requires closer monitoring.",
+          "displayReasonBn": "উচ্চ রক্তচাপ থাকলে গর্ভাবস্থায় ঝুঁকি বাড়ে, নিয়মিত পর্যবেক্ষণ জরুরি।",
+          "evidenceTag": "WHO_PCPNC_PRIORITY_SIGNS",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment"
+        }
+      }
+    },
+    {
+      "name": "MODIFIER_ANEMIA_HISTORY",
+      "priority": 35,
+      "conditions": {
+        "all": [
+          { "fact": "riskFactors.anemia", "operator": "equal", "value": true }
+        ]
+      },
+      "event": {
+        "type": "RISK_MODIFIER",
+        "params": {
+          "modifierScore": 1,
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "History of anemia increases pregnancy risk and should be monitored.",
+          "displayReasonBn": "রক্তস্বল্পতার ইতিহাস থাকলে নিয়মিত পর্যবেক্ষণ জরুরি।",
+          "evidenceTag": "NEEDS_REVIEW",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment"
+        }
+      }
+    },
+    {
+      "name": "MODIFIER_DIABETES",
+      "priority": 35,
+      "conditions": {
+        "all": [
+          { "fact": "riskFactors.diabetes", "operator": "equal", "value": true }
+        ]
+      },
+      "event": {
+        "type": "RISK_MODIFIER",
+        "params": {
+          "modifierScore": 1,
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Diabetes history increases pregnancy risk and needs monitoring.",
+          "displayReasonBn": "ডায়াবেটিস থাকলে গর্ভাবস্থায় পর্যবেক্ষণ জরুরি।",
+          "evidenceTag": "NEEDS_REVIEW",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment"
+        }
+      }
+    },
+    {
+      "name": "MODIFIER_PREVIOUS_HIGH_RISK_PREGNANCY",
+      "priority": 35,
+      "conditions": {
+        "all": [
+          { "fact": "riskFactors.previousHighRiskPregnancy", "operator": "equal", "value": true }
+        ]
+      },
+      "event": {
+        "type": "RISK_MODIFIER",
+        "params": {
+          "modifierScore": 1,
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Previous high-risk pregnancy increases current risk and needs monitoring.",
+          "displayReasonBn": "আগে উচ্চ ঝুঁকির গর্ভাবস্থা থাকলে বর্তমান গর্ভাবস্থায় পর্যবেক্ষণ জরুরি।",
+          "evidenceTag": "NEEDS_REVIEW",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment"
+        }
+      }
+    },
+    {
+      "name": "MODIFIER_PREVIOUS_MIScarriage",
+      "priority": 35,
+      "conditions": {
+        "all": [
+          { "fact": "riskFactors.previousMiscarriage", "operator": "equal", "value": true }
+        ]
+      },
+      "event": {
+        "type": "RISK_MODIFIER",
+        "params": {
+          "modifierScore": 1,
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Previous miscarriage increases concern and needs closer monitoring.",
+          "displayReasonBn": "আগে গর্ভপাতের ইতিহাস থাকলে পর্যবেক্ষণ জরুরি।",
+          "evidenceTag": "NEEDS_REVIEW",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment"
+        }
+      }
+    },
+    {
+      "name": "MODIFIER_LAST_CHECKUP_GAP_60_DAYS",
+      "priority": 30,
+      "conditions": {
+        "all": [
+          { "fact": "lastCheckupGapDays", "operator": "greaterThanInclusive", "value": 60 }
+        ]
+      },
+      "event": {
+        "type": "RISK_MODIFIER",
+        "params": {
+          "modifierScore": 1,
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Long gap since last checkup increases the need for review.",
+          "displayReasonBn": "শেষ চেকআপের অনেক দিন হয়ে গেলে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "NEEDS_REVIEW",
+          "sourceRef": "WHO ANC Digital Adaptation Kit (workflow context)"
+        }
+      }
+    },
+    {
+      "name": "MODIFIER_THIRD_TRIMESTER",
+      "priority": 30,
+      "conditions": {
+        "all": [
+          { "fact": "trimester", "operator": "equal", "value": "third" }
+        ]
+      },
+      "event": {
+        "type": "RISK_MODIFIER",
+        "params": {
+          "modifierScore": 1,
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Late pregnancy increases the need for caution with warning signs.",
+          "displayReasonBn": "গর্ভাবস্থার শেষ পর্যায়ে সতর্ক থাকা জরুরি।",
+          "evidenceTag": "NEEDS_REVIEW",
+          "sourceRef": "WHO ANC Digital Adaptation Kit (workflow context)"
+        }
+      }
+    }
+  ]
+}
