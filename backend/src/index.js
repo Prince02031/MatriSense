@@ -41,6 +41,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/triage', triageRoutes);
+app.use('/api/dev', require('./routes/dev.routes'));
 
 app.get('/api/message', (_req, res) => {
   res.json({ message: 'Backend is running successfully.' });

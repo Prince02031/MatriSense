@@ -21,7 +21,12 @@ const TriageSessionSchema = new mongoose.Schema({
   // RAG Context
   careGuidanceContext: mongoose.Schema.Types.Mixed,
 
-  // LLM Explanation
+  // LLM Extraction (Objective 5)
+  extractionResult: mongoose.Schema.Types.Mixed,
+  extractionSource: { type: String, enum: ['llm', 'fallback'] },
+  extractionAudit: mongoose.Schema.Types.Mixed,
+
+  // LLM Explanation (Objective 4)
   llmOutput: mongoose.Schema.Types.Mixed,
   safetyValidation: {
     valid: Boolean,
