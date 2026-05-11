@@ -14,6 +14,7 @@ import FollowUpQuestionCard from '../../../src/components/triageLab/FollowUpQues
 import TriageResultCard from '../../../src/components/triageLab/TriageResultCard';
 import DebugJsonPanel from '../../../src/components/triageLab/DebugJsonPanel';
 import ChatBubble from '../../../src/components/triageLab/ChatBubble';
+import VoiceDiagnosticsPanel from '../../../src/components/voice/VoiceDiagnosticsPanel';
 
 export default function AITriageLabPage() {
   // --- PAGE STATE ---
@@ -45,6 +46,16 @@ export default function AITriageLabPage() {
   const [llmOutput, setLlmOutput] = useState(null);
   const [postGenerationSafety, setPostGenerationSafety] = useState(null);
   const [safeOutput, setSafeOutput] = useState(null);
+
+  // Diagnostics
+  const [voiceStats, setVoiceStats] = useState({
+    lastMime: null,
+    lastSize: null,
+    lastModel: null,
+    lastLang: null,
+    lastTranscript: null,
+    lastTtsError: null
+  });
 
   // --- ACTIONS ---
 
@@ -227,6 +238,7 @@ export default function AITriageLabPage() {
                   value={inputTextBn} 
                   onChange={setInputTextBn} 
                   onAnalyze={handleStartTriageTest}
+                  onVoiceDiagnostics={setVoiceStats}
                   isLoading={loading}
                 />
                 <div className="pt-4 border-t border-gray-100">
@@ -305,6 +317,8 @@ export default function AITriageLabPage() {
               disclaimerBn={safeOutput?.safetyDisclaimerBn}
               sources={careGuidanceContext?.sources}
               isFallback={postGenerationSafety?.valid === false}
+              safeOutput={safeOutput}
+              decision={decision}
             />
 
             <div className="flex justify-center pb-12">
@@ -407,6 +421,7 @@ export default function AITriageLabPage() {
               </div>
               
               <div className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)] pr-2 custom-scrollbar">
+                <VoiceDiagnosticsPanel stats={voiceStats} />
                 <DebugJsonPanel title="1. Extraction Result" data={extraction} />
                 <DebugJsonPanel title="2. Confirmed Symptoms" data={confirmedSymptoms} />
                 <DebugJsonPanel title="3. Follow-up Questions" data={followUpQuestions} />
