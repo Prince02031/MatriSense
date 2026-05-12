@@ -1,4 +1,12 @@
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // Validate Environment Variables
 const validateEnv = () => {
@@ -23,6 +31,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/admin.routes');
 const triageRoutes = require('./routes/triage.routes');
+const speechRoutes = require('./routes/speech.routes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -41,6 +50,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/triage', triageRoutes);
+app.use('/api/speech', speechRoutes);
 app.use('/api/dev', require('./routes/dev.routes'));
 
 app.get('/api/message', (_req, res) => {

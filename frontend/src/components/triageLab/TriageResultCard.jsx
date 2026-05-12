@@ -1,8 +1,8 @@
-import React from 'react';
+import ResultReadAloudButton from '../voice/ResultReadAloudButton';
 
 /**
  * TriageResultCard
- * Displays the final clinical recommendation and AI explanation.
+ * Displays the final clinical recommendation and AI explanation with TTS support.
  */
 const TriageResultCard = ({ 
   riskLevel, 
@@ -13,7 +13,9 @@ const TriageResultCard = ({
   warnings = [],
   disclaimerBn,
   sources = [],
-  isFallback = false 
+  isFallback = false,
+  safeOutput,
+  decision 
 }) => {
   const getRiskStyles = () => {
     switch (riskLevel) {
@@ -27,7 +29,7 @@ const TriageResultCard = ({
   const styles = getRiskStyles();
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+    <div className="w-full max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-12">
       {/* Risk Banner */}
       <div className={`${styles.bg} ${styles.text} p-8 rounded-3xl shadow-xl border-b-8 ${styles.border} relative overflow-hidden`}>
         {/* Decorative background element */}
@@ -37,8 +39,16 @@ const TriageResultCard = ({
           <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">
             Triage Result
           </span>
-          <div className="bg-white/20 px-4 py-1.5 rounded-full text-[11px] font-black backdrop-blur-md border border-white/30">
-            {styles.label}
+          <div className="flex items-center gap-3">
+             {/* Specialized Result TTS */}
+             <ResultReadAloudButton 
+               safeOutput={safeOutput} 
+               decision={decision} 
+             />
+
+             <div className="bg-white/20 px-4 py-1.5 rounded-full text-[11px] font-black backdrop-blur-md border border-white/30">
+               {styles.label}
+             </div>
           </div>
         </div>
         

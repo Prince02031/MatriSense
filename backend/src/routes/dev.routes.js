@@ -13,9 +13,40 @@ const { validatePreGeneration } = require('../safety');
 
 const knowledgeCardsPath = path.join(__dirname, '../rag/knowledgeCards.json');
 
+// --- VOICE SUPPORT ---
+const multer = require('multer');
+const { transcribeAudio } = require('../speech');
+const upload = multer({ dest: 'uploads/' });
+
+/**
+ * POST /api/dev/voice/stt
+ * Transcribes audio blob to Bangla text.
+ */
+router.post('/voice/stt', upload.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+
+    const result = await transcribeAudio({ file: req.file, language: 'bn' });
+    const transcription = result.transcript;
+
+    // Cleanup temp file
+    fs.unlinkSync(req.file.path);
+
+    res.json({ text: transcription });
+  } catch (error) {
+    console.error('[DevRoutes] STT Error:', error.message);
+    // Cleanup on error if file exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: 'Transcription failed', message: error.message });
+  }
+});
+
 /**
  * POST /api/dev/triage-lab/run
- * End-to-end dev endpoint for the Triage Lab testing UI.
  * Returns all intermediate pipeline stages for debugging.
  */
 router.post('/triage-lab/run', async (req, res) => {
