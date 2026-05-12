@@ -11,7 +11,7 @@ if (!fs.existsSync(uploadsDir)) {
 // Validate Environment Variables
 const validateEnv = () => {
   let provider = process.env.LLM_PROVIDER || 'gemini';
-  
+
   const supportedProviders = ['gemini', 'local'];
   if (!supportedProviders.includes(provider.toLowerCase())) {
     console.warn(`⚠️  Unsupported LLM_PROVIDER "${provider}". Defaulting to "gemini" with fallback templates.`);
@@ -39,7 +39,7 @@ const port = process.env.PORT || 5000;
 // Connect to MongoDB
 connectDB();
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // Routes
