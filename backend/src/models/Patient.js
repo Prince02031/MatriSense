@@ -1,8 +1,20 @@
-// Patient model - stores mother profile information
-// TODO: Connect to MongoDB with Mongoose schema
+const mongoose = require('mongoose');
 
-module.exports = {
-  // Fields:
-  // _id, name, age, phone, trimester, expectedDeliveryDate, lastCheckupDate,
-  // knownRiskFactors (array), emergencyContact, createdAt, updatedAt
-};
+const PatientSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+  name: { type: String, required: true },
+  age: { type: Number, required: true },
+  phone: { type: String, required: false },
+  trimester: { type: String, required: true },
+  gestationalWeek: { type: Number, required: false },
+  expectedDeliveryDate: { type: Date, required: false },
+  lastCheckupDate: { type: Date, required: false },
+  knownRiskFactors: { type: mongoose.Schema.Types.Mixed, default: {} },
+  emergencyContactName: { type: String, required: false },
+  emergencyContactPhone: { type: String, required: false },
+  addressOrVillage: { type: String, required: false },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('Patient', PatientSchema);

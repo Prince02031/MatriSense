@@ -5,6 +5,7 @@ const { validatePreGeneration } = require('../safety');
 const { extractSymptomsFromBangla, generateTriageExplanation } = require('../ai');
 const { selectFollowUpQuestions, normalizeFollowUpAnswers } = require('../triage/followup');
 const { buildCaseStateFromExtraction } = require('../services/caseStateBuilder');
+const { logAction } = require('../services/auditService');
 
 // POST /api/triage/start - start triage session
 router.post('/start', async (req, res) => {
@@ -22,6 +23,9 @@ router.post('/start', async (req, res) => {
       }
     });
     await session.save();
+
+    await logAction(session._id, 'Symptom submitted', 'PATIENT');
+
     res.json(session);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -52,13 +56,15 @@ router.post('/:sessionId/extract', async (req, res) => {
     session.extractionResult = extraction;
     session.extractionSource = extraction.source;
     session.extractionAudit = extraction.rawLlmOutput; // Store raw for quality audit
-    
+
     // Initial sync to caseState
     session.caseState.symptoms = extraction.detectedSymptoms;
     session.caseState.severity = extraction.severity;
-    
+
     session.updatedAt = new Date();
     await session.save();
+
+    await logAction(sessionId, 'Extraction completed', 'SYSTEM');
 
     res.json({
       success: true,
@@ -122,6 +128,8 @@ router.post('/:sessionId/answers', async (req, res) => {
     session.updatedAt = new Date();
     await session.save();
 
+    await logAction(sessionId, 'Follow-up answered', 'PATIENT');
+
     res.json({
       success: true,
       nextStep: 'RUN_TRIAGE',
@@ -145,27 +153,27 @@ router.post('/:sessionId/explain', async (req, res) => {
     const { decision, careGuidanceContext, caseState } = session;
 
     if (!decision || !careGuidanceContext) {
-      return res.status(400).json({ 
-        error: 'Session missing required context', 
-        details: 'Session must have a completed triage decision and RAG context before explanation can be generated.' 
+      return res.status(400).json({
+        error: 'Session missing required context',
+        details: 'Session must have a completed triage decision and RAG context before explanation can be generated.'
       });
     }
 
     // 1. Pre-Generation Safety Check (Double check before calling LLM)
     const preGenSafety = validatePreGeneration(decision, careGuidanceContext);
     if (!preGenSafety.valid) {
-      return res.status(400).json({ 
-        error: 'Pre-generation safety check failed', 
-        issues: preGenSafety.issues 
+      return res.status(400).json({
+        error: 'Pre-generation safety check failed',
+        issues: preGenSafety.issues
       });
     }
 
     // 2. Generate LLM Explanation
     // This calls Gemini (or local) and runs the post-generation safety validator automatically
-    const result = await generateTriageExplanation({ 
-      decision, 
-      careGuidanceContext, 
-      caseState 
+    const result = await generateTriageExplanation({
+      decision,
+      careGuidanceContext,
+      caseState
     });
 
     // 3. Save results to session for audit and persistence
@@ -213,18 +221,20 @@ router.post('/:sessionId/run', async (req, res) => {
     // 3. Assemble RAG Context
     const knowledgeCardsPath = path.join(__dirname, '../rag/knowledgeCards.json');
     const knowledgeCards = JSON.parse(fs.readFileSync(knowledgeCardsPath, 'utf-8'));
-    
-    const careGuidanceContext = assembleCareGuidanceContext({ 
-      decision, 
-      caseState: session.caseState, 
-      knowledgeCards 
+
+    const careGuidanceContext = assembleCareGuidanceContext({
+      decision,
+      caseState: session.caseState,
+      knowledgeCards
     });
-    
+
     session.careGuidanceContext = careGuidanceContext;
     session.status = 'completed';
     session.updatedAt = new Date();
-    
+
     await session.save();
+
+    await logAction(sessionId, 'Triage run completed', 'SYSTEM');
 
     res.json({
       success: true,

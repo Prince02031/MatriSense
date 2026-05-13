@@ -1133,3 +1133,8 @@ a:hover {
   0%, 100% { transform: scaleY(1); opacity: 0.5; }
   50% { transform: scaleY(1.8); opacity: 1; }
 }
+
+/* ===== Urgent Highlights ===== */
+tr.urgent-row td { background-color: rgba(239, 68, 68, 0.04); }
+tr.urgent-row td:first-child { border-left: 3px solid var(--accent-rose); }
+.data-table td, .data-table th { padding: 10px 16px; }

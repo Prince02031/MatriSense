@@ -51,6 +51,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/triage', triageRoutes);
 app.use('/api/speech', speechRoutes);
+app.use('/api/worker', require('./routes/worker.routes'));
+app.use('/api/referral-notes', require('./routes/referral.routes'));
 app.use('/api/dev', require('./routes/dev.routes'));
 
 app.get('/api/message', (_req, res) => {
