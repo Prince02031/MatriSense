@@ -3,17 +3,23 @@ const mongoose = require('mongoose');
 const TriageSessionSchema = new mongoose.Schema({
   patientId: { type: String, required: false },
   inputTextBn: { type: String, required: false },
-  
+
   // Case State
   caseState: {
     symptoms: [String],
     dangerSignsChecked: [String],
     trimester: String,
     gestationalWeek: Number,
+    severity: mongoose.Schema.Types.Mixed,
+    duration: mongoose.Schema.Types.Mixed,
     riskFactors: mongoose.Schema.Types.Mixed,
     followUpAnswers: mongoose.Schema.Types.Mixed,
     meta: mongoose.Schema.Types.Mixed
   },
+
+  // Phase 2 — Symptom Confirmation
+  confirmedSymptoms: { type: [String], default: [] },
+  editedByUser: { type: Boolean, default: false },
 
   // Rule Decision
   decision: mongoose.Schema.Types.Mixed,
@@ -21,12 +27,12 @@ const TriageSessionSchema = new mongoose.Schema({
   // RAG Context
   careGuidanceContext: mongoose.Schema.Types.Mixed,
 
-  // LLM Extraction (Objective 5)
+  // LLM Extraction
   extractionResult: mongoose.Schema.Types.Mixed,
   extractionSource: { type: String, enum: ['llm', 'fallback'] },
   extractionAudit: mongoose.Schema.Types.Mixed,
 
-  // LLM Explanation (Objective 4)
+  // LLM Explanation + Safety
   llmOutput: mongoose.Schema.Types.Mixed,
   safetyValidation: {
     valid: Boolean,
@@ -34,7 +40,14 @@ const TriageSessionSchema = new mongoose.Schema({
   },
   safeOutput: mongoose.Schema.Types.Mixed,
 
-  status: { type: String, default: 'active' },
+  // Session Status Lifecycle
+  status: {
+    type: String,
+    enum: ['active', 'extracted', 'confirmed', 'answered', 'completed', 'error'],
+    default: 'active'
+  },
+
+  completedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
