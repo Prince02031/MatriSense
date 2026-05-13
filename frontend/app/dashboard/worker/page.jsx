@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // Added for programmatic navigation
 import { useAuth } from '../../context/AuthContext';
 import { getWorkerCases } from '../../api/workerApi';
 import CasePriorityBadge from '../../components/dashboard/CasePriorityBadge';
@@ -10,6 +11,7 @@ import CaseStatusBadge from '../../components/dashboard/CaseStatusBadge';
 
 export default function WorkerDashboard() {
     const { user } = useAuth();
+    const router = useRouter();
     const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -31,6 +33,11 @@ export default function WorkerDashboard() {
 
     if (!user) return null;
 
+    // Helper to handle the "Go to dashboard" button specifically for Workers
+    const handleGoToDashboard = () => {
+        router.push('/dashboard/worker');
+    };
+
     const urgentCases = cases.filter(c => c.decision?.riskLevel === 'HIGH');
     const resolvedCases = cases.filter(c => c.status === 'RESOLVED');
 
@@ -43,19 +50,34 @@ export default function WorkerDashboard() {
             return riskA - riskB;
         }
 
-        // Newest first within each risk group
         return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
     return (
         <>
-            {/* Welcome */}
+            {/* Welcome Card Updated with Dashboard Button */}
             <div className="welcome-card" style={{ marginBottom: '24px' }}>
-                <h1>Welcome, {user.name || 'Health Worker'} 👋</h1>
-                <p>
-                    Review patient cases, respond to alerts, and manage follow-ups.
-                    Your expertise helps keep mothers safe.
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <h1>Welcome, {user.name || 'Health Worker'} 👋</h1>
+                        <p style={{ maxWidth: '600px' }}>
+                            Review patient cases, respond to alerts, and manage follow-ups.
+                            Your expertise helps keep mothers safe.
+                        </p>
+                        <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+                            <button
+                                onClick={handleGoToDashboard}
+                                className="btn btn-primary"
+                            >
+                                Go to dashboard
+                            </button>
+                        </div>
+                    </div>
+                    {/* Optional: Role Badge to verify it's the worker portal */}
+                    <span className="badge badge-info" style={{ textTransform: 'uppercase' }}>
+                        {user.role?.replace('_', ' ')}
+                    </span>
+                </div>
             </div>
 
             {/* Stats */}
@@ -68,6 +90,7 @@ export default function WorkerDashboard() {
                     <div className="dash-card-value">{urgentCases.length}</div>
                     <div className="dash-card-sub">High-risk cases pending</div>
                 </div>
+                {/* ... other stat cards remain same ... */}
                 <div className="dash-card">
                     <div className="dash-card-header">
                         <div className="dash-card-icon icon-amber">📂</div>
@@ -142,8 +165,11 @@ export default function WorkerDashboard() {
                                     <small>{new Date(c.createdAt).toLocaleString()}</small>
                                 </td>
                                 <td>
+                                    {/* Updated Link to ensure it goes to the deep-linked case detail within worker dashboard */}
                                     <Link href={`/dashboard/worker/${c._id}`}>
-                                        <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.9rem' }}>View</button>
+                                        <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.9rem' }}>
+                                            View
+                                        </button>
                                     </Link>
                                 </td>
                             </tr>

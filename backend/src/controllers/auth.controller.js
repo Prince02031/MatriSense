@@ -10,7 +10,17 @@ const register = async (req, res) => {
             return res.status(400).json({ success: false, message: error.details[0].message });
         }
 
-        const { name, email, phone, password, role } = value;
+        let { name, email, phone, password, role } = value;
+
+        // --- ADD ROLE MAPPING HERE ---
+        const roleMapping = {
+            patient: 'MOTHER',
+            worker: 'HEALTH_WORKER',
+            admin: 'ADMIN'
+        }
+
+        const dbRole = roleMapping[role] || 'MOTHER';
+        // -----------------------------
 
         if (email) {
             const emailExists = await User.findOne({ email });
@@ -26,7 +36,8 @@ const register = async (req, res) => {
 
         const passwordHash = await authService.hashPassword(password);
 
-        const user = await User.create({ name, email, phone, passwordHash, role });
+        // Save with the dbRole instead of the raw role from the frontend
+        const user = await User.create({ name, email, phone, passwordHash, role: dbRole });
         const token = authService.generateAccessToken(user);
 
         return res.status(201).json({
