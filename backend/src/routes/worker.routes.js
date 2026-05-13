@@ -1,19 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const workerController = require('../controllers/worker.controller');
 
-// Get list of cases for the dashboard
-router.get('/cases', (req, res) => {
-    res.status(501).json({ message: 'List cases route not implemented yet' });
-});
+// Mock Auth middleware (can integrate real auth later if needed)
+// GET /api/worker/cases - list all cases
+router.get('/cases', workerController.getCases);
 
-// Get detailed case view for a session
-router.get('/cases/:sessionId', (req, res) => {
-    res.status(501).json({ message: 'View case details route not implemented yet' });
-});
+// GET /api/worker/cases/:sessionId - get case detail
+router.get('/cases/:sessionId', workerController.getCaseDetail);
 
-// Update the status of a case (e.g., reviewed, followed up)
-router.put('/cases/:sessionId/status', (req, res) => {
-    res.status(501).json({ message: 'Update case status route not implemented yet' });
-});
+// PUT /api/worker/cases/:sessionId/status - update case status
+router.put('/cases/:sessionId/status', workerController.updateStatus);
 
 module.exports = router;

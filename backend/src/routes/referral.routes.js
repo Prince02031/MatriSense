@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const referralController = require('../controllers/referral.controller');
 
-// Create a new referral note
-router.post('/', (req, res) => {
-    res.status(501).json({ message: 'Create referral note route not implemented yet' });
-});
+// POST /api/referral-notes - Create a new note
+router.post('/', referralController.createNote);
+
+// GET /api/referral-notes/:sessionId - Get notes for a session
+router.get('/:sessionId', referralController.getNotesForSession);
 
 module.exports = router;
