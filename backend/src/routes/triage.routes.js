@@ -32,6 +32,29 @@ router.post('/start', async (req, res) => {
   }
 });
 
+// GET /api/triage/:sessionId/status - Get current session status
+router.get('/:sessionId/status', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await TriageSession.findById(sessionId);
+
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    res.json({
+      _id: session._id,
+      status: session.status,
+      caseState: session.caseState,
+      extractionResult: session.extractionResult,
+      confirmedSymptoms: session.confirmedSymptoms,
+      editedByUser: session.editedByUser,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch session', message: error.message });
+  }
+});
+
 // POST /api/triage/:sessionId/extract - Extract symptoms from Bangla text
 router.post('/:sessionId/extract', async (req, res) => {
   try {
@@ -247,8 +270,93 @@ router.post('/:sessionId/run', async (req, res) => {
   }
 });
 
-// Stubs for other triage flow routes
-router.post('/:sessionId/confirm', (req, res) => res.status(501).json({ error: 'Not implemented' }));
-router.get('/:sessionId/result', (req, res) => res.status(501).json({ error: 'Not implemented' }));
+// POST /api/triage/:sessionId/confirm - User confirms/edits extracted symptoms
+router.post('/:sessionId/confirm', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { confirmedSymptoms, editedByUser } = req.body;
+    
+    const session = await TriageSession.findById(sessionId);
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    if (!session.extractionResult) {
+      return res.status(400).json({ error: 'No extraction result found. Run extraction first.' });
+    }
+
+    // 1. Save confirmation data
+    session.confirmedSymptoms = confirmedSymptoms || session.caseState.symptoms;
+    session.editedByUser = editedByUser || false;
+    
+    // 2. Update case state with confirmed symptoms
+    session.caseState.symptoms = session.confirmedSymptoms;
+    
+    // 3. Update status
+    session.status = 'confirmed';
+    session.updatedAt = new Date();
+    
+    await session.save();
+    
+    await logAction(sessionId, 'Symptoms confirmed by user', 'PATIENT');
+
+    res.json({
+      success: true,
+      message: 'Symptoms confirmed',
+      session: {
+        _id: session._id,
+        confirmedSymptoms: session.confirmedSymptoms,
+        editedByUser: session.editedByUser,
+        status: session.status,
+        caseState: session.caseState
+      }
+    });
+  } catch (error) {
+    console.error('[TriageRoutes] Confirm Error:', error);
+    res.status(500).json({ error: 'Failed to confirm symptoms', message: error.message });
+  }
+});
+
+// GET /api/triage/:sessionId/result - Get final triage result
+router.get('/:sessionId/result', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await TriageSession.findById(sessionId);
+
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+
+    // Verify triage has been completed
+    if (!session.decision || session.status !== 'completed') {
+      return res.status(400).json({
+        error: 'Triage not yet completed',
+        currentStatus: session.status,
+        hint: 'Run POST /api/triage/:sessionId/run first'
+      });
+    }
+
+    // Return safe result (uses safe output if available)
+    res.json({
+      success: true,
+      result: {
+        sessionId: session._id,
+        status: session.status,
+        decision: {
+          riskLevel: session.decision.riskLevel,
+          priority: session.decision.priority,
+          recommendedAction: session.decision.recommendedAction,
+          matchedRules: session.decision.matchedRules,
+          reasons: session.decision.reasons,
+          reasonsBn: session.decision.reasonsBn,
+          evidenceTags: session.decision.evidenceTags
+        },
+        careGuidance: session.careGuidanceContext,
+        explanation: session.safeOutput,
+        safetyValidation: session.safetyValidation,
+        completedAt: session.updatedAt
+      }
+    });
+  } catch (error) {
+    console.error('[TriageRoutes] Result Error:', error);
+    res.status(500).json({ error: 'Failed to retrieve result', message: error.message });
+  }
+});
 
 module.exports = router;

@@ -19,7 +19,9 @@
     "test:followup": "node src/triage/followup/tests/runFollowUpTests.js",
     "test:input-pipeline": "node src/ai/tests/runInputPipelineDemo.js",
     "test:e2e:triage": "node src/tests/runEndToEndTriageMock.js",
-    "test:stt:groq": "node src/speech/tests/runGroqSttSmokeTest.js"
+    "test:e2e:triage:live": "node src/tests/runEndToEndTriagePipeline.js",
+    "test:stt:groq": "node src/speech/tests/runGroqSttSmokeTest.js",
+    "test:demo": "node src/tests/runDemoCases.js"
   },
   "dependencies": {
     "@google/genai": "^2.0.1",
