@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['MOTHER', 'HEALTH_WORKER'],
+            enum: ['MOTHER', 'HEALTH_WORKER', 'ADMIN'],
             required: true,
             default: 'MOTHER',
         },
@@ -42,9 +42,7 @@ const UserSchema = new mongoose.Schema(
 );
 
 // Indexes for faster querying
-UserSchema.index({ phone: 1 });
 UserSchema.index({ role: 1 });
-UserSchema.index({ email: 1 });
 
 // Export model safely to avoid overwrite issues
 module.exports = mongoose.models.User || mongoose.model('User', UserSchema);

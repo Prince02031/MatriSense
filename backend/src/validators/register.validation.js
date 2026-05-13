@@ -13,8 +13,9 @@ const registerValidation = Joi.object({
         'string.min': 'Password must be at least 6 characters long',
         'any.required': 'Password is required'
     }),
-    role: Joi.string().valid('MOTHER', 'HEALTH_WORKER').required().messages({
-        'any.only': 'Role must be either MOTHER or HEALTH_WORKER',
+    // Update: Allow 'patient' and 'worker' to match your frontend input
+    role: Joi.string().valid('MOTHER', 'HEALTH_WORKER', 'patient', 'worker').required().messages({
+        'any.only': 'Role must be either MOTHER, HEALTH_WORKER, patient, or worker',
         'any.required': 'Role is required'
     })
 });

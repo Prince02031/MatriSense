@@ -1,45 +1,86 @@
 const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+/**
+ * Helper to generate consistent headers with the Auth token
+ */
+const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('matrisense_token') : null;
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+};
+
+/**
+ * Global response handler for worker API calls
+ */
 const handleResponse = async (res) => {
     if (!res.ok) {
-        let msg = 'Failed to fetch';
+        let msg = `Error ${res.status}: ${res.statusText}`;
         try {
             const data = await res.json();
-            msg = data.error || msg;
-        } catch (e) { }
+            // Capture specific backend error messages (e.g., "Case not found")
+            msg = data.message || data.error || msg;
+        } catch (e) {
+            // Fallback for non-JSON error responses
+        }
+
+        console.error("Worker API Failure Details:", {
+            status: res.status,
+            message: msg,
+            url: res.url
+        });
+
         throw new Error(msg);
     }
     return res.json();
 };
 
+// 1. Get all cases for the worker dashboard
 export async function getWorkerCases() {
     const res = await fetch(`${apiBase}/api/worker/cases`, {
-        headers: { 'Content-Type': 'application/json' },
+        method: 'GET',
+        headers: getAuthHeaders(),
         cache: 'no-store'
     });
     return handleResponse(res);
 }
 
+// 2. Get a single case detail
 export async function getWorkerCase(sessionId) {
+    // PREVENT "Route Not Found" by checking for undefined IDs
+    if (!sessionId || sessionId === 'undefined') {
+        console.error("getWorkerCase was called without a valid sessionId.");
+        throw new Error("Local Error: Session ID is missing before request.");
+    }
+
     const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}`, {
-        headers: { 'Content-Type': 'application/json' },
+        method: 'GET',
+        headers: getAuthHeaders(),
         cache: 'no-store'
     });
     return handleResponse(res);
 }
 
+// 3. Update the status of a specific case
 export async function updateWorkerCaseStatus(sessionId, status) {
+    if (!sessionId) throw new Error("Local Error: Cannot update status without Session ID.");
+
     const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status })
     });
     return handleResponse(res);
 }
 
+// 4. Get the audit log/timeline for a specific case
 export async function getAuditLog(sessionId) {
+    if (!sessionId) throw new Error("Local Error: Cannot fetch audit log without Session ID.");
+
     const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/audit`, {
-        headers: { 'Content-Type': 'application/json' },
+        method: 'GET',
+        headers: getAuthHeaders(),
         cache: 'no-store'
     });
     return handleResponse(res);

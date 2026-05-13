@@ -5,9 +5,11 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 
+// Updated config to match backend Enums
 const navConfig = {
-    patient: {
+    MOTHER: {
         label: 'Patient',
+        roleKey: 'patient',
         sections: [
             {
                 title: 'Main',
@@ -20,8 +22,9 @@ const navConfig = {
             },
         ],
     },
-    worker: {
+    HEALTH_WORKER: {
         label: 'Health Worker',
+        roleKey: 'worker',
         sections: [
             {
                 title: 'Main',
@@ -34,8 +37,9 @@ const navConfig = {
             },
         ],
     },
-    admin: {
+    ADMIN: {
         label: 'Admin',
+        roleKey: 'admin',
         sections: [
             {
                 title: 'Main',
@@ -73,8 +77,15 @@ export default function DashboardLayout({ children }) {
 
     if (!user) return null;
 
-    const nav = navConfig[user.role] || navConfig.patient;
-    const roleClass = `role-${user.role}`;
+    // Bridge the gap between old frontend strings and new backend Enums
+    const getNav = () => {
+        if (user.role === 'HEALTH_WORKER' || user.role === 'worker') return navConfig.HEALTH_WORKER;
+        if (user.role === 'ADMIN' || user.role === 'admin') return navConfig.ADMIN;
+        return navConfig.MOTHER; // Default to Patient/Mother
+    };
+
+    const nav = getNav();
+    const roleClass = `role-${nav.roleKey}`;
 
     const handleLogout = () => {
         logout();
@@ -107,7 +118,8 @@ export default function DashboardLayout({ children }) {
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className={`nav-link ${pathname === link.href.split('#')[0] && !link.href.includes('#') ? 'active' : ''}`}
+                                    className={`nav-link ${pathname === link.href.split('#')[0] && !link.href.includes('#') ? 'active' : ''
+                                        }`}
                                     onClick={() => setSidebarOpen(false)}
                                 >
                                     <span className="nav-icon">{link.icon}</span>
@@ -142,9 +154,9 @@ export default function DashboardLayout({ children }) {
                             ☰
                         </button>
                         <h2>
-                            {user.role === 'patient' && '🤰 Patient Portal'}
-                            {user.role === 'worker' && '👩‍⚕️ Worker Portal'}
-                            {user.role === 'admin' && '🛡️ Admin Portal'}
+                            {(user.role === 'patient' || user.role === 'MOTHER') && '🤰 Patient Portal'}
+                            {(user.role === 'worker' || user.role === 'HEALTH_WORKER') && '👩‍⚕️ Worker Portal'}
+                            {(user.role === 'admin' || user.role === 'ADMIN') && '🛡️ Admin Portal'}
                         </h2>
                     </div>
                     <div className="header-actions">

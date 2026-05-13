@@ -11,21 +11,38 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     useEffect(() => {
         if (!loading) {
             if (!isAuthenticated) {
-                // Not logged in at all
                 router.push('/login');
-            } else if (allowedRoles && !allowedRoles.includes(user?.role)) {
-                // Logged in but missing required role
-                // Redirect patients strictly to their dashboard, otherwise home
-                if (user?.role === 'patient') {
-                    router.push('/dashboard/patient');
-                } else {
-                    router.push('/');
+                return;
+            }
+
+            if (allowedRoles) {
+                // Create a mapping to bridge the gap between Frontend labels and DB Enums
+                const roleMapping = {
+                    'worker': 'HEALTH_WORKER',
+                    'patient': 'MOTHER',
+                    'admin': 'ADMIN'
+                };
+
+                // Check if the user's actual role matches the allowed role 
+                // OR if the mapped version of the allowed role matches
+                const isAllowed = allowedRoles.some(role =>
+                    user?.role === role || user?.role === roleMapping[role]
+                );
+
+                if (!isAllowed) {
+                    // Redirect based on their actual role
+                    if (user?.role === 'MOTHER' || user?.role === 'patient') {
+                        router.push('/dashboard/patient');
+                    } else if (user?.role === 'HEALTH_WORKER' || user?.role === 'worker') {
+                        router.push('/dashboard/worker');
+                    } else {
+                        router.push('/');
+                    }
                 }
             }
         }
     }, [loading, isAuthenticated, user, allowedRoles, router]);
 
-    // Show a loading skeleton/message while verifying auth state
     if (loading) {
         return (
             <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -34,11 +51,25 @@ export default function ProtectedRoute({ children, allowedRoles }) {
         );
     }
 
-    // Only render children if everything is valid
-    if (isAuthenticated && allowedRoles.includes(user?.role)) {
+    // Helper to verify rendering permission
+    const checkPermission = () => {
+        if (!isAuthenticated || !user) return false;
+        if (!allowedRoles) return true;
+
+        const roleMapping = {
+            'worker': 'HEALTH_WORKER',
+            'patient': 'MOTHER',
+            'admin': 'ADMIN'
+        };
+
+        return allowedRoles.some(role =>
+            user.role === role || user.role === roleMapping[role]
+        );
+    };
+
+    if (checkPermission()) {
         return <>{children}</>;
     }
 
-    // Return null while redirect executes to prevent flickering secure data
     return null;
 }
