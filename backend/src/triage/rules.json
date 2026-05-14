@@ -1,0 +1,48 @@
+{
+    "rules": [
+        {
+            "id": "headache_with_blurred_vision_high_risk",
+            "conditions": {
+                "all": [
+                    {
+                        "fact": "symptoms",
+                        "operator": "contains",
+                        "value": "headache"
+                    },
+                    {
+                        "fact": "symptoms",
+                        "operator": "contains",
+                        "value": "blurred_vision"
+                    }
+                ]
+            },
+            "event": {
+                "type": "HIGH_RISK",
+                "params": {
+                    "reason": "Headache with blurred vision was reported, indicating potential severe preeclampsia.",
+                    "recommendedAction": "URGENT_CLINIC_VISIT",
+                    "evidenceTag": "WHO_CDC_HEADACHE_VISION_WARNING"
+                }
+            }
+        },
+        {
+            "id": "known_hypertension_modifier",
+            "conditions": {
+                "all": [
+                    {
+                        "fact": "knownRiskFactors",
+                        "operator": "contains",
+                        "value": "hypertension"
+                    }
+                ]
+            },
+            "event": {
+                "type": "RISK_MODIFIER",
+                "params": {
+                    "modifierScore": 2,
+                    "reason": "Known hypertension history increases concern."
+                }
+            }
+        }
+    ]
+}

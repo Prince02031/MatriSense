@@ -1,0 +1,154 @@
+{
+  "engine": "json-rules-engine",
+  "rules": [
+    {
+      "name": "WHO_WARNING_FEVER_MEDIUM",
+      "priority": 60,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "fever" },
+          { "fact": "symptoms", "operator": "notContains", "value": "severe_weakness" }
+        ]
+      },
+      "event": {
+        "type": "MEDIUM_RISK",
+        "params": {
+          "riskLevel": "MEDIUM",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Fever during pregnancy should be reviewed by a health worker when severe weakness is not present.",
+          "displayReasonBn": "জ্বর থাকলে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
+          "sourceRef": "WHO Counselling for Maternal and Newborn Health Care (Danger Signs)"
+        }
+      }
+    },
+    {
+      "name": "WHO_WARNING_ABDOMINAL_PAIN_MEDIUM",
+      "priority": 60,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "abdominal_pain" },
+          { "fact": "symptoms", "operator": "notContains", "value": "severe_abdominal_pain" },
+          { "fact": "symptoms", "operator": "notContains", "value": "vaginal_bleeding" }
+        ]
+      },
+      "event": {
+        "type": "MEDIUM_RISK",
+        "params": {
+          "riskLevel": "MEDIUM",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Abdominal pain without severe features or bleeding should be checked by a health worker.",
+          "displayReasonBn": "পেটব্যথা থাকলে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
+          "sourceRef": "WHO Counselling for Maternal and Newborn Health Care (Danger Signs)"
+        }
+      }
+    },
+    {
+      "name": "CDC_WARNING_REPEATED_VOMITING_MEDIUM",
+      "priority": 60,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "vomiting_repeated" },
+          { "fact": "symptoms", "operator": "notContains", "value": "cannot_keep_water_down" }
+        ]
+      },
+      "event": {
+        "type": "MEDIUM_RISK",
+        "params": {
+          "riskLevel": "MEDIUM",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Repeated vomiting without dehydration signs should be reviewed by a health worker.",
+          "displayReasonBn": "বারবার বমি হলে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "CDC_HEAR_HER",
+          "sourceRef": "CDC HEAR HER Urgent Maternal Warning Signs"
+        }
+      }
+    },
+    {
+      "name": "CDC_WARNING_DIZZINESS_MEDIUM",
+      "priority": 55,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "dizziness" },
+          { "fact": "symptoms", "operator": "notContains", "value": "fainting" }
+        ]
+      },
+      "event": {
+        "type": "MEDIUM_RISK",
+        "params": {
+          "riskLevel": "MEDIUM",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Dizziness without fainting should be reviewed by a health worker.",
+          "displayReasonBn": "মাথা ঘোরা থাকলে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "CDC_HEAR_HER",
+          "sourceRef": "CDC HEAR HER Urgent Maternal Warning Signs"
+        }
+      }
+    },
+    {
+      "name": "CDC_WARNING_SWELLING_MEDIUM",
+      "priority": 55,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "swelling" },
+          { "fact": "symptoms", "operator": "notContains", "value": "headache" },
+          { "fact": "symptoms", "operator": "notContains", "value": "blurred_vision" }
+        ]
+      },
+      "event": {
+        "type": "MEDIUM_RISK",
+        "params": {
+          "riskLevel": "MEDIUM",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Swelling without headache or vision changes should be reviewed by a health worker.",
+          "displayReasonBn": "হাত-মুখ ফুলে গেলে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "CDC_HEAR_HER",
+          "sourceRef": "CDC HEAR HER Urgent Maternal Warning Signs"
+        }
+      }
+    },
+    {
+      "name": "WHO_PCPNC_HEADACHE_NEEDS_FOLLOWUP_MEDIUM",
+      "priority": 50,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "headache" },
+          { "fact": "symptoms", "operator": "notContains", "value": "blurred_vision" }
+        ]
+      },
+      "event": {
+        "type": "MEDIUM_RISK",
+        "params": {
+          "riskLevel": "MEDIUM",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Headache needs follow-up to check for danger signs.",
+          "displayReasonBn": "মাথাব্যথার বিষয়ে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "WHO_PCPNC_PRIORITY_SIGNS",
+          "sourceRef": "WHO PCPNC Quick Check / Rapid Assessment"
+        }
+      }
+    },
+    {
+      "name": "CDC_REDUCED_FETAL_MOVEMENT_MEDIUM",
+      "priority": 55,
+      "conditions": {
+        "all": [
+          { "fact": "symptoms", "operator": "contains", "value": "reduced_fetal_movement" },
+          { "fact": "trimester", "operator": "notEqual", "value": "third" }
+        ]
+      },
+      "event": {
+        "type": "MEDIUM_RISK",
+        "params": {
+          "riskLevel": "MEDIUM",
+          "recommendedAction": "CONTACT_HEALTH_WORKER_SOON",
+          "reason": "Reduced baby movement is a warning sign that should be reviewed by a health worker.",
+          "displayReasonBn": "বাচ্চার নড়াচড়া কমে গেলে স্বাস্থ্যকর্মীর পরামর্শ নেওয়া উচিত।",
+          "evidenceTag": "CDC_HEAR_HER",
+          "sourceRef": "CDC HEAR HER Urgent Maternal Warning Signs"
+        }
+      }
+    }
+  ]
+}
