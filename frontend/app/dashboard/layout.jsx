@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
+import { normalizeRole } from '../../src/utils/roleHelpers';
 
 // Updated config to match backend Enums
 const navConfig = {
@@ -77,10 +78,10 @@ export default function DashboardLayout({ children }) {
 
     if (!user) return null;
 
-    // Bridge the gap between old frontend strings and new backend Enums
     const getNav = () => {
-        if (user.role === 'HEALTH_WORKER' || user.role === 'worker') return navConfig.HEALTH_WORKER;
-        if (user.role === 'ADMIN' || user.role === 'admin') return navConfig.ADMIN;
+        const normalized = normalizeRole(user.role);
+        if (normalized === 'worker') return navConfig.HEALTH_WORKER;
+        if (normalized === 'admin') return navConfig.ADMIN;
         return navConfig.MOTHER; // Default to Patient/Mother
     };
 
@@ -154,9 +155,9 @@ export default function DashboardLayout({ children }) {
                             ☰
                         </button>
                         <h2>
-                            {(user.role === 'patient' || user.role === 'MOTHER') && '🤰 Patient Portal'}
-                            {(user.role === 'worker' || user.role === 'HEALTH_WORKER') && '👩‍⚕️ Worker Portal'}
-                            {(user.role === 'admin' || user.role === 'ADMIN') && '🛡️ Admin Portal'}
+                            {normalizeRole(user.role) === 'patient' && '🤰 Patient Portal'}
+                            {normalizeRole(user.role) === 'worker' && '👩‍⚕️ Worker Portal'}
+                            {normalizeRole(user.role) === 'admin' && '🛡️ Admin Portal'}
                         </h2>
                     </div>
                     <div className="header-actions">

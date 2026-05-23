@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from './context/AuthContext';
+import { normalizeRole } from '../src/utils/roleHelpers';
 import HomeGuest from './components/home/HomeGuest';
 import HomePatient from './components/home/HomePatient';
 import HomeWorker from './components/home/HomeWorker';
@@ -25,11 +26,13 @@ export default function Home() {
     return <HomeGuest />;
   }
 
-  if (user.role === 'worker') {
+  const normalizedRole = normalizeRole(user.role);
+
+  if (normalizedRole === 'worker') {
     return <HomeWorker user={user} />;
   }
 
-  if (user.role === 'admin') {
+  if (normalizedRole === 'admin') {
     return <HomeAdmin user={user} />;
   }
 

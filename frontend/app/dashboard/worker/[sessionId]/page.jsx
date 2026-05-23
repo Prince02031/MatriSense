@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { getWorkerCase, updateWorkerCaseStatus, getAuditLog } from '../../../api/workerApi';
+import { getWorkerCase, updateWorkerCaseStatus, getAuditLog, setFollowUpDate } from '../../../api/workerApi';
 import { createReferralNote, getReferralNote } from '../../../api/referralApi';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -31,10 +31,12 @@ export default function WorkerCaseDetailPage({ params }) {
     const [actionTaken, setActionTaken] = useState('CONTACTED');
     const [referredTo, setReferredTo] = useState('');
     const [followUpDate, setFollowUpDate] = useState('');
+    const [nextCheckupDate, setNextCheckupDate] = useState('');
 
     // Status states
     const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
     const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+    const [isSubmittingFollowUp, setIsSubmittingFollowUp] = useState(false);
 
     const fetchDetail = async () => {
         try {
@@ -42,6 +44,9 @@ export default function WorkerCaseDetailPage({ params }) {
             if (data.success) {
                 setCaseDetail(data.session);
                 setStatus(data.session.status || 'NEW');
+                if (data.session.nextCheckupDate) {
+                    setNextCheckupDate(new Date(data.session.nextCheckupDate).toISOString().split('T')[0]);
+                }
             }
             const noteData = await getReferralNote(sessionId);
             if (noteData.success) {
@@ -91,6 +96,10 @@ export default function WorkerCaseDetailPage({ params }) {
                 statusAfterNote: status
             });
             if (data.success) {
+                // If a next checkup date is set, also save it
+                if (nextCheckupDate) {
+                    await setFollowUpDate(sessionId, nextCheckupDate, user?._id || user?.id);
+                }
                 await fetchDetail(); // refresh case and timeline
                 setNoteText('');
                 setReferredTo('');
@@ -102,6 +111,27 @@ export default function WorkerCaseDetailPage({ params }) {
             alert('Failed to add note');
         } finally {
             setIsSubmittingNote(false);
+        }
+    };
+
+    const handleSetFollowUpDate = async (e) => {
+        e.preventDefault();
+        if (!nextCheckupDate) {
+            alert('Please select a date');
+            return;
+        }
+        setIsSubmittingFollowUp(true);
+        try {
+            const data = await setFollowUpDate(sessionId, nextCheckupDate, user?._id || user?.id);
+            if (data.success) {
+                setCaseDetail(data.session);
+                alert('Follow-up date set successfully');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to set follow-up date');
+        } finally {
+            setIsSubmittingFollowUp(false);
         }
     };
 
@@ -125,6 +155,8 @@ export default function WorkerCaseDetailPage({ params }) {
                         patient={caseDetail.patientId}
                         decision={caseDetail.decision}
                         caseState={caseDetail.caseState}
+                        nextCheckupDate={caseDetail.nextCheckupDate}
+                        followUpDateSetBy={caseDetail.followUpDateSetBy}
                     />
 
                     <HealthWorkerSummaryCard
@@ -164,6 +196,21 @@ export default function WorkerCaseDetailPage({ params }) {
                                     {isSubmittingStatus ? 'Saving...' : 'Save'}
                                 </button>
                             </div>
+                        </form>
+
+                        <hr style={{ margin: '16px 0', borderColor: 'var(--border-subtle)' }} />
+
+                        <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>Set Next Checkup Date</h4>
+                        <form onSubmit={handleSetFollowUpDate} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                            <input
+                                type="date"
+                                value={nextCheckupDate}
+                                onChange={e => setNextCheckupDate(e.target.value)}
+                                className="form-input"
+                            />
+                            <button type="submit" className="btn btn-primary" disabled={isSubmittingFollowUp}>
+                                {isSubmittingFollowUp ? 'Setting...' : 'Set Checkup Date'}
+                            </button>
                         </form>
 
                         <hr style={{ margin: '16px 0', borderColor: 'var(--border-subtle)' }} />

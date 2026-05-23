@@ -47,9 +47,19 @@
       "name": "WHO_DANGER_SIGN_HEADACHE_VISION_HIGH",
       "priority": 95,
       "conditions": {
-        "all": [
-          { "fact": "symptoms", "operator": "contains", "value": "headache" },
-          { "fact": "symptoms", "operator": "contains", "value": "blurred_vision" }
+        "any": [
+          {
+            "all": [
+              { "fact": "symptoms", "operator": "contains", "value": "headache" },
+              { "fact": "symptoms", "operator": "contains", "value": "blurred_vision" }
+            ]
+          },
+          {
+            "all": [
+              { "fact": "symptoms", "operator": "contains", "value": "severe_headache" },
+              { "fact": "symptoms", "operator": "contains", "value": "blurred_vision" }
+            ]
+          }
         ]
       },
       "event": {

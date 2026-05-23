@@ -1,5 +1,5 @@
 const { createEngine } = require('./createEngine');
-const ruleSets = require('../rules');
+const ruleSets = require('../rules/index.js');
 
 const addRulesToEngine = (engine, rules = []) => {
   if (!Array.isArray(rules) || rules.length === 0) {
