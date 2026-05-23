@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
+import { getDashboardPath } from '../../src/utils/roleHelpers';
 import LanguageToggle from '../components/LanguageToggle';
 
 export default function LoginPage() {
@@ -13,8 +14,7 @@ export default function LoginPage() {
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    // getDashboardPath is a helper we added to AuthContext to handle redirects
-    const { login, getDashboardPath } = useAuth();
+    const { login } = useAuth();
     const router = useRouter();
 
     const handleSubmit = async (e) => {
@@ -27,19 +27,7 @@ export default function LoginPage() {
             const user = await login(email, password);
             setSuccess('Login successful! Redirecting to dashboard...');
 
-            // Mapping logic to convert Database Role (Uppercase) to Folder Path (Lowercase)
-            const roleToPathMap = {
-                'MOTHER': 'patient',
-                'HEALTH_WORKER': 'worker',
-                'ADMIN': 'admin'
-            };
-
-            // If you added getDashboardPath to your AuthContext, use this:
-            // const targetPath = getDashboardPath(user);
-
-            // Otherwise, use this local mapping logic:
-            const roleSlug = roleToPathMap[user.role] || 'patient';
-            const targetPath = `/dashboard/${roleSlug}`;
+            const targetPath = getDashboardPath(user);
 
             setTimeout(() => {
                 router.push(targetPath);

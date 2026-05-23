@@ -52,7 +52,8 @@ export default function TriageStartPage() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          patientId: user?.id,
+          userId: user?._id || user?.id,
+          patientId: user?.patientId,
           trimester: trimester === 'unknown' ? undefined : trimester,
           gestationalWeek: gestationalWeek ? parseInt(gestationalWeek) : undefined
         })
@@ -63,7 +64,7 @@ export default function TriageStartPage() {
       }
 
       const session = await sessionResponse.json();
-      const sessionId = session._id;
+      const sessionId = session.sessionId;
 
       // Step 2: Run extraction
       const extractResponse = await fetch(`/api/triage/${sessionId}/extract`, {

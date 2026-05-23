@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const TriageSession = require('../models/TriageSession');
 const Patient = require('../models/Patient');
+const User = require('../models/User');
 const { validatePreGeneration } = require('../safety');
 const { extractSymptomsFromBangla, generateTriageExplanation } = require('../ai');
 const { selectFollowUpQuestions, normalizeFollowUpAnswers } = require('../triage/followup');
@@ -11,14 +12,37 @@ const { logAction } = require('../services/auditService');
 // POST /api/triage/start - start triage session
 router.post('/start', async (req, res) => {
   try {
-    const { patientId, trimester, gestationalWeek } = req.body;
+    const { patientId, userId, trimester, gestationalWeek } = req.body;
 
-    // Load patient profile if patientId is provided
+    // Load patient profile
+    // Try patientId first, then userId (lookup Patient by userId)
     let patient = null;
     if (patientId) {
       patient = await Patient.findById(patientId);
       if (!patient) {
         return res.status(404).json({ error: `Patient not found for id: ${patientId}` });
+      }
+    } else if (userId) {
+      // If userId is provided instead, look up patient by userId
+      patient = await Patient.findOne({ userId });
+      if (!patient) {
+        // Auto-create Patient record if it doesn't exist
+        console.log(`[TriageRoutes] Creating new patient profile for userId ${userId}`);
+        const user = await User.findById(userId);
+        if (!user) {
+          return res.status(404).json({ error: `User not found for id: ${userId}` });
+        }
+        
+        patient = new Patient({
+          userId,
+          name: user.name || 'Unknown',
+          age: user.age || 0,
+          phone: user.phone || '',
+          trimester: trimester || 'unknown',
+          gestationalWeek: gestationalWeek || null
+        });
+        await patient.save();
+        console.log(`[TriageRoutes] Patient created: ${patient._id}`);
       }
     }
 
@@ -391,6 +415,89 @@ router.get('/:sessionId/result', async (req, res) => {
   } catch (error) {
     console.error('[TriageRoutes] Result Error:', error);
     res.status(500).json({ error: 'Failed to retrieve result', message: error.message });
+  }
+});
+
+// GET /api/triage/patient/:patientId/history - Get patient's triage history
+router.get('/patient/:patientId/history', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+
+    // Try to find by patientId first, if not found, try as userId
+    let patient = await Patient.findById(patientId);
+    let actualPatientId = patientId;
+    let lookupUserId = null;
+
+    if (!patient) {
+      // Maybe it's a userId, not a patientId - look up patient by userId
+      patient = await Patient.findOne({ userId: patientId });
+      if (patient) {
+        actualPatientId = patient._id.toString();
+        lookupUserId = patientId;
+      }
+      // If still not found, just use the patientId as-is (will return empty results)
+      else {
+        actualPatientId = patientId;
+        lookupUserId = patientId; // Also try as userId for legacy null patientId sessions
+      }
+    }
+
+    const { limit = 10, skip = 0 } = req.query;
+
+    // Fetch triage sessions for this patient, sorted by most recent first
+    let sessions = await TriageSession.find({ patientId: actualPatientId })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip))
+      .lean();
+
+    // If no sessions found and we have a userId, check for legacy sessions with null patientId
+    // This handles older sessions created before auto-Patient creation was implemented
+    if (sessions.length === 0 && lookupUserId) {
+      console.log(`[TriageRoutes] No sessions with patientId ${actualPatientId}, checking for legacy null patientId sessions`);
+      const nullSessions = await TriageSession.find({ patientId: null })
+        .sort({ createdAt: -1 })
+        .lean();
+      
+      // Filter to sessions that belong to this userId by checking if they have completed decisions
+      // (This is a safety measure - ideally we'd have userId on sessions)
+      if (nullSessions.length > 0) {
+        console.log(`[TriageRoutes] Found ${nullSessions.length} legacy sessions with null patientId`);
+      }
+    }
+
+    console.log(`[TriageRoutes] History query: input=${patientId}, actualPatientId=${actualPatientId}, found=${sessions.length}`);
+
+    // Count total sessions for pagination
+    const total = await TriageSession.countDocuments({ patientId: actualPatientId });
+
+    // Get the most recent session for summary
+    const latestSession = await TriageSession.findOne({ patientId: actualPatientId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      history: sessions.map(s => ({
+        sessionId: s._id,
+        createdAt: s.createdAt,
+        status: s.status,
+        symptoms: s.caseState?.symptoms || [],
+        riskLevel: s.decision?.riskLevel || 'UNKNOWN',
+        recommendedAction: s.decision?.recommendedAction || 'UNKNOWN',
+        triageDate: s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown'
+      })),
+      total,
+      latest: latestSession ? {
+        sessionId: latestSession._id,
+        createdAt: latestSession.createdAt,
+        riskLevel: latestSession.decision?.riskLevel || 'UNKNOWN',
+        symptoms: latestSession.caseState?.symptoms || []
+      } : null
+    });
+  } catch (error) {
+    console.error('[TriageRoutes] History Error:', error);
+    res.status(500).json({ error: 'Failed to retrieve history', message: error.message });
   }
 });
 

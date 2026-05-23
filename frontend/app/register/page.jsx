@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
+import { getDashboardPath } from '../../src/utils/roleHelpers';
 import LanguageToggle from '../components/LanguageToggle';
 
 export default function RegisterPage() {
@@ -37,17 +38,7 @@ export default function RegisterPage() {
                 formData.phone
             );
 
-            // This mapping handles the translation from DB ENUM to URL Path
-            const roleToPathMap = {
-                'MOTHER': 'patient',
-                'HEALTH_WORKER': 'worker',
-                'ADMIN': 'admin'
-            };
-
-            // Convert 'HEALTH_WORKER' to 'worker', etc.
-            const roleSlug = roleToPathMap[user.role] || 'patient';
-            const targetPath = `/dashboard/${roleSlug}`;
-
+            const targetPath = getDashboardPath(user);
             router.push(targetPath);
         } catch (err) {
             setError(err.message);

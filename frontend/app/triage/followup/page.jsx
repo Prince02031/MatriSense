@@ -167,7 +167,7 @@ export default function FollowUpPage() {
         {/* Question Card */}
         <div className="rounded-2xl bg-white p-8 shadow-soft">
           <h2 className="text-xl font-semibold text-slate-900">
-            {currentQuestion?.textBn || currentQuestion?.text}
+            {currentQuestion?.questionBn || currentQuestion?.textBn || currentQuestion?.text}
           </h2>
 
           {/* Answer Options */}

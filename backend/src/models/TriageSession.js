@@ -40,6 +40,10 @@ const TriageSessionSchema = new mongoose.Schema({
   },
   safeOutput: mongoose.Schema.Types.Mixed,
 
+  // Follow-up Management
+  nextCheckupDate: { type: Date, required: false },
+  followUpDateSetBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+
   // Session Status Lifecycle
   status: {
     type: String,

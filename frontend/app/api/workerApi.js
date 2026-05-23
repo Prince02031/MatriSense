@@ -36,9 +36,15 @@ const handleResponse = async (res) => {
     return res.json();
 };
 
-// 1. Get all cases for the worker dashboard
-export async function getWorkerCases() {
-    const res = await fetch(`${apiBase}/api/worker/cases`, {
+// 1. Get all cases for the worker dashboard with pagination and filtering
+export async function getWorkerCases(limit = 20, skip = 0, filterMode = 'all', sortBy = 'risk') {
+    const url = new URL(`${apiBase}/api/worker/cases`);
+    url.searchParams.append('limit', limit);
+    url.searchParams.append('skip', skip);
+    url.searchParams.append('filterMode', filterMode);
+    url.searchParams.append('sortBy', sortBy);
+
+    const res = await fetch(url.toString(), {
         method: 'GET',
         headers: getAuthHeaders(),
         cache: 'no-store'
@@ -74,7 +80,19 @@ export async function updateWorkerCaseStatus(sessionId, status) {
     return handleResponse(res);
 }
 
-// 4. Get the audit log/timeline for a specific case
+// 4. Set follow-up date for a case
+export async function setFollowUpDate(sessionId, nextCheckupDate, workerId) {
+    if (!sessionId) throw new Error("Local Error: Cannot set follow-up date without Session ID.");
+
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/follow-up-date`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nextCheckupDate, workerId })
+    });
+    return handleResponse(res);
+}
+
+// 5. Get the audit log/timeline for a specific case
 export async function getAuditLog(sessionId) {
     if (!sessionId) throw new Error("Local Error: Cannot fetch audit log without Session ID.");
 
