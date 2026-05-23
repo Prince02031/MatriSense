@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import VoiceRecorderButton from '../../../src/components/voice/VoiceRecorderButton';
+import ReadAloudButton from '../../../src/components/voice/ReadAloudButton';
 
 /**
  * TriageStartPage - Entry point for triage flow
@@ -18,6 +20,7 @@ export default function TriageStartPage() {
   const [dangerSigns, setDangerSigns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [voiceError, setVoiceError] = useState(null);
 
   const commonDangerSigns = [
     { id: 'vaginal_bleeding', labelBn: 'যোনি থেকে রক্তপাত' },
@@ -34,6 +37,20 @@ export default function TriageStartPage() {
     setDangerSigns((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
+  };
+
+  const handleVoiceTranscript = (data) => {
+    setVoiceError(null);
+    if (data.transcript) {
+      // Append transcript to existing text with space
+      setInputTextBn((prev) => 
+        prev.trim() ? `${prev} ${data.transcript}` : data.transcript
+      );
+    }
+  };
+
+  const handleVoiceError = (errorMsg) => {
+    setVoiceError(errorMsg);
   };
 
   const handleStartTriage = async () => {
@@ -158,7 +175,15 @@ export default function TriageStartPage() {
 
         {/* Danger Signs Card */}
         <div className="rounded-2xl bg-white p-8 shadow-soft mb-8">
-          <h2 className="text-xl font-bold text-slate-900">জরুরি সতর্কতা চিহ্ন</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold text-slate-900">জরুরি সতর্কতা চিহ্ন</h2>
+            <ReadAloudButton 
+              text="যদি আপনি এই সতর্কতা চিহ্নগুলির মধ্যে কোনটি অনুভব করছেন তাহলে চেক করুন। এগুলি স্বয়ংক্রিয়ভাবে সনাক্ত হবে। জরুরি সেবার প্রয়োজনে অবিলম্বে একজন যোগ্য চিকিৎসককে যোগাযোগ করুন।"
+              label="শুনুন"
+              language="bn-BD"
+              disabled={loading}
+            />
+          </div>
           <p className="mt-2 text-sm text-slate-600">
             যদি কোনোটি অনুভব করছেন তাহলে চেক করুন (এটি স্বয়ংক্রিয় সনাক্ত হবে):
           </p>
@@ -183,18 +208,44 @@ export default function TriageStartPage() {
 
         {/* Symptom Input Card */}
         <div className="rounded-2xl bg-white p-8 shadow-soft mb-8">
-          <h2 className="text-xl font-bold text-slate-900">আপনার লক্ষণগুলি বর্ণনা করুন</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold text-slate-900">আপনার লক্ষণগুলি বর্ণনা করুন</h2>
+            <ReadAloudButton 
+              text="বাংলায় আপনি যেসব লক্ষণ অনুভব করছেন বর্ণনা করুন। যত বেশি বিস্তারিত, তত ভালো পরামর্শ পাবেন। আপনি বলতে পারেন বা লিখতে পারেন।"
+              label="শুনুন"
+              language="bn-BD"
+              disabled={loading}
+            />
+          </div>
           <p className="mt-2 text-sm text-slate-600">
             আপনি যেসব লক্ষণ অনুভব করছেন বাংলায় বর্ণনা করুন। যত বেশি বিস্তারিত, তত ভালো পরামর্শ পাবেন।
           </p>
 
-          <textarea
-            value={inputTextBn}
-            onChange={(e) => setInputTextBn(e.target.value)}
-            placeholder="যেমন: আমার জ্বর আছে এবং মাথাব্যথা... দুই দিন ধরে এটি চলছে..."
-            rows="6"
-            className="mt-4 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-matri-teal focus:outline-none"
-          />
+          <div className="mt-6 flex gap-4">
+            {/* Textarea on the left */}
+            <textarea
+              value={inputTextBn}
+              onChange={(e) => setInputTextBn(e.target.value)}
+              placeholder="যেমন: আমার জ্বর আছে এবং মাথাব্যথা... দুই দিন ধরে এটি চলছে..."
+              rows="6"
+              className="flex-1 rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-matri-teal focus:outline-none"
+            />
+
+            {/* Voice input on the right */}
+            <div className="flex flex-col items-center justify-start pt-2">
+              <VoiceRecorderButton 
+                onTranscript={handleVoiceTranscript}
+                onError={handleVoiceError}
+                disabled={loading}
+                language="bn"
+              />
+              {voiceError && (
+                <div className="mt-3 text-xs text-red-600 text-center bg-red-50 p-2 rounded">
+                  {voiceError}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Character Count */}
