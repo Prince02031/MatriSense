@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const TriageSessionSchema = new mongoose.Schema({
-  patientId: { type: String, required: false },
+  patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient', required: false },
   inputTextBn: { type: String, required: false },
 
   // Case State

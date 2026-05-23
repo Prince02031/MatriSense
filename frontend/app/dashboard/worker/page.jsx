@@ -102,7 +102,7 @@ export default function WorkerDashboard() {
                     <div className="dash-card-header">
                         <div className="dash-card-icon icon-teal">👥</div>
                     </div>
-                    <div className="dash-card-value">{new Set(cases.map(c => c.patientId?._id)).size}</div>
+                    <div className="dash-card-value">{new Set(cases.map(c => c.patientId?._id).filter(Boolean)).size}</div>
                     <div className="dash-card-sub">Patients assigned</div>
                 </div>
                 <div className="dash-card">
@@ -142,10 +142,10 @@ export default function WorkerDashboard() {
                         {!loading && sortedCases.map(c => (
                             <tr key={c._id} className={c.decision?.riskLevel === 'HIGH' ? 'urgent-row' : ''}>
                                 <td>
-                                    <strong>{c.patientId?.name || 'Unknown'}</strong> <br />
-                                    <small>{c.patientId?.age ? `${c.patientId.age} yrs` : 'Age N/A'}</small>
+                                    <strong>{c.patientId?.name || c.caseState?.profile?.name || 'Anonymous Patient'}</strong> <br />
+                                    <small>{c.patientId?.age ? `${c.patientId.age} yrs` : c.caseState?.profile?.age ? `${c.caseState.profile.age} yrs` : 'Age N/A'}</small>
                                 </td>
-                                <td>{c.caseState?.trimester || c.patientId?.trimester || 'Unknown'}</td>
+                                <td>{c.caseState?.trimester || c.patientId?.trimester || c.caseState?.profile?.trimester || 'Unknown'}</td>
                                 <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {c.caseState?.symptoms?.join(', ') || 'N/A'}
                                 </td>

@@ -15,7 +15,7 @@ export default function ConfirmSymptomsPage() {
   const { isAuthenticated } = useAuth();
 
   const sessionId = searchParams.get('sessionId');
-  
+
   const [session, setSession] = useState(null);
   const [editedSymptoms, setEditedSymptoms] = useState([]);
   const [newSymptom, setNewSymptom] = useState('');
@@ -29,7 +29,7 @@ export default function ConfirmSymptomsPage() {
       setError('No session ID provided');
       return;
     }
-    
+
     fetchSession();
   }, [sessionId]);
 
@@ -40,10 +40,10 @@ export default function ConfirmSymptomsPage() {
         method: 'GET',
         credentials: 'include'
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch session');
       const data = await response.json();
-      
+
       setSession(data);
       setEditedSymptoms(data.caseState?.symptoms || []);
       setError(null);
@@ -69,7 +69,7 @@ export default function ConfirmSymptomsPage() {
     try {
       setConfirming(true);
       setError(null);
-      
+
       const response = await fetch(`/api/triage/${sessionId}/confirm`, {
         method: 'POST',
         credentials: 'include',
@@ -79,9 +79,9 @@ export default function ConfirmSymptomsPage() {
           editedByUser: JSON.stringify(editedSymptoms) !== JSON.stringify(session.caseState?.symptoms || [])
         })
       });
-      
+
       if (!response.ok) throw new Error('Failed to confirm symptoms');
-      
+
       // Redirect to follow-up questions
       router.push(`/triage/followup?sessionId=${sessionId}`);
     } catch (err) {

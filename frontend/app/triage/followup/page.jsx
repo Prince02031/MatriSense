@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { getFollowUpQuestions, submitFollowUpAnswers } from '../../api/triageApi';
 
 /**
  * FollowUpPage - Phase 3
@@ -35,13 +36,7 @@ export default function FollowUpPage() {
   const fetchFollowUpQuestions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/triage/${sessionId}/follow-up`, {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch follow-up questions');
-      const data = await response.json();
+      const data = await getFollowUpQuestions(sessionId);
       
       setFollowUpQuestions(data.questions || []);
       const initialAnswers = {};
@@ -86,14 +81,7 @@ export default function FollowUpPage() {
         value
       }));
       
-      const response = await fetch(`/api/triage/${sessionId}/answers`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers: answersArray })
-      });
-      
-      if (!response.ok) throw new Error('Failed to submit answers');
+      await submitFollowUpAnswers(sessionId, answersArray);
       
       // Redirect to triage run (which will calculate decision)
       router.push(`/triage/result?sessionId=${sessionId}`);

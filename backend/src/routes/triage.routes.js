@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const TriageSession = require('../models/TriageSession');
+const Patient = require('../models/Patient');
 const { validatePreGeneration } = require('../safety');
 const { extractSymptomsFromBangla, generateTriageExplanation } = require('../ai');
 const { selectFollowUpQuestions, normalizeFollowUpAnswers } = require('../triage/followup');
@@ -11,23 +12,57 @@ const { logAction } = require('../services/auditService');
 router.post('/start', async (req, res) => {
   try {
     const { patientId, trimester, gestationalWeek } = req.body;
+
+    // Load patient profile if patientId is provided
+    let patient = null;
+    if (patientId) {
+      patient = await Patient.findById(patientId);
+      if (!patient) {
+        return res.status(404).json({ error: `Patient not found for id: ${patientId}` });
+      }
+    }
+
+    // Seed trimester/gestationalWeek: explicit body params > patient profile > defaults
+    const resolvedTrimester = trimester || patient?.trimester || 'unknown';
+    const resolvedGestationalWeek = gestationalWeek || patient?.gestationalWeek || null;
+
+    // Calculate lastCheckupGapDays from patient profile if available
+    let lastCheckupGapDays = null;
+    if (patient?.lastCheckupDate) {
+      const diffMs = Math.abs(new Date() - new Date(patient.lastCheckupDate));
+      lastCheckupGapDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    }
+
+    // Merge riskFactors from patient profile (knownRiskFactors field)
+    const riskFactors = patient?.knownRiskFactors || patient?.riskFactors || {};
+
     const session = new TriageSession({
-      patientId,
+      patientId: patient?._id || null,
       status: 'active',
       caseState: {
         symptoms: [],
         dangerSignsChecked: [],
-        trimester: trimester || 'unknown',
-        gestationalWeek: gestationalWeek || null,
+        // Top-level rule engine fields — seeded from patient profile so rules fire correctly
+        // even before follow-up answers are collected. See caseStateBuilder for full explanation.
+        trimester: resolvedTrimester,
+        gestationalWeek: resolvedGestationalWeek,
+        riskFactors,
+        lastCheckupGapDays,
         meta: {}
       }
     });
     await session.save();
 
-    await logAction(session._id, 'Symptom submitted', 'PATIENT');
+    await logAction(session._id, 'Triage session started', 'PATIENT');
 
-    res.json(session);
+    res.json({
+      success: true,
+      sessionId: session._id,
+      patientId: patient?._id || null,
+      caseState: session.caseState
+    });
   } catch (error) {
+    console.error('[TriageRoutes] Start Error:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { runTriage, explainTriage, getTriageResult } from '../../api/triageApi';
 
 /**
  * ResultPage - Phase 9 (Enhanced)
@@ -34,22 +35,18 @@ export default function ResultPage() {
       setLoading(true);
       
       // Step 1: Run the triage pipeline
-      const runResponse = await fetch(`/api/triage/${sessionId}/run`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      await runTriage(sessionId);
       
-      if (!runResponse.ok) throw new Error('মূল্যায়ন চালাতে ব্যর্থ');
+      // Step 2: Generate the explanation
+      try {
+        await explainTriage(sessionId);
+      } catch (explainErr) {
+        console.warn('Failed to generate AI explanation:', explainErr);
+        // Soft catch: Don't block loading the decision & care guidance if LLM is slow or offline!
+      }
       
-      // Step 2: Fetch the result
-      const resultResponse = await fetch(`/api/triage/${sessionId}/result`, {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (!resultResponse.ok) throw new Error('ফলাফল আনতে ব্যর্থ');
-      const data = await resultResponse.json();
+      // Step 3: Fetch the result
+      const data = await getTriageResult(sessionId);
       
       setResult(data.result);
       setError(null);
@@ -151,6 +148,26 @@ export default function ResultPage() {
 
   const riskLevel = result?.decision?.riskLevel || 'UNKNOWN';
 
+  // Extract safeOutput / AI guidance
+  const safeOutput = result?.explanation;
+  const hasAiExplanation = safeOutput && typeof safeOutput === 'object' && safeOutput.motherExplanationBn;
+
+  // Empathic Bangla description (motherExplanationBn)
+  const motherExplanation = hasAiExplanation ? safeOutput.motherExplanationBn : null;
+
+  // Care steps, monitoring items, urgent warning flags
+  const stepsNow = hasAiExplanation ? safeOutput.stepsNowBn : result?.careGuidance?.stepsNowBn;
+  const monitor = hasAiExplanation ? safeOutput.monitorBn : result?.careGuidance?.monitorBn;
+  const urgentWarning = hasAiExplanation ? safeOutput.urgentWarningBn : result?.careGuidance?.urgentWarningBn;
+
+  // Safety Disclaimer
+  const safetyDisclaimer = (hasAiExplanation && safeOutput.safetyDisclaimerBn)
+    ? safeOutput.safetyDisclaimerBn
+    : 'এটি একটি স্বয়ংক্রিয় পরামর্শ মাত্র। এটি চিকিৎসা পরামর্শ নয়। কোনো ঔষধ খাওয়ার আগে বা জরুরি প্রয়োজনে অবশ্যই একজন রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন। জরুরি পরিস্থিতিতে (গুরুতর রক্তপাত, চেতনা হারিয়ে যাওয়া, গুরুতর শ্বাসকষ্ট) অবিলম্বে জরুরি সেবা ডায়াল করুন বা নিকটস্থ হাসপাতালে যান।';
+
+  // Evidence Sources (from care guidance or decision context)
+  const evidenceSources = result?.careGuidance?.sources || result?.decision?.matchedRules?.map(r => r.sourceRef).filter(Boolean) || [];
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-matri-soft via-blue-50 to-matri-soft">
       {/* Progress indicator - Complete */}
@@ -208,76 +225,80 @@ export default function ResultPage() {
         </div>
 
         {/* Care Guidance Card */}
-        {result?.careGuidance && (
+        {(result?.careGuidance || hasAiExplanation) && (
           <div className="rounded-2xl bg-white p-8 shadow-soft mb-8 border-l-4 border-matri-teal">
             <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <span>💚</span> যত্নের নির্দেশনা
             </h2>
+
+            {!hasAiExplanation && result?.careGuidance && (
+              <div className="mt-4 mb-6 rounded-lg bg-amber-50 border border-amber-100 p-4">
+                <p className="text-xs text-amber-800 font-medium">
+                  ⚠️ এআই বিস্তারিত পরামর্শ এই মুহূর্তে উপলব্ধ নয়। নিচে চিকিৎসা নির্দেশিকা থেকে সাধারণ পরামর্শ দেওয়া হলো:
+                </p>
+              </div>
+            )}
+
+            {motherExplanation && (
+              <div className="mt-6 mb-6 rounded-xl bg-teal-50/40 border border-teal-100/60 p-6">
+                <p className="text-slate-800 font-medium leading-relaxed whitespace-pre-line text-lg">
+                  {motherExplanation}
+                </p>
+              </div>
+            )}
             
-            {result.careGuidance.stepsNowBn && (
+            {stepsNow && (
               <div className="mt-6 space-y-4">
                 <div>
                   <h3 className="font-semibold text-slate-900">এখনই করণীয়:</h3>
                   <ul className="mt-3 space-y-2 text-slate-700">
-                    {Array.isArray(result.careGuidance.stepsNowBn) ? (
-                      result.careGuidance.stepsNowBn.map((step, idx) => (
+                    {Array.isArray(stepsNow) ? (
+                      stepsNow.map((step, idx) => (
                         <li key={idx} className="flex gap-3">
                           <span className="font-semibold text-matri-teal">{idx + 1}.</span>
                           <span>{step}</span>
                         </li>
                       ))
                     ) : (
-                      <li>{result.careGuidance.stepsNowBn}</li>
+                      <li>{stepsNow}</li>
                     )}
                   </ul>
                 </div>
               </div>
             )}
 
-            {result.careGuidance.monitorBn?.length > 0 && (
+            {monitor && monitor.length > 0 && (
               <div className="mt-6 rounded-lg border-l-4 border-blue-500 bg-blue-50 p-4">
                 <h3 className="font-semibold text-blue-700">পর্যবেক্ষণ করুন:</h3>
                 <ul className="mt-2 space-y-1 text-blue-700 text-sm">
-                  {result.careGuidance.monitorBn.map((item, idx) => (
+                  {monitor.map((item, idx) => (
                     <li key={idx}>• {item}</li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {result.careGuidance.urgentWarningBn?.length > 0 && (
+            {urgentWarning && urgentWarning.length > 0 && (
               <div className="mt-6 rounded-lg border-l-4 border-red-500 bg-red-50 p-4">
                 <h3 className="font-semibold text-red-700">⚠️ জরুরি সতর্কতা:</h3>
                 <ul className="mt-2 space-y-1 text-red-700 text-sm">
-                  {result.careGuidance.urgentWarningBn.map((trigger, idx) => (
+                  {urgentWarning.map((trigger, idx) => (
                     <li key={idx}>• {trigger}</li>
                   ))}
                 </ul>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Explanation Card */}
-        {result?.explanation && (
-          <div className="rounded-2xl bg-blue-50 p-8 shadow-soft mb-8 border border-blue-200">
-            <button
-              onClick={() => setExplanationExpanded(!explanationExpanded)}
-              className="flex w-full items-center justify-between"
-            >
-              <h2 className="text-2xl font-bold text-slate-900">🔍 বিস্তারিত ব্যাখ্যা</h2>
-              <span className={`transition-transform ${explanationExpanded ? 'rotate-180' : ''}`}>
-                ▼
-              </span>
-            </button>
-            
-            {explanationExpanded && (
-              <div className="mt-6 space-y-4 text-slate-700 whitespace-pre-wrap leading-relaxed">
-                {typeof result.explanation === 'string' ? (
-                  <p>{result.explanation}</p>
-                ) : (
-                  <pre className="text-sm overflow-auto">{JSON.stringify(result.explanation, null, 2)}</pre>
-                )}
+            {evidenceSources && evidenceSources.length > 0 && (
+              <div className="mt-8 border-t border-slate-100 pt-6">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">চিকিৎসা তথ্যের উৎস (Evidence Sources):</p>
+                <div className="flex flex-wrap gap-2">
+                  {evidenceSources.map((src, i) => (
+                    <span key={i} className="text-[11px] bg-slate-50 text-slate-600 px-3 py-1 rounded-full font-semibold border border-slate-200 shadow-sm">
+                      📖 {src}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -286,13 +307,8 @@ export default function ResultPage() {
         {/* Safety Disclaimer */}
         <div className="rounded-2xl border-l-4 border-rose-500 bg-rose-50 p-8 shadow-soft mb-8">
           <h3 className="font-bold text-rose-700 text-lg">⚠️ অত্যন্ত গুরুত্বপূর্ণ সতর্কতা</h3>
-          <p className="mt-3 text-sm text-rose-700 leading-relaxed">
-            এটি একটি স্বয়ংক্রিয় পরামর্শ মাত্র। এটি চিকিৎসা পরামর্শ নয়।
-            <br />
-            <strong>কোনো ঔষধ খাওয়ার আগে বা জরুরি প্রয়োজনে অবশ্যই একজন রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।</strong>
-            <br />
-            <br />
-            জরুরি পরিস্থিতিতে (গুরুতর রক্তপাত, চেতনা হারিয়ে যাওয়া, গুরুতর শ্বাসকষ্ট) অবিলম্বে জরুরি সেবা ডায়াল করুন বা নিকটস্থ হাসপাতালে যান।
+          <p className="mt-3 text-sm text-rose-700 leading-relaxed whitespace-pre-line">
+            {safetyDisclaimer}
           </p>
         </div>
 
