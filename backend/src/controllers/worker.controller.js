@@ -1,4 +1,5 @@
 const TriageSession = require('../models/TriageSession');
+const AuditLog = require('../models/AuditLog');
 const { logAction } = require('../services/auditService');
 
 exports.getCases = async (req, res) => {
@@ -54,6 +55,18 @@ exports.updateStatus = async (req, res) => {
         await logAction(sessionId, 'Status updated', 'WORKER', { status });
 
         res.json({ success: true, session });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.getAuditLogs = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const logs = await AuditLog.find({ triageSessionId: sessionId })
+            .sort({ createdAt: 1 });
+
+        res.json({ success: true, logs });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

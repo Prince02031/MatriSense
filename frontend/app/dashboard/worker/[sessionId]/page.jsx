@@ -83,7 +83,7 @@ export default function WorkerCaseDetailPage({ params }) {
         try {
             const data = await createReferralNote({
                 triageSessionId: sessionId,
-                patientId: caseDetail.patientId._id,
+                patientId: caseDetail.patientId?._id || 'unknown',
                 actionTaken,
                 referredTo,
                 followUpDate: followUpDate || undefined,
@@ -124,6 +124,7 @@ export default function WorkerCaseDetailPage({ params }) {
                     <PatientProfilePanel
                         patient={caseDetail.patientId}
                         decision={caseDetail.decision}
+                        caseState={caseDetail.caseState}
                     />
 
                     <HealthWorkerSummaryCard

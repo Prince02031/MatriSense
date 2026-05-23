@@ -1,6 +1,7 @@
 export default function EvidencePanel({ evidenceTags, careGuidanceContext }) {
     const hasTags = evidenceTags && evidenceTags.length > 0;
-    const hasContext = careGuidanceContext && careGuidanceContext.cards && careGuidanceContext.cards.length > 0;
+    const cards = careGuidanceContext?.retrievedCards || careGuidanceContext?.cards || [];
+    const hasContext = cards && cards.length > 0;
 
     if (!hasTags && !hasContext) {
         return (
@@ -32,7 +33,7 @@ export default function EvidencePanel({ evidenceTags, careGuidanceContext }) {
                 <div>
                     <strong>Guidance Cards:</strong>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
-                        {careGuidanceContext.cards.map((card, idx) => (
+                        {cards.map((card, idx) => (
                             <div key={idx} style={{ padding: '12px', border: '1px solid var(--border-subtle)', borderRadius: '8px', background: '#fafafa' }}>
                                 <div style={{ fontWeight: '600', marginBottom: '4px' }}>{card.topic}</div>
                                 <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{card.contentEn}</div>

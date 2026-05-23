@@ -12,10 +12,12 @@ export default function HealthWorkerSummaryCard({ safeOutput }) {
         <div className="dash-card" style={{ background: 'linear-gradient(135deg, rgba(14, 165, 168, 0.05), transparent)' }}>
             <h3>📋 Health Worker Summary</h3>
 
-            {safeOutput.workerSummaryEn && (
+            {(safeOutput.workerSummaryEn || safeOutput.healthWorkerSummaryBn) && (
                 <div style={{ marginTop: '16px' }}>
                     <h4 style={{ fontSize: '0.95rem', marginBottom: '8px' }}>Clinical Summary</h4>
-                    <p style={{ lineHeight: '1.6', fontSize: '0.95rem' }}>{safeOutput.workerSummaryEn}</p>
+                    <p style={{ lineHeight: '1.6', fontSize: '0.95rem' }}>
+                        {safeOutput.healthWorkerSummaryBn || safeOutput.workerSummaryEn}
+                    </p>
                 </div>
             )}
 

@@ -23,10 +23,10 @@ export default function TriageStartPage() {
     { id: 'vaginal_bleeding', labelBn: 'যোনি থেকে রক্তপাত' },
     { id: 'severe_headache', labelBn: 'তীব্র মাথাব্যথা' },
     { id: 'blurred_vision', labelBn: 'ঝাপসা দৃষ্টি' },
-    { id: 'breathing_difficulty', labelBn: 'শ্বাস নিতে কষ্ট' },
+    { id: 'difficulty_breathing', labelBn: 'শ্বাস নিতে কষ্ট' },
     { id: 'convulsion', labelBn: 'খিঁচুনি' },
     { id: 'severe_abdominal_pain', labelBn: 'তীব্র পেটব্যথা' },
-    { id: 'persistent_vomiting', labelBn: 'ক্রমাগত বমি' },
+    { id: 'vomiting_repeated', labelBn: 'ক্রমাগত বমি' },
     { id: 'severe_weakness', labelBn: 'তীব্র দুর্বলতা' }
   ];
 
