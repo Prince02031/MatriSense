@@ -287,20 +287,27 @@ const fs = require('fs');
 router.post('/:sessionId/run', async (req, res) => {
   try {
     const { sessionId } = req.params;
+    console.log('[TriageRoutes] Starting run for sessionId:', sessionId);
+    
     const session = await TriageSession.findById(sessionId);
 
     if (!session) return res.status(404).json({ error: 'Session not found' });
     if (!session.caseState) return res.status(400).json({ error: 'Case state is empty' });
 
+    console.log('[TriageRoutes] Running rules...');
     // 1. Run Rule Engine
     const runResult = await runRules(session.caseState);
     const events = Array.isArray(runResult) ? runResult : (runResult?.events || []);
+    console.log('[TriageRoutes] Rules complete, events:', events?.length);
 
     // 2. Build Decision
+    console.log('[TriageRoutes] Building decision...');
     const decision = buildDecision(events, session.caseState);
     session.decision = decision;
+    console.log('[TriageRoutes] Decision built:', decision?.riskLevel);
 
     // 3. Assemble RAG Context
+    console.log('[TriageRoutes] Assembling RAG context...');
     const knowledgeCardsPath = path.join(__dirname, '../rag/knowledgeCards.json');
     const knowledgeCards = JSON.parse(fs.readFileSync(knowledgeCardsPath, 'utf-8'));
 
@@ -309,6 +316,7 @@ router.post('/:sessionId/run', async (req, res) => {
       caseState: session.caseState,
       knowledgeCards
     });
+    console.log('[TriageRoutes] RAG context assembled');
 
     session.careGuidanceContext = careGuidanceContext;
     session.status = 'completed';

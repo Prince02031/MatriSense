@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { runTriage, explainTriage, getTriageResult } from '../../api/triageApi';
+import ReadAloudButton from '../../../src/components/voice/ReadAloudButton';
 
 /**
  * ResultPage - Phase 9 (Enhanced)
@@ -177,12 +178,20 @@ export default function ResultPage() {
 
       <div className="mx-auto max-w-4xl px-6 py-12">
         {/* Header */}
-        <div className="mb-8">
-          <div className="mb-4 inline-block rounded-lg bg-matri-green/10 px-4 py-2">
-            <p className="text-sm font-semibold text-matri-green">✓ মূল্যায়ন সম্পূর্ণ</p>
+        <div className="mb-8 flex items-start justify-between">
+          <div className="flex-1">
+            <div className="mb-4 inline-block rounded-lg bg-matri-green/10 px-4 py-2">
+              <p className="text-sm font-semibold text-matri-green">✓ মূল্যায়ন সম্পূর্ণ</p>
+            </div>
+            <h1 className="text-4xl font-bold text-slate-900">আপনার ত্রিয়েজ ফলাফল</h1>
+            <p className="mt-2 text-slate-600">আপনার স্বাস্থ্য অবস্থা সম্পর্কে আমাদের পরামর্শ নিচে দেওয়া হয়েছে।</p>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900">আপনার ত্রিয়েজ ফলাফল</h1>
-          <p className="mt-2 text-slate-600">আপনার স্বাস্থ্য অবস্থা সম্পর্কে আমাদের পরামর্শ নিচে দেওয়া হয়েছে।</p>
+          <ReadAloudButton 
+            text={`আপনার ত্রিয়েজ মূল্যায়ন সম্পূর্ণ হয়েছে। ঝুঁকির স্তর ${riskLevel}। আপনার স্বাস্থ্য অবস্থা সম্পর্কে আমাদের পরামর্শ নিচে দেওয়া হয়েছে। এই মূল্যায়ন শুধুমাত্র একটি প্রাথমিক মূল্যায়ন এবং চিকিৎসকের পরামর্শের বিকল্প নয়।`}
+            label="শুনুন"
+            language="bn-BD"
+            disabled={loading}
+          />
         </div>
 
         {/* Risk Card */}

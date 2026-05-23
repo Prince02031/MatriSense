@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { getFollowUpQuestions, submitFollowUpAnswers } from '../../api/triageApi';
+import ReadAloudButton from '../../../src/components/voice/ReadAloudButton';
 
 /**
  * FollowUpPage - Phase 3
@@ -133,11 +134,19 @@ export default function FollowUpPage() {
     <main className="min-h-screen bg-matri-soft">
       <div className="mx-auto max-w-2xl px-6 py-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">অনুসরণ প্রশ্ন</h1>
-          <p className="mt-2 text-slate-600">
-            আপনার অবস্থা আরও ভালভাবে বুঝতে কয়েকটি প্রশ্ন জিজ্ঞাসা করছি।
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-slate-900">অনুসরণ প্রশ্ন</h1>
+            <p className="mt-2 text-slate-600">
+              আপনার অবস্থা আরও ভালভাবে বুঝতে কয়েকটি প্রশ্ন জিজ্ঞাসা করছি।
+            </p>
+          </div>
+          <ReadAloudButton 
+            text="আপনার অবস্থা আরও ভালভাবে বুঝতে কয়েকটি প্রশ্ন জিজ্ঞাসা করছি। প্রতিটি প্রশ্নের উত্তর দিন এবং তারপর পরবর্তী প্রশ্নে যান।"
+            label="শুনুন"
+            language="bn-BD"
+            disabled={submitting}
+          />
         </div>
 
         {/* Progress Bar */}
@@ -166,9 +175,17 @@ export default function FollowUpPage() {
 
         {/* Question Card */}
         <div className="rounded-2xl bg-white p-8 shadow-soft">
-          <h2 className="text-xl font-semibold text-slate-900">
-            {currentQuestion?.questionBn || currentQuestion?.textBn || currentQuestion?.text}
-          </h2>
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <h2 className="text-xl font-semibold text-slate-900 flex-1">
+              {currentQuestion?.questionBn || currentQuestion?.textBn || currentQuestion?.text}
+            </h2>
+            <ReadAloudButton 
+              text={currentQuestion?.questionBn || currentQuestion?.textBn || currentQuestion?.text}
+              label="শুনুন"
+              language="bn-BD"
+              disabled={submitting}
+            />
+          </div>
 
           {/* Answer Options */}
           <div className="mt-6 space-y-3">

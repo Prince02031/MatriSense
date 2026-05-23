@@ -1,6 +1,44 @@
 const { retrieveEvidence } = require('./evidenceRetriever');
 const { ALWAYS_BLOCKED_ADVICE } = require('../safety/safetyRules');
 
+// Message roles for guidance categorization
+const MESSAGE_ROLES = {
+  PRIMARY_ACTION: 'PRIMARY_ACTION',
+  WHY_URGENT: 'WHY_URGENT',
+  SELF_CARE: 'SELF_CARE',
+  WARNING_SIGN: 'WARNING_SIGN',
+  SAFETY_DISCLAIMER: 'SAFETY_DISCLAIMER',
+  SUPPORTIVE_ACTION: 'SUPPORTIVE_ACTION'
+};
+
+// Output limits by risk level to control the amount of guidance
+const RISK_OUTPUT_LIMITS = {
+  LOW: {
+    maxStepsNow: 3,
+    maxWhyUrgent: 2,
+    maxWarnings: 1,
+    maxMonitor: 3
+  },
+  MEDIUM: {
+    maxStepsNow: 4,
+    maxWhyUrgent: 3,
+    maxWarnings: 2,
+    maxMonitor: 4
+  },
+  HIGH: {
+    maxStepsNow: 5,
+    maxWhyUrgent: 4,
+    maxWarnings: 3,
+    maxMonitor: 5
+  },
+  URGENT_ESCALATION: {
+    maxStepsNow: 6,
+    maxWhyUrgent: 5,
+    maxWarnings: 4,
+    maxMonitor: 6
+  }
+};
+
 const dedupeText = (items = []) => Array.from(
   new Set(items.map((item) => (typeof item === 'string' ? item.trim() : '')))
 ).filter(Boolean);

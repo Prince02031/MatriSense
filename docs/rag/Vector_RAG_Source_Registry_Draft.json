@@ -1,0 +1,291 @@
+{
+  "version": "1.0.0",
+  "basePathNote": "Adjust paths to match the project. These paths assume uploaded docs are copied into backend/data/rag/source-documents/ and summaries into backend/data/rag/source-documents/md-files/.",
+  "sources": [
+    {
+      "sourceId": "knowledge-cards",
+      "sourceKind": "KNOWLEDGE_CARD",
+      "path": "backend/src/rag/KnowledgeCards.json",
+      "title": "MatriSense Rule-Aware Knowledge Cards",
+      "language": "bn",
+      "trusted": true,
+      "priority": 100,
+      "defaultMetadata": {
+        "audience": ["PATIENT", "HEALTH_WORKER"],
+        "sourceUse": "patient_guidance"
+      }
+    },
+    {
+      "sourceId": "who-danger-signs-summary",
+      "sourceKind": "MARKDOWN",
+      "path": "backend/data/rag/source-documents/md-files/01_who_counselling_danger_signs_summary.md",
+      "title": "WHO / NCBI Danger Signs in Pregnancy Summary",
+      "language": "en_bn",
+      "trusted": true,
+      "priority": 95,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM", "LOW"],
+        "guidanceTypes": ["URGENT_ESCALATION", "WARNING_SIGNS", "FOLLOW_UP_QUESTION", "SAFETY_DISCLAIMER"],
+        "audience": ["PATIENT", "HEALTH_WORKER"],
+        "sourceUse": "patient_guidance",
+        "evidenceTags": ["WHO_PREGNANCY_DANGER_SIGNS"]
+      }
+    },
+    {
+      "sourceId": "who-pcpnc-summary",
+      "sourceKind": "MARKDOWN",
+      "path": "backend/data/rag/source-documents/md-files/02_who_pcpnc_quick_check_rapid_assessment_summary.md",
+      "title": "WHO PCPNC Quick Check and Rapid Assessment Summary",
+      "language": "en_bn",
+      "trusted": true,
+      "priority": 92,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM"],
+        "guidanceTypes": ["URGENT_ESCALATION", "CONTACT_HEALTH_WORKER", "HEALTH_WORKER_REVIEW"],
+        "audience": ["HEALTH_WORKER", "PATIENT"],
+        "sourceUse": "triage_reasoning",
+        "evidenceTags": ["WHO_PCPNC_QUICK_CHECK"]
+      }
+    },
+    {
+      "sourceId": "cdc-hear-her-summary",
+      "sourceKind": "MARKDOWN",
+      "path": "backend/data/rag/source-documents/md-files/03_cdc_hear_her_urgent_maternal_warning_signs_summary.md",
+      "title": "CDC HEAR HER Urgent Maternal Warning Signs Summary",
+      "language": "en_bn",
+      "trusted": true,
+      "priority": 94,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM", "LOW"],
+        "guidanceTypes": ["URGENT_ESCALATION", "WARNING_SIGNS", "FOLLOW_UP_QUESTION"],
+        "audience": ["PATIENT", "HEALTH_WORKER"],
+        "sourceUse": "patient_guidance",
+        "evidenceTags": ["CDC_HEAR_HER"]
+      }
+    },
+    {
+      "sourceId": "cdc-hear-her-html",
+      "sourceKind": "HTML",
+      "path": "backend/data/rag/source-documents/Urgent Maternal Warning Signs and Symptoms _ HEAR HER Campaign _ CDC.html",
+      "title": "CDC HEAR HER Urgent Maternal Warning Signs and Symptoms HTML",
+      "language": "en",
+      "trusted": true,
+      "priority": 90,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM", "LOW"],
+        "guidanceTypes": ["URGENT_ESCALATION", "WARNING_SIGNS", "FOLLOW_UP_QUESTION"],
+        "audience": ["PATIENT", "HEALTH_WORKER"],
+        "sourceUse": "patient_guidance",
+        "evidenceTags": ["CDC_HEAR_HER"]
+      }
+    },
+    {
+      "sourceId": "cdc-hear-her-pdf",
+      "sourceKind": "PDF",
+      "path": "backend/data/rag/source-documents/CDC-Hear-Her-Womens-urgent-warning-signs-h.pdf",
+      "title": "CDC HEAR HER Women's Urgent Warning Signs Poster",
+      "language": "en",
+      "trusted": true,
+      "priority": 88,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM", "LOW"],
+        "guidanceTypes": ["URGENT_ESCALATION", "WARNING_SIGNS"],
+        "audience": ["PATIENT", "HEALTH_WORKER"],
+        "sourceUse": "patient_guidance",
+        "evidenceTags": ["CDC_HEAR_HER"]
+      }
+    },
+    {
+      "sourceId": "cdc-warning-signs-bengali-poster",
+      "sourceKind": "PDF",
+      "path": "backend/data/rag/source-documents/Warning-Signs-Poster_LTR_whitebkg_Bengali.pdf",
+      "title": "CDC Urgent Maternal Warning Signs Poster - Bengali",
+      "language": "bn",
+      "trusted": true,
+      "priority": 87,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM", "LOW"],
+        "guidanceTypes": ["URGENT_ESCALATION", "WARNING_SIGNS"],
+        "audience": ["PATIENT", "HEALTH_WORKER"],
+        "sourceUse": "patient_guidance",
+        "evidenceTags": ["CDC_HEAR_HER"]
+      }
+    },
+    {
+      "sourceId": "dghs-mnch-summary",
+      "sourceKind": "MARKDOWN",
+      "path": "backend/data/rag/source-documents/md-files/05_dghs_bangladesh_mnch_anc_job_aid_summary.md",
+      "title": "DGHS Bangladesh MNCH ANC Job Aid Summary",
+      "language": "en_bn",
+      "trusted": true,
+      "priority": 82,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM", "LOW"],
+        "guidanceTypes": ["WARNING_SIGNS", "CONTACT_HEALTH_WORKER", "FOLLOW_UP_QUESTION"],
+        "audience": ["PATIENT", "HEALTH_WORKER"],
+        "sourceUse": "local_patient_counselling",
+        "evidenceTags": ["BD_MNCH_ANC_COUNSELLING"]
+      }
+    },
+    {
+      "sourceId": "who-anc-dak-summary",
+      "sourceKind": "MARKDOWN",
+      "path": "backend/data/rag/source-documents/md-files/04_who_anc_digital_adaptation_kit_summary.md",
+      "title": "WHO ANC Digital Adaptation Kit Summary",
+      "language": "en",
+      "trusted": true,
+      "priority": 55,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["LOW", "MEDIUM", "HIGH"],
+        "guidanceTypes": ["DIGITAL_HEALTH_ARCHITECTURE", "SYSTEM_CONTEXT"],
+        "audience": ["ADMIN", "DOCS"],
+        "sourceUse": "architecture",
+        "evidenceTags": ["WHO_ANC_DAK_DIGITAL_WORKFLOW"]
+      }
+    },
+    {
+      "sourceId": "mnh-accreditation-summary",
+      "sourceKind": "MARKDOWN",
+      "path": "backend/data/rag/source-documents/md-files/06_bangladesh_mnh_service_accreditation_summary.md",
+      "title": "Bangladesh MNH Service Accreditation Summary",
+      "language": "en_bn",
+      "trusted": true,
+      "priority": 65,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM"],
+        "guidanceTypes": ["HEALTH_WORKER_REVIEW", "REFERRAL_WORKFLOW", "FACILITY_READINESS"],
+        "audience": ["HEALTH_WORKER", "ADMIN"],
+        "sourceUse": "worker_workflow",
+        "evidenceTags": ["BD_MNH_WORKER_REVIEW", "BD_MNH_FACILITY_READINESS"]
+      }
+    },
+    {
+      "sourceId": "bangladesh-strategy-summary",
+      "sourceKind": "MARKDOWN",
+      "path": "backend/data/rag/source-documents/md-files/07_bangladesh_national_strategy_maternal_health_2019_2030_summary.md",
+      "title": "Bangladesh National Strategy for Maternal Health 2019-2030 Summary",
+      "language": "en",
+      "trusted": true,
+      "priority": 45,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["LOW", "MEDIUM", "HIGH"],
+        "guidanceTypes": ["SYSTEM_CONTEXT"],
+        "audience": ["DOCS", "ADMIN"],
+        "sourceUse": "system_context",
+        "evidenceTags": ["BD_MATERNAL_STRATEGY_REFERRAL"]
+      }
+    },
+    {
+      "sourceId": "rule-source-index",
+      "sourceKind": "MARKDOWN",
+      "path": "backend/data/rag/source-documents/md-files/08_rule_source_index_for_agents.md",
+      "title": "MatriSense Rule Source Index for Agents",
+      "language": "en",
+      "trusted": true,
+      "priority": 70,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["LOW", "MEDIUM", "HIGH"],
+        "guidanceTypes": ["SYSTEM_CONTEXT", "HEALTH_WORKER_REVIEW"],
+        "audience": ["ADMIN", "DOCS"],
+        "sourceUse": "developer_reference",
+        "evidenceTags": ["MATRISENSE_RULE_SOURCE_INDEX"]
+      }
+    },
+    {
+      "sourceId": "who-counselling-full-pdf",
+      "sourceKind": "PDF",
+      "path": "backend/data/rag/source-documents/NCBI_bookshelf_high_risk.pdf",
+      "title": "WHO Counselling for Maternal and Newborn Health Care - Full PDF",
+      "language": "en",
+      "trusted": true,
+      "priority": 50,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM", "LOW"],
+        "guidanceTypes": ["WARNING_SIGNS", "FOLLOW_UP_QUESTION", "SAFETY_DISCLAIMER"],
+        "audience": ["PATIENT", "HEALTH_WORKER"],
+        "sourceUse": "patient_guidance_selective",
+        "evidenceTags": ["WHO_PREGNANCY_DANGER_SIGNS"]
+      }
+    },
+    {
+      "sourceId": "pcpnc-full-pdf",
+      "sourceKind": "PDF",
+      "path": "backend/data/rag/source-documents/NCTB_information_and_counselling_sheets_high_risk.pdf",
+      "title": "WHO PCPNC / Information and Counselling Sheets - Full PDF",
+      "language": "en",
+      "trusted": true,
+      "priority": 48,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM"],
+        "guidanceTypes": ["HEALTH_WORKER_REVIEW", "URGENT_ESCALATION", "CONTACT_HEALTH_WORKER"],
+        "audience": ["HEALTH_WORKER"],
+        "sourceUse": "triage_reasoning_selective",
+        "evidenceTags": ["WHO_PCPNC_QUICK_CHECK"]
+      }
+    },
+    {
+      "sourceId": "who-anc-dak-full-pdf",
+      "sourceKind": "PDF",
+      "path": "backend/data/rag/source-documents/WHO-Antinatal-kit.pdf",
+      "title": "WHO Digital Adaptation Kit for Antenatal Care - Full PDF",
+      "language": "en",
+      "trusted": true,
+      "priority": 35,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["LOW", "MEDIUM", "HIGH"],
+        "guidanceTypes": ["DIGITAL_HEALTH_ARCHITECTURE", "SYSTEM_CONTEXT"],
+        "audience": ["ADMIN", "DOCS"],
+        "sourceUse": "architecture",
+        "evidenceTags": ["WHO_ANC_DAK_DIGITAL_WORKFLOW"]
+      }
+    },
+    {
+      "sourceId": "facility-readiness-checklist",
+      "sourceKind": "PDF",
+      "path": "backend/data/rag/source-documents/Checklist-04-Facility-Readiness.pdf",
+      "title": "MNH Service Accreditation Facility Readiness Checklist",
+      "language": "en",
+      "trusted": true,
+      "priority": 35,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM"],
+        "guidanceTypes": ["FACILITY_READINESS", "REFERRAL_WORKFLOW"],
+        "audience": ["HEALTH_WORKER", "ADMIN"],
+        "sourceUse": "worker_workflow",
+        "evidenceTags": ["BD_MNH_FACILITY_READINESS"]
+      }
+    },
+    {
+      "sourceId": "mnh-accreditation-manual-full-pdf",
+      "sourceKind": "PDF",
+      "path": "backend/data/rag/source-documents/MNH-Service-Accreditation-Manual_Clean_Cor-14-4-23.pdf",
+      "title": "Bangladesh MNH Service Accreditation Operational Manual",
+      "language": "en",
+      "trusted": true,
+      "priority": 32,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["HIGH", "MEDIUM"],
+        "guidanceTypes": ["HEALTH_WORKER_REVIEW", "REFERRAL_WORKFLOW", "FACILITY_READINESS"],
+        "audience": ["HEALTH_WORKER", "ADMIN"],
+        "sourceUse": "worker_workflow",
+        "evidenceTags": ["BD_MNH_WORKER_REVIEW", "BD_MNH_FACILITY_READINESS"]
+      }
+    },
+    {
+      "sourceId": "bangladesh-maternal-health-strategy-full-pdf",
+      "sourceKind": "PDF",
+      "path": "backend/data/rag/source-documents/government_Strategy.pdf",
+      "title": "Bangladesh National Strategy for Maternal Health 2019-2030 - Full PDF",
+      "language": "en",
+      "trusted": true,
+      "priority": 25,
+      "defaultMetadata": {
+        "riskLevelAllowed": ["LOW", "MEDIUM", "HIGH"],
+        "guidanceTypes": ["SYSTEM_CONTEXT"],
+        "audience": ["DOCS", "ADMIN"],
+        "sourceUse": "system_context",
+        "evidenceTags": ["BD_MATERNAL_STRATEGY_REFERRAL"]
+      }
+    }
+  ]
+}
