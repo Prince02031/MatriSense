@@ -1,56 +1,48 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
     {
         name: {
             type: String,
             required: [true, 'Name is required'],
             trim: true,
         },
+        phone: {
+            type: String,
+            required: [true, 'Phone number is required'],
+            unique: true,
+            trim: true,
+        },
         email: {
             type: String,
-            required: [true, 'Email is required'],
+            required: false,
             unique: true,
+            sparse: true,
             lowercase: true,
             trim: true,
         },
-        password: {
+        passwordHash: {
             type: String,
-            required: [true, 'Password is required'],
-            minlength: [6, 'Password must be at least 6 characters'],
+            required: [true, 'Password hash is required'],
         },
         role: {
             type: String,
-            enum: ['patient', 'worker', 'admin'],
-            default: 'patient',
+            enum: ['MOTHER', 'HEALTH_WORKER', 'ADMIN'],
+            required: true,
+            default: 'MOTHER',
         },
-        phone: {
-            type: String,
-            trim: true,
-            default: '',
+        isActive: {
+            type: Boolean,
+            default: true,
         },
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+    }
 );
 
-// Hash password before saving
-userSchema.pre('save', async function () {
-    if (!this.isModified('password')) return;
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-});
+// Indexes for faster querying
+UserSchema.index({ role: 1 });
 
-// Compare entered password with hashed password
-userSchema.methods.comparePassword = async function (enteredPassword) {
-    return bcrypt.compare(enteredPassword, this.password);
-};
-
-// Remove password from JSON output
-userSchema.methods.toJSON = function () {
-    const obj = this.toObject();
-    delete obj.password;
-    return obj;
-};
-
-module.exports = mongoose.model('User', userSchema);
+// Export model safely to avoid overwrite issues
+module.exports = mongoose.models.User || mongoose.model('User', UserSchema);

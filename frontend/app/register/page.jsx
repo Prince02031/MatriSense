@@ -36,7 +36,19 @@ export default function RegisterPage() {
                 formData.role,
                 formData.phone
             );
-            router.push(`/dashboard/${user.role}`);
+
+            // This mapping handles the translation from DB ENUM to URL Path
+            const roleToPathMap = {
+                'MOTHER': 'patient',
+                'HEALTH_WORKER': 'worker',
+                'ADMIN': 'admin'
+            };
+
+            // Convert 'HEALTH_WORKER' to 'worker', etc.
+            const roleSlug = roleToPathMap[user.role] || 'patient';
+            const targetPath = `/dashboard/${roleSlug}`;
+
+            router.push(targetPath);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -130,9 +142,10 @@ export default function RegisterPage() {
                                     name="phone"
                                     type="tel"
                                     className="form-input"
-                                    placeholder="01XXXXXXXXX (optional)"
+                                    placeholder="01XXXXXXXXX"
                                     value={formData.phone}
                                     onChange={handleChange}
+                                    required
                                 />
                             </div>
                         </div>
@@ -188,8 +201,17 @@ export default function RegisterPage() {
                             </div>
                         </div>
 
-                        <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={isLoading}>
-                            {isLoading ? <><span className="spinner"></span> Creating account...</> : 'Create Account'}
+                        <button
+                            type="submit"
+                            className="btn btn-primary btn-lg"
+                            style={{ width: '100%' }}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <><span className="spinner"></span> Creating account...</>
+                            ) : (
+                                'Create Account'
+                            )}
                         </button>
                     </form>
                 </div>

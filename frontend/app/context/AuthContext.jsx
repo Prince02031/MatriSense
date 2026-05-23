@@ -7,6 +7,12 @@ const AuthContext = createContext(null);
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+const ROLE_PATH_MAP = {
+    'MOTHER': 'patient',
+    'HEALTH_WORKER': 'worker',
+    'ADMIN': 'admin'
+};
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(null);

@@ -1,0 +1,705 @@
+[
+	{
+		"id": "TC_LOW_01",
+		"description": "Mild nausea in first trimester",
+		"profile": {
+			"age": 24,
+			"trimester": "first",
+			"gestationalWeek": 10,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "সকালে একটু বমি বমি লাগে, কিন্তু অন্য কিছু নেই।",
+		"confirmedSymptoms": ["nausea"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "LOW",
+		"expectedAction": "HOME_CARE_AND_MONITOR",
+		"expectedMatchedRules": [],
+		"expectedGuidanceType": "SELF_CARE_AND_MONITOR",
+		"shouldBlockHomeCareFirst": false,
+		"notes": "No danger signs; supportive care only."
+	},
+	{
+		"id": "TC_LOW_02",
+		"description": "Fatigue without danger signs",
+		"profile": {
+			"age": 29,
+			"trimester": "second",
+			"gestationalWeek": 18,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "খুব ক্লান্ত লাগে, কিন্তু জ্বর বা অন্য লক্ষণ নেই।",
+		"confirmedSymptoms": ["fatigue"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "LOW",
+		"expectedAction": "HOME_CARE_AND_MONITOR",
+		"expectedMatchedRules": [],
+		"expectedGuidanceType": "SELF_CARE_AND_MONITOR",
+		"shouldBlockHomeCareFirst": false,
+		"notes": "Fatigue only; no warning signs."
+	},
+	{
+		"id": "TC_LOW_03",
+		"description": "Single episode vomiting without dehydration",
+		"profile": {
+			"age": 21,
+			"trimester": "first",
+			"gestationalWeek": 9,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "একবার বমি হয়েছে, পানি রাখতে পারছি।",
+		"confirmedSymptoms": ["vomiting"],
+		"followUpAnswers": {
+			"cannot_keep_water_down": false
+		},
+		"expectedRiskLevel": "LOW",
+		"expectedAction": "HOME_CARE_AND_MONITOR",
+		"expectedMatchedRules": [],
+		"expectedGuidanceType": "SELF_CARE_AND_MONITOR",
+		"shouldBlockHomeCareFirst": false,
+		"notes": "Vomiting but not repeated; no dehydration."
+	},
+	{
+		"id": "TC_LOW_04",
+		"description": "Nausea with occasional vomiting",
+		"profile": {
+			"age": 26,
+			"trimester": "first",
+			"gestationalWeek": 12,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "বমি বমি লাগে আর মাঝে মাঝে বমি হয়।",
+		"confirmedSymptoms": ["nausea", "vomiting"],
+		"followUpAnswers": {
+			"cannot_keep_water_down": false
+		},
+		"expectedRiskLevel": "LOW",
+		"expectedAction": "HOME_CARE_AND_MONITOR",
+		"expectedMatchedRules": [],
+		"expectedGuidanceType": "SELF_CARE_AND_MONITOR",
+		"shouldBlockHomeCareFirst": false,
+		"notes": "Low-risk GI discomfort without red flags."
+	},
+	{
+		"id": "TC_LOW_05",
+		"description": "Severe headache described but no vision changes",
+		"profile": {
+			"age": 30,
+			"trimester": "second",
+			"gestationalWeek": 20,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "মাথা খুব ব্যথা, কিন্তু চোখে ঝাপসা নেই।",
+		"confirmedSymptoms": ["severe_headache"],
+		"followUpAnswers": {
+			"vision_change": false
+		},
+		"expectedRiskLevel": "LOW",
+		"expectedAction": "HOME_CARE_AND_MONITOR",
+		"expectedMatchedRules": [],
+		"expectedGuidanceType": "SELF_CARE_AND_MONITOR",
+		"shouldBlockHomeCareFirst": false,
+		"notes": "Severe_headache is not mapped to a rule yet."
+	},
+	{
+		"id": "TC_LOW_06",
+		"description": "Fatigue with nausea",
+		"profile": {
+			"age": 19,
+			"trimester": "first",
+			"gestationalWeek": 11,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "খুব ক্লান্ত লাগছে আর বমি বমি লাগে।",
+		"confirmedSymptoms": ["fatigue", "nausea"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "LOW",
+		"expectedAction": "HOME_CARE_AND_MONITOR",
+		"expectedMatchedRules": [],
+		"expectedGuidanceType": "SELF_CARE_AND_MONITOR",
+		"shouldBlockHomeCareFirst": false,
+		"notes": "No rule-matching symptoms."
+	},
+	{
+		"id": "TC_LOW_07",
+		"description": "Severe headache with fatigue (no vision issues)",
+		"profile": {
+			"age": 27,
+			"trimester": "second",
+			"gestationalWeek": 22,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "মাথা খুব ব্যথা আর খুব ক্লান্ত লাগে।",
+		"confirmedSymptoms": ["severe_headache", "fatigue"],
+		"followUpAnswers": {
+			"vision_change": false
+		},
+		"expectedRiskLevel": "LOW",
+		"expectedAction": "HOME_CARE_AND_MONITOR",
+		"expectedMatchedRules": [],
+		"expectedGuidanceType": "SELF_CARE_AND_MONITOR",
+		"shouldBlockHomeCareFirst": false,
+		"notes": "Await future rule expansion for severe_headache."
+	},
+	{
+		"id": "TC_LOW_08",
+		"description": "Nausea, vomiting, fatigue combo without danger signs",
+		"profile": {
+			"age": 25,
+			"trimester": "first",
+			"gestationalWeek": 13,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "বমি বমি লাগে, মাঝে মাঝে বমি হয়, আর খুব ক্লান্ত লাগছে।",
+		"confirmedSymptoms": ["nausea", "vomiting", "fatigue"],
+		"followUpAnswers": {
+			"cannot_keep_water_down": false
+		},
+		"expectedRiskLevel": "LOW",
+		"expectedAction": "HOME_CARE_AND_MONITOR",
+		"expectedMatchedRules": [],
+		"expectedGuidanceType": "SELF_CARE_AND_MONITOR",
+		"shouldBlockHomeCareFirst": false,
+		"notes": "Monitor hydration; no red flags reported."
+	},
+	{
+		"id": "TC_MED_01",
+		"description": "Fever without severe weakness",
+		"profile": {
+			"age": 23,
+			"trimester": "second",
+			"gestationalWeek": 19,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "জ্বর আছে কিন্তু খুব দুর্বল লাগে না।",
+		"confirmedSymptoms": ["fever"],
+		"followUpAnswers": {
+			"severe_weakness": false
+		},
+		"expectedRiskLevel": "MEDIUM",
+		"expectedAction": "CONTACT_HEALTH_WORKER_SOON",
+		"expectedMatchedRules": ["WHO_WARNING_FEVER_MEDIUM"],
+		"expectedGuidanceType": "CONTACT_HEALTH_WORKER",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "WHO fever warning rule."
+	},
+	{
+		"id": "TC_MED_02",
+		"description": "Abdominal pain without bleeding",
+		"profile": {
+			"age": 31,
+			"trimester": "second",
+			"gestationalWeek": 21,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "পেটে ব্যথা আছে, তবে রক্তপাত নেই।",
+		"confirmedSymptoms": ["abdominal_pain"],
+		"followUpAnswers": {
+			"bleeding_present": false
+		},
+		"expectedRiskLevel": "MEDIUM",
+		"expectedAction": "CONTACT_HEALTH_WORKER_SOON",
+		"expectedMatchedRules": ["WHO_WARNING_ABDOMINAL_PAIN_MEDIUM"],
+		"expectedGuidanceType": "CONTACT_HEALTH_WORKER",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Abdominal pain requires clinician review."
+	},
+	{
+		"id": "TC_MED_03",
+		"description": "Repeated vomiting without dehydration",
+		"profile": {
+			"age": 22,
+			"trimester": "first",
+			"gestationalWeek": 12,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "বারবার বমি হচ্ছে, তবে পানি রাখতে পারি।",
+		"confirmedSymptoms": ["vomiting_repeated"],
+		"followUpAnswers": {
+			"cannot_keep_water_down": false
+		},
+		"expectedRiskLevel": "MEDIUM",
+		"expectedAction": "CONTACT_HEALTH_WORKER_SOON",
+		"expectedMatchedRules": ["CDC_WARNING_REPEATED_VOMITING_MEDIUM"],
+		"expectedGuidanceType": "CONTACT_HEALTH_WORKER",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Repeated vomiting requires review."
+	},
+	{
+		"id": "TC_MED_04",
+		"description": "Dizziness without fainting",
+		"profile": {
+			"age": 28,
+			"trimester": "second",
+			"gestationalWeek": 17,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "মাথা ঘোরে কিন্তু অজ্ঞান হইনি।",
+		"confirmedSymptoms": ["dizziness"],
+		"followUpAnswers": {
+			"fainting": false
+		},
+		"expectedRiskLevel": "MEDIUM",
+		"expectedAction": "CONTACT_HEALTH_WORKER_SOON",
+		"expectedMatchedRules": ["CDC_WARNING_DIZZINESS_MEDIUM"],
+		"expectedGuidanceType": "CONTACT_HEALTH_WORKER",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "CDC dizziness warning."
+	},
+	{
+		"id": "TC_MED_05",
+		"description": "Swelling without headache or vision changes",
+		"profile": {
+			"age": 27,
+			"trimester": "second",
+			"gestationalWeek": 24,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "হাত-মুখ ফুলে গেছে, মাথা ব্যথা নেই।",
+		"confirmedSymptoms": ["swelling"],
+		"followUpAnswers": {
+			"headache": false,
+			"vision_change": false
+		},
+		"expectedRiskLevel": "MEDIUM",
+		"expectedAction": "CONTACT_HEALTH_WORKER_SOON",
+		"expectedMatchedRules": ["CDC_WARNING_SWELLING_MEDIUM"],
+		"expectedGuidanceType": "CONTACT_HEALTH_WORKER",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Swelling rule applies when no headache/vision change."
+	},
+	{
+		"id": "TC_MED_06",
+		"description": "Headache only should trigger follow-up (edge)",
+		"profile": {
+			"age": 26,
+			"trimester": "second",
+			"gestationalWeek": 20,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "মাথাব্যথা আছে, তবে চোখে ঝাপসা নেই।",
+		"confirmedSymptoms": ["headache"],
+		"followUpAnswers": {
+			"vision_change": false
+		},
+		"expectedRiskLevel": "MEDIUM",
+		"expectedAction": "CONTACT_HEALTH_WORKER_SOON",
+		"expectedMatchedRules": ["WHO_PCPNC_HEADACHE_NEEDS_FOLLOWUP_MEDIUM"],
+		"expectedGuidanceType": "CONTACT_HEALTH_WORKER",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Edge: headache alone should not be HIGH; ask follow-up."
+	},
+	{
+		"id": "TC_MED_07",
+		"description": "Headache with swelling but no vision change",
+		"profile": {
+			"age": 30,
+			"trimester": "second",
+			"gestationalWeek": 23,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "মাথা ব্যথা আর হাত একটু ফুলে আছে, তবে ঝাপসা দেখি না।",
+		"confirmedSymptoms": ["headache", "swelling"],
+		"followUpAnswers": {
+			"vision_change": false
+		},
+		"expectedRiskLevel": "MEDIUM",
+		"expectedAction": "CONTACT_HEALTH_WORKER_SOON",
+		"expectedMatchedRules": ["WHO_PCPNC_HEADACHE_NEEDS_FOLLOWUP_MEDIUM"],
+		"expectedGuidanceType": "CONTACT_HEALTH_WORKER",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Headache rule still applies; swelling rule blocked by headache."
+	},
+	{
+		"id": "TC_MED_08",
+		"description": "Modifiers-only case escalates to MEDIUM",
+		"profile": {
+			"age": 34,
+			"trimester": "second",
+			"gestationalWeek": 18,
+			"riskFactors": {
+				"hypertension": true,
+				"diabetes": false,
+				"anemia": true,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "কোনো নতুন লক্ষণ নেই, তবে আগে থেকে উচ্চ রক্তচাপ ও রক্তস্বল্পতা আছে।",
+		"confirmedSymptoms": [],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "MEDIUM",
+		"expectedAction": "CONTACT_HEALTH_WORKER_SOON",
+		"expectedMatchedRules": ["MODIFIER_KNOWN_HYPERTENSION", "MODIFIER_ANEMIA_HISTORY"],
+		"expectedGuidanceType": "CONTACT_HEALTH_WORKER",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Modifier score reaches 3 and escalates to MEDIUM."
+	},
+	{
+		"id": "TC_HIGH_01",
+		"description": "Vaginal bleeding in second trimester",
+		"profile": {
+			"age": 28,
+			"trimester": "second",
+			"gestationalWeek": 19,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "হালকা রক্তপাত হচ্ছে।",
+		"confirmedSymptoms": ["vaginal_bleeding"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "URGENT_CLINIC_VISIT",
+		"expectedMatchedRules": ["WHO_DANGER_SIGN_VAGINAL_BLEEDING_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Vaginal bleeding is always HIGH."
+	},
+	{
+		"id": "TC_HIGH_02",
+		"description": "Convulsion episode",
+		"profile": {
+			"age": 20,
+			"trimester": "second",
+			"gestationalWeek": 16,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "খিঁচুনি হয়েছে।",
+		"confirmedSymptoms": ["convulsion"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+		"expectedMatchedRules": ["WHO_PCPNC_CONVULSION_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Emergency convulsion case."
+	},
+	{
+		"id": "TC_HIGH_03",
+		"description": "Severe abdominal pain",
+		"profile": {
+			"age": 32,
+			"trimester": "second",
+			"gestationalWeek": 24,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "তীব্র পেট ব্যথা হচ্ছে।",
+		"confirmedSymptoms": ["severe_abdominal_pain"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "URGENT_CLINIC_VISIT",
+		"expectedMatchedRules": ["WHO_PCPNC_SEVERE_ABDOMINAL_PAIN_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Severe abdominal pain requires urgent care."
+	},
+	{
+		"id": "TC_HIGH_04",
+		"description": "Fever with severe weakness",
+		"profile": {
+			"age": 25,
+			"trimester": "second",
+			"gestationalWeek": 18,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "জ্বর আছে আর খুব দুর্বল লাগছে।",
+		"confirmedSymptoms": ["fever", "severe_weakness"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+		"expectedMatchedRules": ["WHO_DANGER_SIGN_FEVER_WITH_WEAKNESS_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Danger sign pairing: fever + severe weakness."
+	},
+	{
+		"id": "TC_HIGH_05",
+		"description": "Difficulty breathing",
+		"profile": {
+			"age": 27,
+			"trimester": "second",
+			"gestationalWeek": 20,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "শ্বাস নিতে কষ্ট হচ্ছে।",
+		"confirmedSymptoms": ["difficulty_breathing"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+		"expectedMatchedRules": ["WHO_DANGER_SIGN_BREATHING_DIFFICULTY_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Danger sign breathing difficulty."
+	},
+	{
+		"id": "TC_HIGH_06",
+		"description": "Fainting episode",
+		"profile": {
+			"age": 29,
+			"trimester": "second",
+			"gestationalWeek": 17,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "অজ্ঞান হয়ে গিয়েছিলাম।",
+		"confirmedSymptoms": ["fainting"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+		"expectedMatchedRules": ["WHO_PCPNC_FAINTING_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Fainting requires urgent assessment."
+	},
+	{
+		"id": "TC_HIGH_07",
+		"description": "Reduced fetal movement in third trimester",
+		"profile": {
+			"age": 30,
+			"trimester": "third",
+			"gestationalWeek": 33,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "শেষ দিকে বাচ্চার নড়াচড়া কমে গেছে।",
+		"confirmedSymptoms": ["reduced_fetal_movement"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+		"expectedMatchedRules": ["CDC_REDUCED_FETAL_MOVEMENT_THIRD_TRIMESTER_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Important: reduced movement is urgent in third trimester."
+	},
+	{
+		"id": "TC_HIGH_08",
+		"description": "Headache with blurred vision (edge)",
+		"profile": {
+			"age": 26,
+			"trimester": "second",
+			"gestationalWeek": 21,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "মাথা ব্যথা আর চোখে ঝাপসা দেখি।",
+		"confirmedSymptoms": ["headache", "blurred_vision"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "URGENT_CLINIC_VISIT",
+		"expectedMatchedRules": ["WHO_DANGER_SIGN_HEADACHE_VISION_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Edge: headache + blurred vision must be HIGH."
+	},
+	{
+		"id": "TC_HIGH_09",
+		"description": "Vaginal bleeding with reassuring wording (edge)",
+		"profile": {
+			"age": 33,
+			"trimester": "third",
+			"gestationalWeek": 31,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "আমি ঠিক আছি, শুধু সামান্য রক্তপাত হয়েছে।",
+		"confirmedSymptoms": ["vaginal_bleeding"],
+		"followUpAnswers": {},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "URGENT_CLINIC_VISIT",
+		"expectedMatchedRules": ["WHO_DANGER_SIGN_VAGINAL_BLEEDING_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Edge: reassuring language must not downgrade risk."
+	},
+	{
+		"id": "TC_HIGH_10",
+		"description": "LLM misses symptom; danger sign checked (edge)",
+		"profile": {
+			"age": 24,
+			"trimester": "second",
+			"gestationalWeek": 18,
+			"riskFactors": {
+				"hypertension": false,
+				"diabetes": false,
+				"anemia": false,
+				"previousHighRiskPregnancy": false,
+				"previousCSection": false,
+				"previousMiscarriage": false
+			}
+		},
+		"inputBn": "শ্বাস নিতে কষ্ট আছে, তবে কথার মধ্যে উল্লেখ হয়নি।",
+		"confirmedSymptoms": [],
+		"followUpAnswers": {
+			"dangerSignsChecked": ["difficulty_breathing"]
+		},
+		"expectedRiskLevel": "HIGH",
+		"expectedAction": "CONTACT_HEALTH_WORKER_IMMEDIATELY",
+		"expectedMatchedRules": ["WHO_DANGER_SIGN_BREATHING_DIFFICULTY_HIGH"],
+		"expectedGuidanceType": "URGENT_ESCALATION",
+		"shouldBlockHomeCareFirst": true,
+		"notes": "Edge: dangerSignsChecked should recover missing symptom."
+	}
+]
