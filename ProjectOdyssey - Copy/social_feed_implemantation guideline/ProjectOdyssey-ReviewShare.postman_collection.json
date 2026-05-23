@@ -1,0 +1,691 @@
+{
+  "info": {
+    "name": "Project Odyssey - Review Share Feature",
+    "description": "Test collection for the Review Share feed feature (Module C extension).\n\nSetup:\n1. Set `base_url` = http://localhost:4000\n2. Login and paste your JWT into `jwt_token`\n3. Run requests top to bottom",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Auth",
+      "item": [
+        {
+          "name": "Login (get JWT token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "    pm.collectionVariables.set('jwt_token', res.token);",
+                  "    console.log('✅ JWT saved automatically');",
+                  "} else {",
+                  "    console.log('⚠️ No token in response — check credentials');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"your@email.com\",\n  \"password\": \"yourpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. POST /api/posts/review-share (direct fields)",
+      "item": [
+        {
+          "name": "✅ Share review — all fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('success is true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('type is review', () => pm.expect(res.data.type).to.eql('review'));",
+                  "pm.test('reviewData.placeName exists', () => pm.expect(res.data.reviewData.placeName).to.be.a('string'));",
+                  "pm.test('reviewData.rating is 4', () => pm.expect(res.data.reviewData.rating).to.eql(4));",
+                  "if (res.data && res.data._id) {",
+                  "    pm.collectionVariables.set('review_post_id', res.data._id);",
+                  "    console.log('✅ review_post_id saved:', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeName\": \"Lalbagh Fort\",\n  \"rating\": 4,\n  \"title\": \"Historic gem in the heart of Dhaka\",\n  \"comment\": \"The Mughal architecture is absolutely stunning. A must visit if you're in Dhaka.\",\n  \"images\": [\n    \"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Lalbagh_fort.jpg/1024px-Lalbagh_fort.jpg\"\n  ],\n  \"placeType\": \"POI\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/review-share",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "review-share"]
+            }
+          }
+        },
+        {
+          "name": "✅ Share review — minimal (no title/images)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeName\": \"Sundarbans National Park\",\n  \"rating\": 5,\n  \"comment\": \"Saw a Royal Bengal Tiger from the boat. Absolutely surreal.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/review-share",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "review-share"]
+            }
+          }
+        },
+        {
+          "name": "✅ Share review — rating 1 (negative review)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeName\": \"Some Overrated Tourist Trap\",\n  \"rating\": 1,\n  \"title\": \"Disappointing\",\n  \"comment\": \"Way too crowded, overpriced, and not worth the trip.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/review-share",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "review-share"]
+            }
+          }
+        },
+        {
+          "name": "❌ Validation — missing placeName and reviewId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "const res = pm.response.json();",
+                  "pm.test('error message present', () => pm.expect(res.error).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/review-share",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "review-share"]
+            }
+          }
+        },
+        {
+          "name": "❌ Validation — rating out of range (7)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "const res = pm.response.json();",
+                  "pm.test('error about rating', () => pm.expect(res.error).to.include('rating'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeName\": \"Some Place\",\n  \"rating\": 7\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/review-share",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "review-share"]
+            }
+          }
+        },
+        {
+          "name": "❌ No auth token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 or 403', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeName\": \"Test Place\",\n  \"rating\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/review-share",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "review-share"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. POST /api/posts/review-share (by Supabase reviewId)",
+      "item": [
+        {
+          "name": "ℹ️ First: get my reviews to find a reviewId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.length > 0) {",
+                  "    const firstId = res.data[0].id;",
+                  "    pm.collectionVariables.set('supabase_review_id', firstId);",
+                  "    console.log('✅ supabase_review_id saved:', firstId);",
+                  "} else {",
+                  "    console.log('⚠️ No reviews found — create one first via POST /api/reviews');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews"]
+            }
+          }
+        },
+        {
+          "name": "✅ Share by reviewId (uses saved supabase_review_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('type is review', () => pm.expect(res.data.type).to.eql('review'));",
+                  "pm.test('reviewData.reviewId is set', () => pm.expect(res.data.reviewData.reviewId).to.be.a('string'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewId\": \"{{supabase_review_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/review-share",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "review-share"]
+            }
+          }
+        },
+        {
+          "name": "❌ Share by reviewId — ID not found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "const res = pm.response.json();",
+                  "pm.test('error is Review not found', () => pm.expect(res.error).to.include('not found'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reviewId\": \"00000000-0000-0000-0000-000000000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/posts/review-share",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "review-share"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. POST /api/reviews (with shareToFeed)",
+      "item": [
+        {
+          "name": "✅ Create review + shareToFeed: true",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('data (supabase review) exists', () => pm.expect(res.data).to.be.an('object'));",
+                  "pm.test('feedPost exists', () => pm.expect(res.feedPost).to.be.an('object'));",
+                  "pm.test('feedPost.type is review', () => pm.expect(res.feedPost.type).to.eql('review'));",
+                  "if (res.feedPost && res.feedPost._id) {",
+                  "    pm.collectionVariables.set('review_post_id', res.feedPost._id);",
+                  "    console.log('✅ review_post_id updated:', res.feedPost._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeName\": \"Cox's Bazar\",\n  \"rating\": 5,\n  \"title\": \"World's longest sea beach!\",\n  \"comment\": \"The waves, the sunset, the seafood — everything was perfect. Will definitely come back.\",\n  \"images\": [],\n  \"shareToFeed\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews"]
+            }
+          }
+        },
+        {
+          "name": "✅ Create review + shareToFeed: false (no feed post)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('feedPost absent', () => pm.expect(res.feedPost).to.be.undefined);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeName\": \"Sylhet Tea Garden\",\n  \"rating\": 4,\n  \"comment\": \"Peaceful and green. Great for a morning walk.\",\n  \"shareToFeed\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews"]
+            }
+          }
+        },
+        {
+          "name": "✅ Create review (no shareToFeed field at all)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('feedPost absent', () => pm.expect(res.feedPost).to.be.undefined);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placeName\": \"Rangamati Lake\",\n  \"rating\": 5,\n  \"comment\": \"Blue water, boat rides, tribal culture — unforgettable.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reviews"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. GET /api/posts (verify review posts in feed)",
+      "item": [
+        {
+          "name": "✅ Get feed — type=review only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('success true', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('all posts are type review', () => {",
+                  "    res.data.forEach(p => pm.expect(p.type).to.eql('review'));",
+                  "});",
+                  "console.log('Total review posts:', res.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts?type=review&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"],
+              "query": [
+                { "key": "type", "value": "review" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "✅ Get global feed — all types mixed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "const types = [...new Set(res.data.map(p => p.type))];",
+                  "console.log('Post types in feed:', types);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts"],
+              "query": [
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "✅ Get single review post by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('type is review', () => pm.expect(res.data.type).to.eql('review'));",
+                  "pm.test('reviewData exists', () => pm.expect(res.data.reviewData).to.be.an('object'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{review_post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "{{review_post_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Likes & Comments on review posts",
+      "item": [
+        {
+          "name": "✅ Like review post (toggle)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('liked field present', () => pm.expect(res).to.have.property('liked'));",
+                  "console.log('Liked:', res.liked);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/likes/{{review_post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "likes", "{{review_post_id}}"]
+            }
+          }
+        },
+        {
+          "name": "✅ Unlike review post (toggle again)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/likes/{{review_post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "likes", "{{review_post_id}}"]
+            }
+          }
+        },
+        {
+          "name": "✅ Add comment to review post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const res = pm.response.json();",
+                  "pm.test('comment created', () => pm.expect(res.data.text).to.be.a('string'));",
+                  "if (res.data && res.data._id) {",
+                  "    pm.collectionVariables.set('comment_id', res.data._id);",
+                  "    console.log('✅ comment_id saved:', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"{{review_post_id}}\",\n  \"text\": \"I've been here too! Totally agree with your rating 🙌\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "comments"]
+            }
+          }
+        },
+        {
+          "name": "✅ Get comments for review post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "console.log('Comment count:', res.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/comments/{{review_post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "comments", "{{review_post_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Delete review post",
+      "item": [
+        {
+          "name": "✅ Delete review post (own post)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const res = pm.response.json();",
+                  "pm.test('success true', () => pm.expect(res.success).to.be.true);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{review_post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "posts", "{{review_post_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000"
+    },
+    {
+      "key": "jwt_token",
+      "value": ""
+    },
+    {
+      "key": "review_post_id",
+      "value": ""
+    },
+    {
+      "key": "supabase_review_id",
+      "value": ""
+    },
+    {
+      "key": "comment_id",
+      "value": ""
+    }
+  ]
+}

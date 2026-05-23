@@ -1,0 +1,195 @@
+# Project Odyssey — Planner + Trip Mode Feature Set
+
+Implement a series of interconnected features across the Planner page and Trip Mode page. The planner gets plan activation, configurable day start time, auto commute cards, nearby meal search, expandable trip days, and print support. Trip mode gets a complete overhaul: load the activated plan, geolocation toggle, collapsible map, navigation routing, and removal of mock/broken data.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Scope**: Features 1 (Planner) and 3 (Destinations tab) are explicitly out of scope per the user's note that a teammate is handling #2 (destinations). However, the user's detailed list covers planner enhancements and trip mode fixes. This plan addresses all items in the user's numbered list.
+
+> [!WARNING]
+> **Google Maps API costs**: Commute cards and navigation routing will call the Directions API. The existing `generate-route` endpoint and client-side [Directions](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/components/MapComponent.tsx#59-130) component already use this API, so no new API keys are needed, but usage will increase.
+
+> [!IMPORTANT]
+> **Active trip persistence**: Currently there is no `status = "active"` distinction in the backend. We will add an `"active"` status value alongside existing `"draft" | "confirmed" | "completed"` to mark which trip is the live one. This means a small backend schema consideration — the `status` column already accepts string values, so no migration is needed.
+
+---
+
+## Proposed Changes
+
+### Phase 1: Planner Enhancements
+
+---
+
+#### 1.1 — "Activate Plan" Button
+
+##### [MODIFY] [ItinerarySidebar.tsx](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/ItinerarySidebar.tsx)
+- Add a new `onActivateTrip?: (id: string) => void` prop
+- For each trip card, add an "Activate" button (rocket/play icon) that calls `onActivateTrip`
+- Show a green "ACTIVE" badge on the trip with `status === "active"`
+- The currently `"active"` badge already shows for the sidebar-selected trip — this is different: "active" means "this is the trip I'll follow in Trip Mode"
+
+##### [MODIFY] [page.tsx (planner2)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx)
+- Add `handleActivateTrip(tripId)` — sets trip status to `"active"` via `PUT /api/trips/:id` with `status: "active"`, and sets all other trips back to `"draft"`
+- Pass `onActivateTrip={handleActivateTrip}` to [ItinerarySidebar](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/ItinerarySidebar.tsx#21-151)
+- Add `"active"` to the `Trip.status` union type
+
+---
+
+#### 1.2 — Configurable Day Start Time
+
+##### [MODIFY] [page.tsx (planner2)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx)
+- Add state: `const [dayStartTime, setDayStartTime] = useState("04:00")`
+- Update [recalculateDayTimes](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx#369-383) to use `dayStartTime` instead of the hardcoded `"09:00"` default
+- Pass `dayStartTime` down to [TimelineView](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/TimelineView.tsx#88-187)
+
+##### [MODIFY] [TimelineView.tsx](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/TimelineView.tsx)
+- Accept `startTime?: string` prop (default `"04:00"`)
+- Derive `START_HOUR` from the prop instead of hardcoded `4`
+- Add a small time-picker in the header bar to allow users to set the day start time
+
+---
+
+#### 1.3 — Auto Commute Cards Between Locations
+
+##### [MODIFY] [page.tsx (planner2)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx)
+- Extend [ItineraryItem](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx#37-52) type with: `isCommute?: boolean`, `commuteMode?: "transit" | "driving"`, `commuteDurationMin?: number`
+- Create `insertCommutes(items: ItineraryItem[]): ItineraryItem[]` — loops through items, inserts a commute card between each pair of non-break items that have lat/lng
+- Modify [recalculateDayTimes](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx#369-383) to treat commute items specially (their duration is the travel time)
+- On schedule change, auto-call `insertCommutes` then [recalculateDayTimes](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx#369-383)
+
+##### [MODIFY] [TimelineView.tsx](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/TimelineView.tsx)
+- Render commute cards with a distinct dashed-border + car/bus icon style
+- Commute cards get a transport mode selector (toggle between 🚗 Car and 🚌 Transit)
+- Commute cards are not draggable/sortable — they auto-position between activities
+
+---
+
+#### 1.4 — Meal Break with Nearby Restaurant Search
+
+##### [MODIFY] [page.tsx (planner2)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx)
+- Update [handleAddMealBreak(day, afterIndex?)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx#849-866) to accept an optional parameter for *which* item the break goes after
+- When the user clicks "Add Meal Break" on a timeline item, use the preceding item's lat/lng to call `POST /api/map/search-places` with query `"restaurants near {lat},{lng}"`
+- Show a small dropdown/modal of nearby results, let the user pick one, and insert it as the meal break location with real placeId + coordinates
+
+##### [MODIFY] [TimelineView.tsx](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/TimelineView.tsx)
+- Add a "🍽️+" button on each activity card that triggers meal break insertion *after* that item
+- When clicked, show a loading state then a mini search results panel inline
+
+---
+
+#### 1.5 — Expand / Reduce Trip Days
+
+##### [MODIFY] [DayTabs.tsx](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/DayTabs.tsx)
+- Add `onAddDay?: () => void` and `onRemoveDay?: () => void` props
+- Render a "+" button after the last day tab and a "−" button (only if days > 1)
+
+##### [MODIFY] [page.tsx (planner2)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx)
+- Add `handleAddDay()` — increments `activeTrip.days`, adds empty schedule entry, persists to backend
+- Add `handleRemoveDay()` — decrements `activeTrip.days`, removes last day's schedule, persists to backend
+- Pass these as callbacks to [DayTabs](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/DayTabs.tsx#11-31)
+
+---
+
+#### 1.6 — Print Plan
+
+##### [NEW] [PrintView.tsx](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/components/PrintView.tsx)
+- A print-optimized component that renders the full trip schedule in a clean, paginated layout
+- Each day gets its own section with items listed as a table: Time | Place | Duration | Category
+- Uses `@media print` CSS for clean output
+- Triggered via a "Print" button in the planner top bar
+
+##### [MODIFY] [page.tsx (planner2)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx)
+- Add `showPrintView` state and a "🖨 Print" button in the top bar
+- When toggled, render `PrintView` in a full-screen overlay, and call `window.print()`
+
+---
+
+### Phase 2: Trip Mode Fixes
+
+---
+
+#### 2.1 — Load Active Plan (Not Mock / Latest)
+
+##### [MODIFY] [page.tsx (trip)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/trip/page.tsx)
+- Change [loadSavedItinerary](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/trip/page.tsx#64-130): Instead of grabbing `data.data[0]` (latest trip), find the trip with `status === "active"`
+- Fallback: if no active trip, show a message "No active trip. Go to Planner and activate a trip."
+- Normalize schedule: Handle both `Record<number, Item[]>` and `Array<{day, items}>` formats (matching planner's [normalizeSchedule](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/planner2/page.tsx#197-246))
+
+---
+
+#### 2.2 — Geolocation Toggle
+
+##### [MODIFY] [page.tsx (trip)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/trip/page.tsx)
+- Add state: `const [geoEnabled, setGeoEnabled] = useState(true)`
+- Pass `enabled: geoEnabled && !!savedItineraryId` to the `useGeofencing` hook
+- Add a toggle switch in the header: "📍 Auto-detect location" with on/off
+
+---
+
+#### 2.3 — Map Open/Close Toggle (Improved)
+
+##### [MODIFY] [page.tsx (trip)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/trip/page.tsx)
+- The map collapse already works on desktop. Fix mobile: add a floating "Map" button visible on mobile that toggles a full-screen map overlay
+- Make the collapse button more visible and always accessible (not just on desktop via `hidden md:block`)
+
+---
+
+#### 2.4 — Map Shows Navigation Route to Next Location
+
+##### [MODIFY] [page.tsx (trip)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/trip/page.tsx)
+- Determine the "next" location: the first un-checked-out item that has coordinates
+- Pass a `routeItems` prop to [MapComponent](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/components/MapComponent.tsx#181-266) containing just [current/user location, next location] for focused navigation
+- The existing [Directions](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/components/MapComponent.tsx#59-130) component in [MapComponent](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/components/MapComponent.tsx#181-266) already renders routes via Google Directions API — we just need to feed it the right 2-point items
+
+##### [MODIFY] [MapComponent.tsx](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/components/MapComponent.tsx)
+- Add optional `routeToNext?: { origin: { lat: number; lng: number }; destination: { lat: number; lng: number; name: string } }` prop
+- When provided, the [Directions](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/components/MapComponent.tsx#59-130) component uses this 2-point route instead of the full day's items
+- Add a "Full Route / Next Only" toggle on the map
+
+---
+
+#### 2.5 — Fix Checkout & Generic Location Handling
+
+##### [MODIFY] [page.tsx (trip)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/trip/page.tsx)
+- In the Navigate link: if `item.placeId` is missing, fall back to `lat,lng` coordinates in the Google Maps URL
+- In Check In: use `lat/lng` from schedule data (not hardcoded `lat: 0, lng: 0`)
+- Filter out items with no coordinates and no placeId from the map's [Directions](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/components/MapComponent.tsx#59-130) items to prevent route generation errors
+
+---
+
+#### 2.6 — Remove Mock Data
+
+##### [MODIFY] [page.tsx (trip)](file:///Users/sadmanshaharier/Documents/ProjectOdyssey/client/odyssey/app/trip/page.tsx)
+- Remove any hardcoded/mock itinerary data
+- The page currently doesn't have inline mock data but it falls through to `data.data[0]` which might be a stale trip — the "load active plan" change (2.1) fixes this
+- Ensure `currentDayItems` gracefully handles the case where `schedule` is a Record instead of an array
+
+---
+
+## Verification Plan
+
+### Browser Testing
+Since this is a frontend-heavy change set, the primary verification will be done through browser-based testing:
+
+1. **Planner Page (`/planner2`)**:
+   - Verify "Activate" button appears on sidebar trip cards
+   - Activate a trip, check the badge changes
+   - Navigate to Trip Mode, verify the activated trip loads
+   - Add/remove days using +/- buttons, verify schedule persistence
+   - Drag items and verify commute cards appear between activities
+   - Add a meal break after an item, verify restaurant search appears
+   - Click Print, verify clean layout opens
+
+2. **Trip Mode Page (`/trip`)**:
+   - Verify the active trip loads (not just the latest)
+   - Toggle geolocation on/off, check that auto-detection responds
+   - Toggle map open/close on both mobile and desktop viewports
+   - Verify the map shows route to the next unvisited location
+   - Check In / Check Out items without placeId — verify no errors
+   - Navigate to items with coordinates but no placeId — verify Google Maps opens correctly
+
+### Manual Verification
+- The user should verify on their running dev servers (already running on ports 3000/4000)
+- Walk through each feature in sequence on `/planner2` then `/trip`
+- Test with real trip data and verify backend persistence via the Network tab

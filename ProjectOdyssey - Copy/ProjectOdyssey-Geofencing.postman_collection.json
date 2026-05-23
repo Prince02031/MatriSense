@@ -1,0 +1,547 @@
+{
+  "info": {
+    "name": "ProjectOdyssey - Geofencing & Visit Tracking",
+    "description": "Complete test collection for geofencing and visit tracking endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo_user\",\n  \"password\": \"DemoPass123!\",\n  \"email\": \"demo@example.com\",\n  \"dob\": \"1990-01-15\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/auth/signup",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "auth", "signup"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.environment.set(\"authToken\", jsonData.token);",
+                  "  console.log('Token saved:', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo_user\",\n  \"password\": \"DemoPass123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Geofence Settings",
+      "item": [
+        {
+          "name": "Get Current Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4000/api/visits/settings",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "settings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Configure Geofence (100m)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"radius\": 100,\n  \"autoCheckin\": true,\n  \"autoCheckout\": true\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/configure-geofence",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "configure-geofence"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Configure Geofence (150m)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"radius\": 150,\n  \"autoCheckin\": true,\n  \"autoCheckout\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/configure-geofence",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "configure-geofence"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Configure Geofence (Invalid - Too Small)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"radius\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/configure-geofence",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "configure-geofence"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Geofence Detection",
+      "item": [
+        {
+          "name": "Check Geofence (Outside - San Francisco)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 37.7749,\n  \"longitude\": -122.4194,\n  \"itineraryId\": \"{{itineraryId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/geofence-check",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "geofence-check"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Geofence (Inside - Mountain View)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 37.4219,\n  \"longitude\": -122.0840,\n  \"itineraryId\": \"{{itineraryId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/geofence-check",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "geofence-check"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Geofence (Invalid Coords)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 200,\n  \"longitude\": -122.0840,\n  \"itineraryId\": \"{{itineraryId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/geofence-check",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "geofence-check"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Manual Check-In / Check-Out",
+      "item": [
+        {
+          "name": "Manual Check-In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const jsonData = pm.response.json();",
+                  "  if (jsonData.visitLog) {",
+                  "    pm.environment.set(\"visitLogId\", jsonData.visitLog.id);",
+                  "    console.log('Visit Log ID saved:', jsonData.visitLog.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itineraryId\": \"{{itineraryId}}\",\n  \"placeId\": \"place-001\",\n  \"placeName\": \"Golden Gate Bridge\",\n  \"expectedDuration\": 120\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/check-in",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "check-in"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Double Check-In (Same Place)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itineraryId\": \"{{itineraryId}}\",\n  \"placeId\": \"place-001\",\n  \"placeName\": \"Golden Gate Bridge\",\n  \"expectedDuration\": 120\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/check-in",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "check-in"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Manual Check-Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visitLogId\": \"{{visitLogId}}\",\n  \"userRating\": 5,\n  \"notes\": \"Amazing views and great photos!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/check-out",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "check-out"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check-Out Without Check-In",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visitLogId\": \"invalid-visit-id\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/check-out",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "check-out"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Skip Place",
+      "item": [
+        {
+          "name": "Skip a Place",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itineraryId\": \"{{itineraryId}}\",\n  \"placeId\": \"place-002\",\n  \"placeName\": \"Alcatraz Island\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/visits/skip",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "skip"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. View Visit Logs & Stats",
+      "item": [
+        {
+          "name": "Get All Visit Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4000/api/visits/logs/{{itineraryId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "logs", "{{itineraryId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Visit",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4000/api/visits/current/{{itineraryId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "current", "{{itineraryId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Visit Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4000/api/visits/stats/{{itineraryId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "stats", "{{itineraryId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Delete Visit Log",
+      "item": [
+        {
+          "name": "Delete Visit",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:4000/api/visits/{{visitLogId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["api", "visits", "{{visitLogId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "itineraryId",
+      "value": "your-itinerary-uuid-here",
+      "type": "string"
+    },
+    {
+      "key": "visitLogId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

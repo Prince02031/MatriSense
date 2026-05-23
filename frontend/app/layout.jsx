@@ -1,7 +1,6 @@
 import './globals.css';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
-import Script from 'next/script';
 
 export const metadata = {
   title: 'MatriSense — Maternal Health Assistant',
@@ -16,11 +15,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        <Script 
-          src="https://js.puter.com/v2/"
-          strategy="afterInteractive"
-        />
+      <body>
         <LanguageProvider>
           <AuthProvider>{children}</AuthProvider>
         </LanguageProvider>
