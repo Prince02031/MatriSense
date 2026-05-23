@@ -34,3 +34,10 @@ Runs on http://localhost:3000 by default.
 
 - `GET /health`
 - `GET /api/message`
+
+## Demo Credentials
+
+You can log into the respective interfaces using the mock credentials baked into the Database Seed. 
+
+- **Mother App:** `mother@demo.com` / `password`
+- **Dashboard:** `worker@demo.com` / `password`

@@ -1,0 +1,50 @@
+# ============================================
+# MatriSense — Root .gitignore
+# ============================================
+
+# SECURITY: Never commit secrets
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+.next/
+out/
+build/
+dist/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads / media (user-uploaded files)
+uploads/
+*.mp3
+*.wav
+*.webm
+*.mp4
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.DS_Store
+.vscode/settings.json
+.idea/
+
+# Seed / debug artifacts
+seed.log
+seed_error.log
+scratch/
+
+# Old copies / extra folders
+ProjectOdyssey - Copy/
+node.zip

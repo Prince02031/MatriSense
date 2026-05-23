@@ -12,7 +12,9 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
+
+    // getDashboardPath is a helper we added to AuthContext to handle redirects
+    const { login, getDashboardPath } = useAuth();
     const router = useRouter();
 
     const handleSubmit = async (e) => {
@@ -24,8 +26,23 @@ export default function LoginPage() {
         try {
             const user = await login(email, password);
             setSuccess('Login successful! Redirecting to dashboard...');
+
+            // Mapping logic to convert Database Role (Uppercase) to Folder Path (Lowercase)
+            const roleToPathMap = {
+                'MOTHER': 'patient',
+                'HEALTH_WORKER': 'worker',
+                'ADMIN': 'admin'
+            };
+
+            // If you added getDashboardPath to your AuthContext, use this:
+            // const targetPath = getDashboardPath(user);
+
+            // Otherwise, use this local mapping logic:
+            const roleSlug = roleToPathMap[user.role] || 'patient';
+            const targetPath = `/dashboard/${roleSlug}`;
+
             setTimeout(() => {
-                router.push(`/dashboard/${user.role}`);
+                router.push(targetPath);
             }, 1200);
         } catch (err) {
             setError(err.message);
@@ -97,8 +114,17 @@ export default function LoginPage() {
                             </div>
                         </div>
 
-                        <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={isLoading}>
-                            {isLoading ? <><span className="spinner"></span> Signing in...</> : 'Sign In'}
+                        <button
+                            type="submit"
+                            className="btn btn-primary btn-lg"
+                            style={{ width: '100%' }}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <><span className="spinner"></span> Signing in...</>
+                            ) : (
+                                'Sign In'
+                            )}
                         </button>
                     </form>
                 </div>
