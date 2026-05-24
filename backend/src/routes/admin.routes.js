@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+const { retrieveEvidenceWithMode } = require('../vectorRag/retrieval/hybridRagService');
 
 const testCasesPath = path.join(__dirname, '../triage/tests/testCases.json');
 const knowledgeCardsPath = path.join(__dirname, '../rag/knowledgeCards.json');
@@ -18,7 +19,7 @@ const getTriageModules = () => {
 const getRagModules = () => {
   const { assembleCareGuidanceContext } = require('../rag/careGuidanceAssembler');
   const knowledgeCards = JSON.parse(fs.readFileSync(knowledgeCardsPath, 'utf-8'));
-  return { assembleCareGuidanceContext, knowledgeCards };
+  return { assembleCareGuidanceContext, knowledgeCards, hybridRetriever: retrieveEvidenceWithMode };
 };
 
 // ─────────────────────────────────────────────
@@ -194,8 +195,8 @@ router.post('/case-state/validate', (req, res) => {
 router.post('/rag-preview/assemble', (req, res) => {
   try {
     const { decision, caseState } = req.body;
-    const { assembleCareGuidanceContext, knowledgeCards } = getRagModules();
-    const result = assembleCareGuidanceContext({ decision, caseState, knowledgeCards });
+    const { assembleCareGuidanceContext, knowledgeCards, hybridRetriever } = getRagModules();
+    const result = assembleCareGuidanceContext({ decision, caseState, knowledgeCards, hybridRetriever });
     res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -323,7 +324,8 @@ router.post('/ai-explanation/test', async (req, res) => {
     const runResult = await runRules(caseState);
     const events = Array.isArray(runResult) ? runResult : (runResult?.events || []);
     const decision = buildDecision(events, caseState);
-    const careGuidanceContext = assembleCareGuidanceContext({ decision, caseState, knowledgeCards });
+    const { hybridRetriever } = getRagModules();
+    const careGuidanceContext = assembleCareGuidanceContext({ decision, caseState, knowledgeCards, hybridRetriever });
 
     // 3. Generate Explanation
     const aiResult = await generateTriageExplanation({ decision, careGuidanceContext, caseState });
@@ -332,8 +334,103 @@ router.post('/ai-explanation/test', async (req, res) => {
       caseState,
       decision,
       careGuidanceContext,
-      aiResult
+      aiResult,
+      // Add vector RAG debug info to response
+      vectorRagDebug: {
+        ragMode: careGuidanceContext.ragMode,
+        vectorChunksCount: careGuidanceContext.vectorChunks?.length || 0,
+        vectorFallbackUsed: careGuidanceContext.vectorFallbackUsed,
+        vectorChunks: careGuidanceContext.vectorChunks,
+        retrievalWarnings: careGuidanceContext.retrievalWarnings
+      }
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─────────────────────────────────────────────
+// VECTOR RAG PREVIEW
+// ─────────────────────────────────────────────
+
+// POST /api/admin/vector-rag/preview - Debug Vector RAG retrieval
+router.post('/vector-rag/preview', async (req, res) => {
+  try {
+    const { riskLevel, symptoms, evidenceTags, allowedGuidanceType, topK = 5 } = req.body;
+    
+    // Import vector retriever
+    const { retrieveRuleAware } = require('../vectorRag/retrieval/ruleAwareVectorRetriever');
+    const EmbeddingClient = require('../vectorRag/providers/embeddingClient');
+    const VectorKnowledgeChunk = require('../models/VectorKnowledgeChunk');
+    
+    // Build mock decision
+    const decision = {
+      riskLevel: riskLevel || 'MEDIUM',
+      allowedGuidanceType: allowedGuidanceType || 'SELF_CARE_AND_MONITOR',
+      evidenceTags: evidenceTags || []
+    };
+    
+    // Build mock case state
+    const caseState = {
+      symptoms: symptoms || [],
+      meta: {}
+    };
+    
+    try {
+      // Try to retrieve with vector RAG
+      const embeddingClient = new EmbeddingClient();
+      const result = await retrieveRuleAware({
+        decision,
+        caseState,
+        embeddingClient,
+        VectorKnowledgeChunk,
+        topK
+      });
+      
+      res.json({
+        ok: true,
+        mode: result.mode,
+        queryText: result.queryText,
+        filtersApplied: result.filtersApplied,
+        retrievedChunks: result.retrievedChunks?.map(chunk => ({
+          sourceId: chunk.sourceId,
+          sourceTitle: chunk.sourceTitle,
+          sourceKind: chunk.sourceKind,
+          content: chunk.content?.substring(0, 200) + '...',
+          fullContent: chunk.content,
+          evidenceTags: chunk.evidenceTags,
+          guidanceTypes: chunk.guidanceTypes,
+          audience: chunk.audience,
+          priority: chunk.priority,
+          relevanceScore: chunk.relevanceScore,
+          similarityScore: chunk.similarityScore
+        })) || [],
+        rejectedChunks: result.rejectedChunks?.map(c => ({
+          sourceId: c.sourceId,
+          sourceTitle: c.sourceTitle,
+          reason: c.rejectionReason,
+          content: c.content?.substring(0, 100) + '...'
+        })) || [],
+        fallbackRecommended: result.fallbackRecommended,
+        warnings: result.warnings || []
+      });
+    } catch (vectorError) {
+      // Vector retrieval failed, but return graceful response
+      res.json({
+        ok: false,
+        mode: 'error',
+        queryText: null,
+        filtersApplied: null,
+        retrievedChunks: [],
+        rejectedChunks: [],
+        fallbackRecommended: true,
+        warnings: [
+          `Vector retrieval failed: ${vectorError.message}`,
+          'Recommend using JSON RAG for this query'
+        ],
+        error: vectorError.message
+      });
+    }
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -21,7 +21,14 @@
     "test:e2e:triage": "node src/tests/runEndToEndTriageMock.js",
     "test:e2e:triage:live": "node src/tests/runEndToEndTriagePipeline.js",
     "test:stt:groq": "node src/speech/tests/runGroqSttSmokeTest.js",
-    "test:demo": "node src/tests/runDemoCases.js"
+    "test:demo": "node src/tests/runDemoCases.js",
+    "rag:ingest": "node src/vectorRag/ingestion/scripts/runIngestion.js",
+    "rag:ingest:dry": "node src/vectorRag/ingestion/scripts/runIngestion.js --dry-run",
+    "rag:smoke": "node src/vectorRag/tests/runIngestionSmokeTest.js",
+    "rag:pdf-smoke": "node src/vectorRag/tests/runPdfHtmlSmokeTest.js",
+    "rag:retrieval-test": "node src/vectorRag/tests/runRuleAwareVectorRagTest.js",
+    "rag:fallback-test": "node src/vectorRag/tests/runHybridFallbackTest.js",
+    "rag:hybrid-integration": "node src/vectorRag/tests/runHybridRagIntegrationTest.js"
   },
   "dependencies": {
     "@google/genai": "^2.0.1",
