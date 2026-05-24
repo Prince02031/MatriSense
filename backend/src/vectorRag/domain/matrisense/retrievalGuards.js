@@ -1,16 +1,36 @@
 /**
  * Retrieval Guards
- * Filters and safety checks for vector retrieval results
- * Ensures chunks are appropriate for the audience and decision context
+ * Safety-first filtering for vector retrieval results.
  */
 
-const { isMetadataAllowedForAudience } = require('./matrisenseMetadataPolicy');
 const {
-  isGuidanceTypeAllowedForAudience,
-  isPatientSafeGuidanceType,
-} = require('./guidanceTypePolicy');
+  normalizeChunkMetadata,
+  normalizeQueryContext,
+} = require('../../retrieval/normalizeRetrievalMetadata');
 
-// Patterns indicating clinical/treatment content unsafe for patient guidance
+const DANGER_SIGN_TAGS = new Set([
+  'danger_sign',
+  'danger_signs',
+  'maternal_warning_signs',
+  'urgent_warning_signs',
+  'warning_signs',
+  'high_risk',
+]);
+
+const HIGH_RISK_ALLOWED_GUIDANCE = new Set([
+  'URGENT_ESCALATION',
+  'WARNING_SIGNS',
+  'CONTACT_HEALTH_WORKER',
+  'SAFETY_DISCLAIMER',
+  'HEALTH_WORKER_REVIEW',
+]);
+
+const HIGH_RISK_PATIENT_BLOCKED_GUIDANCE = new Set([
+  'SYSTEM_CONTEXT',
+  'DIGITAL_HEALTH_ARCHITECTURE',
+  'FACILITY_READINESS',
+]);
+
 const UNSAFE_FOR_PATIENT_PATTERNS = [
   /\bdosage\b/i,
   /\bdose\b/i,
@@ -20,335 +40,174 @@ const UNSAFE_FOR_PATIENT_PATTERNS = [
   /\bprocedure\b/i,
   /\bsurgical\b/i,
   /\bintravenous\b/i,
-  /\biv\b/i,
   /\binjection\b/i,
-  /\btherapy\b/i,
-  /\bcatheter\b/i,
-  /\bintubat/i,
 ];
 
-/**
- * Check if chunk contains unsafe clinical content for patient guidance
- * @param {string} chunkText - Chunk text to analyze
- * @returns {boolean} true if chunk contains unsafe content
- */
 function hasUnsafePatientContent(chunkText) {
   if (!chunkText) return false;
   return UNSAFE_FOR_PATIENT_PATTERNS.some((pattern) => pattern.test(chunkText));
 }
 
-/**
- * Guard: Check risk level compatibility
- * HIGH risk must not return LOW-only SELF_CARE_AND_MONITOR chunks
- * @param {string} queryRiskLevel - Risk level from query
- * @param {string} chunkRiskLevel - Risk level allowed by chunk metadata
- * @param {array} chunkGuidanceTypes - Guidance types in chunk
- * @returns {boolean} true if acceptable
- */
-function guardRiskLevelCompatibility(
-  queryRiskLevel,
-  chunkRiskLevel,
-  chunkGuidanceTypes
-) {
-  // HIGH risk queries should not get only SELF_CARE_AND_MONITOR chunks
-  if (queryRiskLevel === 'HIGH') {
-    if (
-      chunkGuidanceTypes &&
-      chunkGuidanceTypes.length === 1 &&
-      chunkGuidanceTypes[0] === 'SELF_CARE_AND_MONITOR'
-    ) {
-      // If chunk riskLevel says LOW/MEDIUM, reject for HIGH query
-      if (chunkRiskLevel === 'LOW' || chunkRiskLevel === 'MEDIUM') {
-        return false;
+function audienceAllowed(meta, audience) {
+  const aud = meta.audience || [];
+  if (audience === 'PATIENT') {
+    if (meta.patientRestricted || meta.restrictedPatientContext) {
+      return { ok: false, reason: 'patient_restricted_metadata' };
+    }
+    if (aud.includes('PATIENT')) return { ok: true };
+    return { ok: false, reason: 'audience_not_patient' };
+  }
+  if (audience === 'HEALTH_WORKER') {
+    if (aud.includes('HEALTH_WORKER') || aud.includes('PATIENT')) return { ok: true };
+    return { ok: false, reason: 'audience_not_health_worker' };
+  }
+  if (audience === 'ADMIN') {
+    if (aud.includes('ADMIN') || aud.includes('HEALTH_WORKER')) return { ok: true };
+    return { ok: false, reason: 'audience_not_admin' };
+  }
+  if (audience === 'DOCS') {
+    if (aud.includes('DOCS')) return { ok: true };
+    return { ok: false, reason: 'audience_not_docs' };
+  }
+  return { ok: false, reason: 'unknown_audience' };
+}
+
+function riskAllowed(meta, query) {
+  const risks = meta.riskLevelAllowed || [];
+  const guidance = meta.guidanceTypes || [];
+  const isKnowledgeCard = meta.sourceKind === 'KNOWLEDGE_CARD';
+  const selfCareOnly =
+    guidance.length === 1 && guidance[0] === 'SELF_CARE_AND_MONITOR';
+
+  if (query.riskLevel === 'HIGH') {
+    const hasHighRisk = risks.includes('HIGH') || risks.includes('ALL') || risks.length === 0;
+    if (!hasHighRisk && !(isKnowledgeCard && guidance.length > 0)) {
+      return { ok: false, reason: 'risk_not_high_compatible' };
+    }
+    if (selfCareOnly) {
+      return { ok: false, reason: 'high_risk_self_care_only' };
+    }
+  }
+
+  return { ok: true };
+}
+
+function guidanceAllowed(meta, query) {
+  const guidance = meta.guidanceTypes || [];
+  if (guidance.length === 0) return { ok: true };
+
+  if (query.targetAudience === 'PATIENT') {
+    if (guidance.some((g) => HIGH_RISK_PATIENT_BLOCKED_GUIDANCE.has(g))) {
+      return { ok: false, reason: 'patient_non_patient_guidance' };
+    }
+    if (guidance.includes('REFERRAL_WORKFLOW')) {
+      return { ok: false, reason: 'patient_referral_workflow' };
+    }
+  }
+
+  if (query.riskLevel === 'HIGH') {
+    if (query.targetAudience === 'PATIENT') {
+      if (guidance.length === 1 && guidance[0] === 'SELF_CARE_AND_MONITOR') {
+        return { ok: false, reason: 'patient_high_risk_self_care_only' };
       }
     }
-  }
 
-  return true;
-}
-
-/**
- * Guard: Check audience compatibility
- * Patient guidance must reject worker/docs-only chunks
- * @param {object} chunkMetadata - Chunk metadata
- * @param {string} audience - Target audience
- * @returns {object} { allowed: boolean, reason: string }
- */
-function guardAudienceCompatibility(chunkMetadata, audience) {
-  if (!chunkMetadata) {
-    return { allowed: false, reason: 'No metadata' };
-  }
-
-  // Check if metadata allows this audience
-  if (!isMetadataAllowedForAudience(chunkMetadata, audience)) {
-    return {
-      allowed: false,
-      reason: `Chunk restricted from audience ${audience}`,
-    };
-  }
-
-  // Patient audience
-  if (audience === 'PATIENT') {
-    if (chunkMetadata.patientRestricted) {
-      return { allowed: false, reason: 'Chunk marked patientRestricted' };
-    }
-    if (chunkMetadata.restrictedPatientContext) {
-      return { allowed: false, reason: 'Chunk marked restrictedPatientContext' };
+    const hasAllowed = guidance.some((g) => HIGH_RISK_ALLOWED_GUIDANCE.has(g));
+    if (!hasAllowed && meta.sourceKind !== 'KNOWLEDGE_CARD') {
+      return { ok: false, reason: 'high_risk_guidance_mismatch' };
     }
   }
 
-  return { allowed: true, reason: 'Audience compatible' };
+  return { ok: true };
 }
 
-/**
- * Guard: Check guidance type compatibility
- * Chunk's guidance types must have at least one allowed for audience
- * @param {array} chunkGuidanceTypes - Guidance types from chunk metadata
- * @param {string} audience - Target audience
- * @returns {object} { allowed: boolean, reason: string }
- */
-function guardGuidanceTypeCompatibility(chunkGuidanceTypes, audience) {
-  if (!Array.isArray(chunkGuidanceTypes) || chunkGuidanceTypes.length === 0) {
-    return { allowed: true, reason: 'No guidance type restriction' };
+function relevanceAllowed(meta, query) {
+  const evidenceOverlap = meta.evidenceTags.some((tag) => query.evidenceTags.includes(tag));
+  const symptomOverlap = meta.symptoms.some((sym) => query.confirmedSymptoms.includes(sym));
+  const highRiskDangerTag =
+    query.riskLevel === 'HIGH' &&
+    meta.evidenceTags.some((tag) => DANGER_SIGN_TAGS.has(tag));
+  const knowledgeCardCompatible =
+    meta.sourceKind === 'KNOWLEDGE_CARD' &&
+    meta.guidanceTypes.length > 0 &&
+    (query.riskLevel !== 'HIGH' ||
+      meta.guidanceTypes.some((g) => HIGH_RISK_ALLOWED_GUIDANCE.has(g)));
+
+  if (evidenceOverlap || symptomOverlap || highRiskDangerTag || knowledgeCardCompatible) {
+    return { ok: true };
   }
 
-  // Check if any guidance type is allowed for this audience
-  const hasAllowed = chunkGuidanceTypes.some((gt) =>
-    isGuidanceTypeAllowedForAudience(gt, audience)
-  );
-
-  if (!hasAllowed) {
-    return {
-      allowed: false,
-      reason: `No compatible guidance types for ${audience}. Chunk has: ${chunkGuidanceTypes.join(', ')}`,
-    };
-  }
-
-  return { allowed: true, reason: 'Guidance type compatible' };
+  return { ok: false, reason: 'no_evidence_or_symptom_overlap' };
 }
 
-/**
- * Guard: Check for unsafe patient content
- * Treatment/procedure/dosage content unsafe for patient guidance
- * @param {object} chunk - Chunk with text
- * @param {string} audience - Target audience
- * @returns {object} { allowed: boolean, reason: string }
- */
-function guardPatientSafetyContent(chunk, audience) {
-  if (audience !== 'PATIENT') {
-    return { allowed: true, reason: 'Not patient audience' };
-  }
-
-  if (hasUnsafePatientContent(chunk.text)) {
-    return {
-      allowed: false,
-      reason: 'Chunk contains unsafe clinical content for patient guidance',
-    };
-  }
-
-  return { allowed: true, reason: 'Content safe for patient' };
-}
-
-/**
- * Guard: Check evidence tag overlap
- * Prefer chunks with evidence tag overlap with query
- * Returns priority score
- * @param {array} chunkEvidenceTags - Chunk evidence tags
- * @param {array} queryEvidenceTags - Query evidence tags
- * @returns {number} Overlap score (0-1)
- */
-function scoreEvidenceTagOverlap(chunkEvidenceTags, queryEvidenceTags) {
-  if (!Array.isArray(chunkEvidenceTags) || chunkEvidenceTags.length === 0) {
-    return 0;
-  }
-  if (!Array.isArray(queryEvidenceTags) || queryEvidenceTags.length === 0) {
-    return 0;
-  }
-
-  const overlap = chunkEvidenceTags.filter((tag) => queryEvidenceTags.includes(tag))
-    .length;
-  return overlap / Math.max(chunkEvidenceTags.length, queryEvidenceTags.length);
-}
-
-/**
- * Guard: Check symptom overlap
- * Prefer chunks with symptom overlap with query
- * Returns priority score
- * @param {array} chunkSymptoms - Chunk symptoms
- * @param {array} querySymptoms - Query symptoms
- * @returns {number} Overlap score (0-1)
- */
-function scoreSymptomOverlap(chunkSymptoms, querySymptoms) {
-  if (!Array.isArray(chunkSymptoms) || chunkSymptoms.length === 0) {
-    return 0;
-  }
-  if (!Array.isArray(querySymptoms) || querySymptoms.length === 0) {
-    return 0;
-  }
-
-  const overlap = chunkSymptoms.filter((sym) => querySymptoms.includes(sym)).length;
-  return overlap / Math.max(chunkSymptoms.length, querySymptoms.length);
-}
-
-/**
- * Guard: Check if chunk can pass without exact overlap
- * General WARNING_SIGNS and SAFETY_DISCLAIMER chunks may pass
- * @param {array} chunkGuidanceTypes - Chunk guidance types
- * @returns {boolean} true if generic guidance allowed
- */
-function allowGenericGuidance(chunkGuidanceTypes) {
-  if (!Array.isArray(chunkGuidanceTypes)) return false;
-  return chunkGuidanceTypes.some((gt) =>
-    ['WARNING_SIGNS', 'SAFETY_DISCLAIMER'].includes(gt)
-  );
-}
-
-/**
- * Evaluate chunk against all guards
- * Returns detailed result with reasons for rejection
- *
- * @param {object} chunk - Retrieved chunk
- * @param {string} chunk.text - Chunk text
- * @param {object} chunk.metadata - Chunk metadata
- * @param {object} queryConfig - Query configuration
- * @param {string} queryConfig.riskLevel - Risk level from query
- * @param {string} queryConfig.targetAudience - Target audience
- * @param {array} queryConfig.evidenceTags - Query evidence tags
- * @param {array} queryConfig.components.confirmedSymptoms - Query symptoms
- * @returns {object} Evaluation result
- *   - allowed: boolean
- *   - score: 0-1 priority score for ranking
- *   - reasons: array of reason strings
- *   - issues: array of rejection issues if any
- */
 function evaluateChunk(chunk, queryConfig) {
-  if (!chunk || !chunk.metadata) {
-    return {
-      allowed: false,
-      score: 0,
-      reasons: [],
-      issues: ['Missing chunk or metadata'],
-    };
+  const meta = normalizeChunkMetadata(chunk);
+  const query = normalizeQueryContext(queryConfig);
+  const rejectionReasons = [];
+
+  const audienceCheck = audienceAllowed(meta, query.targetAudience);
+  if (!audienceCheck.ok) rejectionReasons.push(audienceCheck.reason);
+
+  if (query.targetAudience === 'PATIENT' && hasUnsafePatientContent(meta.text)) {
+    rejectionReasons.push('unsafe_clinical_content_for_patient');
   }
 
-  const { metadata, text } = chunk;
-  const { riskLevel, targetAudience, evidenceTags, components } = queryConfig;
-  const reasons = [];
-  const issues = [];
+  const riskCheck = riskAllowed(meta, query);
+  if (!riskCheck.ok) rejectionReasons.push(riskCheck.reason);
 
-  // Guard 1: Audience compatibility
-  const audienceCheck = guardAudienceCompatibility(metadata, targetAudience);
-  if (!audienceCheck.allowed) {
-    issues.push(audienceCheck.reason);
-  } else {
-    reasons.push(audienceCheck.reason);
-  }
+  const guidanceCheck = guidanceAllowed(meta, query);
+  if (!guidanceCheck.ok) rejectionReasons.push(guidanceCheck.reason);
 
-  // Guard 2: Risk level compatibility
-  if (
-    !guardRiskLevelCompatibility(riskLevel, metadata.riskLevel, metadata.guidanceTypes)
-  ) {
-    issues.push('Risk level incompatible with query');
-  } else {
-    reasons.push('Risk level compatible');
-  }
-
-  // Guard 3: Guidance type compatibility
-  const guidanceCheck = guardGuidanceTypeCompatibility(
-    metadata.guidanceTypes || metadata.allowedGuidanceTypes,
-    targetAudience
-  );
-  if (!guidanceCheck.allowed) {
-    issues.push(guidanceCheck.reason);
-  } else {
-    reasons.push('Guidance type compatible');
-  }
-
-  // Guard 4: Patient safety content
-  const safetyCheck = guardPatientSafetyContent(chunk, targetAudience);
-  if (!safetyCheck.allowed) {
-    issues.push(safetyCheck.reason);
-  } else {
-    reasons.push('Content is safe');
-  }
-
-  // Calculate priority score (0-1)
-  let score = 0.5; // Base score
-
-  // Add scores for overlaps
-  const tagOverlap = scoreEvidenceTagOverlap(metadata.evidenceTags, evidenceTags);
-  score += tagOverlap * 0.2;
-
-  const symptomOverlap = scoreSymptomOverlap(
-    metadata.symptoms,
-    components.confirmedSymptoms
-  );
-  score += symptomOverlap * 0.2;
-
-  // Boost for trusted sources
-  if (metadata.trusted) {
-    score += 0.1;
-  }
-
-  // Cap at 1.0
-  score = Math.min(score, 1.0);
-
-  // Determine final allowed status
-  const allowed = issues.length === 0;
+  const relevanceCheck = relevanceAllowed(meta, query);
+  if (!relevanceCheck.ok) rejectionReasons.push(relevanceCheck.reason);
 
   return {
-    allowed,
-    score: allowed ? score : 0,
-    reasons,
-    issues,
+    allowed: rejectionReasons.length === 0,
+    score: meta.score || 0,
+    normalized: meta,
+    rejectionReasons,
   };
 }
 
-/**
- * Filter chunks through all guards
- * Returns separated accepted/rejected chunks
- * @param {array} chunks - Retrieved chunks
- * @param {object} queryConfig - Query configuration
- * @returns {object} { accepted: array, rejected: array }
- */
-function filterChunksThroughGuards(chunks, queryConfig) {
-  if (!Array.isArray(chunks)) {
-    return { accepted: [], rejected: [] };
-  }
+function toReturnShape(meta, rejectionReasons = []) {
+  return {
+    chunkId: meta.chunkId,
+    sourceId: meta.sourceId,
+    sourceTitle: meta.sourceTitle,
+    sourceKind: meta.sourceKind,
+    score: meta.score,
+    audience: meta.audience,
+    riskLevelAllowed: meta.riskLevelAllowed,
+    guidanceTypes: meta.guidanceTypes,
+    evidenceTags: meta.evidenceTags,
+    symptoms: meta.symptoms,
+    trusted: meta.trusted,
+    rejectionReasons,
+  };
+}
 
+function filterChunksThroughGuards(chunks, queryConfig) {
   const accepted = [];
   const rejected = [];
-
-  for (const chunk of chunks) {
+  for (const chunk of Array.isArray(chunks) ? chunks : []) {
     const evaluation = evaluateChunk(chunk, queryConfig);
+    const shaped = toReturnShape(evaluation.normalized, evaluation.rejectionReasons);
     if (evaluation.allowed) {
       accepted.push({
-        chunk,
-        ...evaluation,
+        ...shaped,
+        text: evaluation.normalized.text,
       });
     } else {
-      rejected.push({
-        chunk,
-        ...evaluation,
-      });
+      rejected.push(shaped);
     }
   }
 
-  // Sort accepted by score (highest first)
-  accepted.sort((a, b) => b.score - a.score);
-
+  accepted.sort((a, b) => (b.score || 0) - (a.score || 0));
   return { accepted, rejected };
 }
 
 module.exports = {
   hasUnsafePatientContent,
-  guardRiskLevelCompatibility,
-  guardAudienceCompatibility,
-  guardGuidanceTypeCompatibility,
-  guardPatientSafetyContent,
-  scoreEvidenceTagOverlap,
-  scoreSymptomOverlap,
-  allowGenericGuidance,
   evaluateChunk,
   filterChunksThroughGuards,
 };

@@ -134,15 +134,12 @@ const addByActionGroup = (items, card, usedGroups, text) => {
   return items;
 };
 
-const assembleCareGuidanceContext = ({ decision, caseState, knowledgeCards, hybridRetriever } = {}) => {
+const assembleCareGuidanceContext = async ({ decision, caseState, knowledgeCards, hybridRetriever } = {}) => {
   // Use hybrid retriever if available, otherwise fall back to direct evidence retrieval
   let retrievalResult;
 
   if (hybridRetriever && typeof hybridRetriever === 'function') {
-    // This is a synchronous wrapper that calls the async hybridRetriever
-    // Note: This will be handled as a synchronous fallback for now
-    // In production, the entire flow should be async
-    retrievalResult = retrieveEvidence({
+    retrievalResult = await hybridRetriever({
       decision,
       caseState,
       knowledgeCards,
@@ -155,7 +152,24 @@ const assembleCareGuidanceContext = ({ decision, caseState, knowledgeCards, hybr
     });
   }
 
-  const { retrievedCards: rawCards, blockedAdvice, ragMode, vectorFallbackUsed, retrievalWarnings, vectorChunks } = retrievalResult;
+  const {
+    retrievedCards: rawCards,
+    blockedAdvice,
+    ragMode,
+    vectorFallbackUsed,
+    retrievalWarnings,
+    vectorChunks,
+    vectorAttempted,
+    vectorSkippedReason,
+    vectorQueryText,
+    filtersApplied,
+    rejectedChunksCount,
+    rejectedChunksPreview,
+    embeddingProvider,
+    embeddingModel,
+    vectorIndexName,
+    vectorCollectionName,
+  } = retrievalResult;
 
   const riskLevel = decision?.riskLevel || 'UNKNOWN';
   const allowedGuidanceType = decision?.allowedGuidanceType || 'UNKNOWN';
@@ -305,6 +319,16 @@ const assembleCareGuidanceContext = ({ decision, caseState, knowledgeCards, hybr
     finalSteps = supportiveSteps.filter(step => step !== primaryActionBn).slice(0, 3);
   }
 
+  // Ensure immediate steps never render as empty
+  if (finalSteps.length === 0) {
+    const fallbackSteps = [
+      ...limitedWhyUrgent,
+      ...limitedWarnings,
+      ...limitedMonitor,
+    ].filter(Boolean);
+    finalSteps = dedupeText(fallbackSteps).slice(0, Math.max(1, limits.maxStepsNow || 3));
+  }
+
   const sources = dedupeText(
     retrievedCards.map((card) => card.citation || card.sourceName)
   );
@@ -350,6 +374,16 @@ const assembleCareGuidanceContext = ({ decision, caseState, knowledgeCards, hybr
     // Hybrid RAG metadata (if available from retrieval)
     ragMode: ragMode || 'json',
     vectorFallbackUsed: vectorFallbackUsed || false,
+    vectorAttempted: !!vectorAttempted,
+    vectorSkippedReason: vectorSkippedReason || null,
+    vectorQueryText: vectorQueryText || null,
+    filtersApplied: filtersApplied || null,
+    rejectedChunksCount: rejectedChunksCount || 0,
+    rejectedChunksPreview: rejectedChunksPreview || [],
+    embeddingProvider: embeddingProvider || null,
+    embeddingModel: embeddingModel || null,
+    vectorIndexName: vectorIndexName || (process.env.VECTOR_INDEX_NAME || 'vector_index'),
+    vectorCollectionName: vectorCollectionName || 'vectorKnowledgeChunks',
     retrievalWarnings: retrievalWarnings || [],
     vectorChunks: vectorChunks || [],
   };

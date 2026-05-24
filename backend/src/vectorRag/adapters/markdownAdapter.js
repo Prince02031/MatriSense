@@ -93,6 +93,8 @@ function convertSection(filePath, section, index, sourceRegistry = {}) {
       trusted: sourceRegistry.trusted !== false,
       audiences: sourceRegistry.audiences || ['HEALTH_WORKER'],
       allowedGuidanceTypes: sourceRegistry.allowedGuidanceTypes || [],
+      evidenceTag: sourceRegistry.defaultMetadata?.evidenceTag || null,
+      defaultMetadata: sourceRegistry.defaultMetadata || {},
       priority: sourceRegistry.priority || 3,
     },
   };
@@ -134,6 +136,8 @@ async function adapt(filePath, sourceRegistry = {}) {
           trusted: sourceRegistry.trusted !== false,
           audiences: sourceRegistry.audiences || ['HEALTH_WORKER'],
           allowedGuidanceTypes: sourceRegistry.allowedGuidanceTypes || [],
+          evidenceTag: sourceRegistry.defaultMetadata?.evidenceTag || null,
+          defaultMetadata: sourceRegistry.defaultMetadata || {},
           priority: sourceRegistry.priority || 3,
         },
       });

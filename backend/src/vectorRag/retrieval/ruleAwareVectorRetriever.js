@@ -93,6 +93,7 @@ async function retrieveRuleAware(config) {
 
     result.queryText = queryConfig.queryText;
     result.queryConfig = queryConfig;
+    result.rawInputIncluded = !!queryConfig.components?.rawInputIncluded;
 
     // Step 3: Embed query
     if (!embeddingClient) {
@@ -104,9 +105,11 @@ async function retrieveRuleAware(config) {
     let embeddingError = false;
 
     try {
-      const embedResult = await embeddingClient.embed(queryConfig.queryText);
+      const embedResult = await embeddingClient.embed(queryConfig.queryText, {
+        inputType: 'query',
+      });
 
-      if (embedResult.error) {
+      if (!embedResult.ok) {
         embeddingError = true;
 
         if (embedResult.error === 'QUOTA_EXHAUSTED') {
@@ -209,24 +212,18 @@ function buildMetadataFilters(queryConfig, audience) {
 
   // Risk level filter
   if (queryConfig.riskLevel) {
-    // Accept same or higher risk levels
-    const riskHierarchy = { LOW: 1, MEDIUM: 2, HIGH: 3 };
-    const queryRiskValue = riskHierarchy[queryConfig.riskLevel] || 2;
-    const acceptedRisks = Object.entries(riskHierarchy)
-      .filter(([, value]) => value >= queryRiskValue)
-      .map(([key]) => key);
-    filters.riskLevel = acceptedRisks;
+    const queryRisk = String(queryConfig.riskLevel).toUpperCase();
+    if (queryRisk === 'HIGH') {
+      filters.riskLevel = ['HIGH', 'ALL'];
+    } else if (queryRisk === 'MEDIUM') {
+      filters.riskLevel = ['MEDIUM', 'HIGH', 'ALL'];
+    } else {
+      filters.riskLevel = ['LOW', 'MEDIUM', 'HIGH', 'ALL'];
+    }
   }
 
-  // Evidence tags (prefer overlap)
-  if (queryConfig.evidenceTags && queryConfig.evidenceTags.length > 0) {
-    filters.evidenceTags = queryConfig.evidenceTags;
-  }
-
-  // Symptoms (prefer overlap)
-  if (queryConfig.components.confirmedSymptoms && queryConfig.components.confirmedSymptoms.length > 0) {
-    filters.symptoms = queryConfig.components.confirmedSymptoms;
-  }
+  // Do not hard-filter on evidence/symptoms in DB query.
+  // Relevance is checked by retrieval guards to avoid over-pruning.
 
   return filters;
 }

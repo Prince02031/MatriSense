@@ -12,7 +12,6 @@ const VectorKnowledgeSourceSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
 
     // Type of source document
@@ -21,7 +20,6 @@ const VectorKnowledgeSourceSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ['KNOWLEDGE_CARD', 'MARKDOWN', 'PDF', 'HTML'],
-      index: true,
     },
 
     // Human-readable title
@@ -59,7 +57,6 @@ const VectorKnowledgeSourceSchema = new mongoose.Schema(
     priority: {
       type: Number,
       default: 3,
-      index: true,
     },
 
     // Allowed audiences for this source
@@ -111,7 +108,6 @@ const VectorKnowledgeSourceSchema = new mongoose.Schema(
       type: String,
       enum: ['PENDING', 'INGESTED', 'PARTIAL', 'ERROR', 'SKIPPED_NEEDS_OCR'],
       default: 'PENDING',
-      index: true,
     },
 
     // Timestamp of last successful ingestion
@@ -164,7 +160,6 @@ const VectorKnowledgeSourceSchema = new mongoose.Schema(
 );
 
 // Indexes for efficient querying
-VectorKnowledgeSourceSchema.index({ sourceId: 1 });
 VectorKnowledgeSourceSchema.index({ sourceKind: 1 });
 VectorKnowledgeSourceSchema.index({ priority: 1 });
 VectorKnowledgeSourceSchema.index({ ingestionStatus: 1 });

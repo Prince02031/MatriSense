@@ -13,42 +13,49 @@
  * @returns {array} MongoDB aggregation pipeline
  */
 function buildVectorSearchPipeline(config) {
-  const { embedding, topK = 10, filters = {}, minScore = 0.0 } = config;
+  const {
+    embedding,
+    topK = 10,
+    filters = {},
+    minScore = 0.0,
+    indexName = process.env.VECTOR_INDEX_NAME || 'vector_index',
+  } = config;
 
   if (!embedding || !Array.isArray(embedding)) {
     throw new Error('embedding vector required');
   }
 
+  const vectorFilter = buildFilterCondition(filters);
+
   const pipeline = [
     {
-      $search: {
-        cosmosSearch: {
-          vector: embedding,
-          k: topK * 2, // Get more to account for filtering
-        },
-        returnScore: true,
-        select: ['text', 'metadata', 'chunkId', 'sourceId', 'textHash'],
+      $vectorSearch: {
+        index: indexName,
+        path: 'embedding',
+        queryVector: embedding,
+        numCandidates: Math.max(topK * 10, 100),
+        limit: topK * 2,
+        ...(Object.keys(vectorFilter).length > 0 ? { filter: vectorFilter } : {}),
       },
     },
     {
       $project: {
-        similarityScore: { $meta: 'searchScore' },
+        similarityScore: { $meta: 'vectorSearchScore' },
         text: 1,
-        metadata: 1,
         chunkId: 1,
         sourceId: 1,
+        sourceTitle: 1,
+        sourceKind: 1,
+        guidanceTypes: 1,
+        audience: 1,
+        riskLevelAllowed: 1,
+        evidenceTags: 1,
+        symptoms: 1,
+        priority: 1,
         textHash: 1,
       },
     },
   ];
-
-  // Apply filters if provided
-  if (Object.keys(filters).length > 0) {
-    const filterCondition = buildFilterCondition(filters);
-    pipeline.push({
-      $match: filterCondition,
-    });
-  }
 
   // Filter by minimum score
   if (minScore > 0) {
@@ -80,48 +87,48 @@ function buildFilterCondition(filters) {
   }
 
   if (filters.sourceKind) {
-    conditions.push({ 'metadata.sourceKind': filters.sourceKind });
+    conditions.push({ sourceKind: filters.sourceKind });
   }
 
   if (filters.audience) {
     conditions.push({
-      'metadata.allowedAudiences': { $in: [filters.audience] },
+      audience: { $in: [filters.audience] },
     });
   }
 
   if (filters.riskLevel) {
     if (Array.isArray(filters.riskLevel)) {
       conditions.push({
-        'metadata.riskLevel': { $in: filters.riskLevel },
+        riskLevelAllowed: { $in: filters.riskLevel },
       });
     } else {
       conditions.push({
-        'metadata.riskLevel': filters.riskLevel,
+        riskLevelAllowed: filters.riskLevel,
       });
     }
   }
 
   if (filters.evidenceTags && Array.isArray(filters.evidenceTags)) {
     conditions.push({
-      'metadata.evidenceTags': { $in: filters.evidenceTags },
+      evidenceTags: { $in: filters.evidenceTags },
     });
   }
 
   if (filters.symptoms && Array.isArray(filters.symptoms)) {
     conditions.push({
-      'metadata.symptoms': { $in: filters.symptoms },
+      symptoms: { $in: filters.symptoms },
     });
   }
 
   if (filters.trusted !== undefined) {
     conditions.push({
-      'metadata.trusted': filters.trusted,
+      trusted: filters.trusted,
     });
   }
 
   if (filters.language) {
     conditions.push({
-      'metadata.language': filters.language,
+      language: filters.language,
     });
   }
 
@@ -160,6 +167,7 @@ async function vectorSearch(VectorKnowledgeChunk, embedding, options = {}) {
     topK = 10,
     filters = {},
     minScore = 0.0,
+    indexName = process.env.VECTOR_INDEX_NAME || 'vector_index',
   } = options;
 
   const pipeline = buildVectorSearchPipeline({
@@ -167,6 +175,7 @@ async function vectorSearch(VectorKnowledgeChunk, embedding, options = {}) {
     topK,
     filters,
     minScore,
+    indexName,
   });
 
   try {

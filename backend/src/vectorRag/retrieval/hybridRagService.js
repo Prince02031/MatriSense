@@ -5,18 +5,21 @@
  */
 
 const { retrieveEvidenceHybrid } = require('../../rag/hybridEvidenceRetriever');
+const EmbeddingClient = require('../core/embeddingClient');
+const VectorKnowledgeChunk = require('../models/VectorKnowledgeChunk');
+const { retrieveRuleAware } = require('./ruleAwareVectorRetriever');
 
 /**
  * Get RAG mode from environment
- * Defaults to 'json' for safety
+ * Defaults to 'hybrid'
  */
 function getRagMode() {
-  const mode = (process.env.RAG_MODE || 'json').toLowerCase();
+  const mode = (process.env.RAG_MODE || 'hybrid').toLowerCase();
   const validModes = ['json', 'hybrid', 'vector'];
   
   if (!validModes.includes(mode)) {
-    console.warn(`Invalid RAG_MODE: ${mode}, defaulting to 'json'`);
-    return 'json';
+    console.warn(`Invalid RAG_MODE: ${mode}, defaulting to 'hybrid'`);
+    return 'hybrid';
   }
   
   return mode;
@@ -30,12 +33,18 @@ function getRagMode() {
  * @returns {Promise<object>} Evidence retrieval result
  */
 async function retrieveEvidenceWithMode(config = {}) {
-  const ragMode = getRagMode();
+  const requestedMode = config.ragMode ? String(config.ragMode).toLowerCase() : null;
+  const ragMode = ['json', 'hybrid', 'vector'].includes(requestedMode)
+    ? requestedMode
+    : getRagMode();
   
   // Merge mode from config if provided
   const retrievalConfig = {
     ...config,
     ragMode,
+    vectorRetriever: retrieveRuleAware,
+    embeddingClient: new EmbeddingClient(),
+    VectorKnowledgeChunk,
   };
 
   // Delegate to hybrid retriever (handles all modes)
@@ -52,7 +61,7 @@ async function retrieveEvidenceWithMode(config = {}) {
     console.error('[HybridRagService] Retrieval error:', error.message);
     
     // Fall back to JSON-only retrieval
-    const { retrieveEvidence } = require('./evidenceRetriever');
+    const { retrieveEvidence } = require('../../rag/evidenceRetriever');
     try {
       const jsonResult = retrieveEvidence({
         decision: config.decision,
@@ -63,6 +72,8 @@ async function retrieveEvidenceWithMode(config = {}) {
       return {
         ...jsonResult,
         ragMode: 'json-emergency-fallback',
+        vectorAttempted: true,
+        vectorSkippedReason: 'hybrid_service_error',
         vectorFallbackUsed: true,
         retrievalWarnings: [`Critical error in RAG: ${error.message}. Fell back to JSON.`],
       };
@@ -78,7 +89,10 @@ async function retrieveEvidenceWithMode(config = {}) {
  */
 function getRagStatus() {
   const ragMode = getRagMode();
-  const vectorEnabled = process.env.GOOGLE_API_KEY && process.env.MONGODB_URI;
+  const provider = (process.env.EMBEDDING_PROVIDER || 'local').toLowerCase();
+  const vectorEnabled =
+    !!process.env.MONGODB_URI &&
+    (provider !== 'gemini' || !!process.env.GOOGLE_API_KEY || !!process.env.GEMINI_API_KEY);
   
   return {
     ragMode,
@@ -108,8 +122,9 @@ function validateRagConfig() {
     if (!process.env.MONGODB_URI) {
       issues.push('MONGODB_URI not configured (required for vector RAG)');
     }
-    if (!process.env.GOOGLE_API_KEY) {
-      issues.push('GOOGLE_API_KEY not configured (required for vector RAG)');
+    const provider = (process.env.EMBEDDING_PROVIDER || 'local').toLowerCase();
+    if (provider === 'gemini' && !process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY) {
+      issues.push('GOOGLE_API_KEY/GEMINI_API_KEY not configured (required for gemini embeddings)');
     }
   }
 

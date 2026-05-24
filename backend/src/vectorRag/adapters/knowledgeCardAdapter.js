@@ -27,7 +27,17 @@ async function loadKnowledgeCards(filePath) {
  * @param {string} sourceId - Source identifier
  * @returns {object} Normalized record
  */
-function convertCard(card, sourceId) {
+function getCardAudiences(card, sourceConfig = {}) {
+  const sourceAud = Array.isArray(sourceConfig.audiences) ? sourceConfig.audiences : [];
+  if (Array.isArray(card.audiences) && card.audiences.length > 0) return card.audiences;
+  if (sourceAud.length > 0) return sourceAud;
+
+  const guidanceType = String(card.guidanceType || '').toUpperCase();
+  if (guidanceType === 'HEALTH_WORKER_REVIEW') return ['HEALTH_WORKER'];
+  return ['PATIENT', 'HEALTH_WORKER'];
+}
+
+function convertCard(card, sourceId, sourceConfig = {}) {
   if (!card || !card.id) {
     return null;
   }
@@ -90,7 +100,7 @@ function convertCard(card, sourceId) {
     condition: card.condition,
     sourceName: card.sourceName,
     sourceType: card.sourceType,
-    evidenceTag: card.evidenceTag,
+      evidenceTag: card.evidenceTag || sourceConfig.defaultMetadata?.evidenceTag,
     stepsBn: card.stepsBn,
     stepsEn: card.stepsEn,
     monitorBn: card.monitorBn,
@@ -116,7 +126,13 @@ function convertCard(card, sourceId) {
       riskLevelAllowed: card.riskLevelAllowed || ['HIGH', 'MEDIUM', 'LOW'],
       guidanceType: card.guidanceType,
       symptoms: card.symptoms || [],
-      evidenceTags: card.evidenceTag ? [card.evidenceTag] : [],
+      evidenceTags: card.evidenceTag
+        ? [card.evidenceTag]
+        : sourceConfig.defaultMetadata?.evidenceTag
+          ? [sourceConfig.defaultMetadata.evidenceTag]
+          : [],
+      audiences: getCardAudiences(card, sourceConfig),
+      allowedGuidanceTypes: sourceConfig.allowedGuidanceTypes || [],
     },
   };
 }
@@ -127,13 +143,15 @@ function convertCard(card, sourceId) {
  * @param {string} sourceId - Source identifier
  * @returns {Promise<array>} Array of normalized records
  */
-async function adapt(filePath, sourceId = 'knowledge_cards_json') {
+async function adapt(filePath, source = 'knowledge_cards_json') {
   try {
+    const sourceId = typeof source === 'string' ? source : source.sourceId || 'knowledge_cards_json';
+    const sourceConfig = typeof source === 'object' && source ? source : {};
     const cards = await loadKnowledgeCards(filePath);
     const records = [];
 
     for (const card of cards) {
-      const record = convertCard(card, sourceId);
+      const record = convertCard(card, sourceId, sourceConfig);
       if (record) {
         records.push(record);
       }
