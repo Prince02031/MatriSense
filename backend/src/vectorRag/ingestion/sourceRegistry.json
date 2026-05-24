@@ -1,0 +1,449 @@
+{
+  "version": "1.0.0",
+  "description": "Source registry for source-agnostic Vector RAG pipeline. Maps source documents to their ingestion metadata.",
+  "sources": [
+    {
+      "sourceId": "knowledge_cards_json",
+      "sourceKind": "KNOWLEDGE_CARD",
+      "path": "backend/src/rag/knowledgeCards.json",
+      "title": "MatriSense Knowledge Cards",
+      "description": "Curated JSON knowledge cards with condition-specific guidance, escalation triggers, and multilingual support.",
+      "language": ["en", "bn"],
+      "trusted": true,
+      "priority": 1,
+      "audiences": ["PATIENT", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "URGENT_ESCALATION",
+        "CONTACT_HEALTH_WORKER",
+        "SELF_CARE_AND_MONITOR",
+        "WARNING_SIGNS",
+        "SAFETY_DISCLAIMER",
+        "FOLLOW_UP_QUESTION"
+      ],
+      "defaultMetadata": {
+        "source": "knowledge_cards",
+        "fallback": true,
+        "systemReady": true,
+        "embedding": false,
+        "notes": "Primary fallback source. Used by existing JSON RAG. Do not remove."
+      }
+    },
+    {
+      "sourceId": "who_danger_signs_summary",
+      "sourceKind": "MARKDOWN",
+      "path": "docs/rag-sources/summaries/01_who_counselling_danger_signs_summary.md",
+      "title": "WHO Counselling for Maternal and Newborn Health Care - Danger Signs Summary",
+      "description": "Curated summary of WHO danger signs and escalation guidance for maternal health.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 2,
+      "audiences": ["PATIENT", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "WARNING_SIGNS",
+        "URGENT_ESCALATION",
+        "CONTACT_HEALTH_WORKER"
+      ],
+      "defaultMetadata": {
+        "source": "who_danger_signs",
+        "curated": true,
+        "evidenceTag": "WHO_PREGNANCY_DANGER_SIGNS",
+        "restrictedPatientContext": false
+      }
+    },
+    {
+      "sourceId": "who_pcpnc_summary",
+      "sourceKind": "MARKDOWN",
+      "path": "docs/rag-sources/summaries/02_who_pcpnc_quick_check_rapid_assessment_summary.md",
+      "title": "WHO PCPNC Quick Check - Rapid Assessment Summary",
+      "description": "WHO postpartum and postnatal care quick check for rapid assessment and triage reasoning.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 2,
+      "audiences": ["HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "HEALTH_WORKER_REVIEW",
+        "URGENT_ESCALATION",
+        "FOLLOW_UP_QUESTION"
+      ],
+      "defaultMetadata": {
+        "source": "who_pcpnc",
+        "curated": true,
+        "evidenceTag": "WHO_PCPNC_QUICK_CHECK",
+        "restrictedPatientContext": true,
+        "notes": "Limited patient guidance. Primary audience: health workers and triage reasoning."
+      }
+    },
+    {
+      "sourceId": "cdc_hear_her_summary",
+      "sourceKind": "MARKDOWN",
+      "path": "docs/rag-sources/summaries/03_cdc_hear_her_urgent_maternal_warning_signs_summary.md",
+      "title": "CDC HEAR HER - Urgent Maternal Warning Signs Summary",
+      "description": "CDC HEAR HER campaign summary of urgent maternal warning signs and escalation indicators.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 2,
+      "audiences": ["PATIENT", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "WARNING_SIGNS",
+        "URGENT_ESCALATION",
+        "CONTACT_HEALTH_WORKER"
+      ],
+      "defaultMetadata": {
+        "source": "cdc_hear_her",
+        "curated": true,
+        "evidenceTag": "CDC_HEAR_HER_CAMPAIGN",
+        "restrictedPatientContext": false
+      }
+    },
+    {
+      "sourceId": "who_anc_digital_kit",
+      "sourceKind": "MARKDOWN",
+      "path": "docs/rag-sources/summaries/04_who_anc_digital_adaptation_kit_summary.md",
+      "title": "WHO ANC Digital Adaptation Kit Summary",
+      "description": "WHO antenatal care digital adaptation kit for architecture and implementation guidance.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 3,
+      "audiences": ["DOCS", "ADMIN"],
+      "allowedGuidanceTypes": [
+        "SYSTEM_CONTEXT",
+        "DIGITAL_HEALTH_ARCHITECTURE"
+      ],
+      "defaultMetadata": {
+        "source": "who_anc_digital_kit",
+        "curated": true,
+        "evidenceTag": "WHO_DIGITAL_ADAPTATION",
+        "restrictedPatientContext": true,
+        "patientRestricted": true,
+        "notes": "Documentation and architecture only. Not for patient guidance."
+      }
+    },
+    {
+      "sourceId": "dghs_mnch_summary",
+      "sourceKind": "MARKDOWN",
+      "path": "docs/rag-sources/summaries/05_dghs_bangladesh_mnch_anc_job_aid_summary.md",
+      "title": "DGHS Bangladesh MNCH ANC Job Aid Summary",
+      "description": "Bangladesh DGHS maternal, neonatal and child health job aid for antenatal care with local wording and counselling.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 2,
+      "audiences": ["PATIENT", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "WARNING_SIGNS",
+        "SELF_CARE_AND_MONITOR",
+        "CONTACT_HEALTH_WORKER",
+        "FOLLOW_UP_QUESTION"
+      ],
+      "defaultMetadata": {
+        "source": "dghs_mnch",
+        "curated": true,
+        "evidenceTag": "DGHS_BANGLADESH_MNCH",
+        "localContent": true,
+        "restrictedPatientContext": false,
+        "notes": "Bangladesh-specific counselling and wording. Suitable for patient guidance."
+      }
+    },
+    {
+      "sourceId": "mnh_accreditation_summary",
+      "sourceKind": "MARKDOWN",
+      "path": "docs/rag-sources/summaries/06_bangladesh_mnh_service_accreditation_summary.md",
+      "title": "Bangladesh MNH Service Accreditation Summary",
+      "description": "Bangladesh maternal and neonatal health service accreditation standards and quality indicators.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 3,
+      "audiences": ["HEALTH_WORKER", "ADMIN"],
+      "allowedGuidanceTypes": [
+        "FACILITY_READINESS",
+        "HEALTH_WORKER_REVIEW"
+      ],
+      "defaultMetadata": {
+        "source": "mnh_accreditation",
+        "curated": true,
+        "evidenceTag": "BANGLADESH_MNH_ACCREDITATION",
+        "restrictedPatientContext": true,
+        "patientRestricted": true,
+        "notes": "Facility and worker workflow only. Not for patient guidance."
+      }
+    },
+    {
+      "sourceId": "bangladesh_national_strategy",
+      "sourceKind": "MARKDOWN",
+      "path": "docs/rag-sources/summaries/07_bangladesh_national_strategy_maternal_health_2019_2030_summary.md",
+      "title": "Bangladesh National Strategy for Maternal Health 2019-2030 Summary",
+      "description": "Bangladesh national maternal health strategy and policy guidelines (2019-2030).",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 3,
+      "audiences": ["DOCS", "ADMIN"],
+      "allowedGuidanceTypes": [
+        "SYSTEM_CONTEXT",
+        "FACILITY_READINESS"
+      ],
+      "defaultMetadata": {
+        "source": "bangladesh_national_strategy",
+        "curated": true,
+        "evidenceTag": "BANGLADESH_NATIONAL_STRATEGY",
+        "restrictedPatientContext": true,
+        "patientRestricted": true,
+        "notes": "Policy and system context only. Not for patient guidance."
+      }
+    },
+    {
+      "sourceId": "rule_source_index",
+      "sourceKind": "MARKDOWN",
+      "path": "docs/rag-sources/summaries/08_rule_source_index_for_agents.md",
+      "title": "Rule Source Index for Agents",
+      "description": "Index of rule sources and evidence mapping for triage and decision agents.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 2,
+      "audiences": ["DOCS", "ADMIN", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "SYSTEM_CONTEXT",
+        "HEALTH_WORKER_REVIEW"
+      ],
+      "defaultMetadata": {
+        "source": "rule_source_index",
+        "curated": true,
+        "evidenceTag": "RULE_SOURCE_INDEX",
+        "restrictedPatientContext": true,
+        "notes": "Internal reference for rule mapping and evidence sources."
+      }
+    },
+    {
+      "sourceId": "cdc_hear_her_pdf",
+      "sourceKind": "PDF",
+      "path": "docs/rag-sources/pdfs/CDC-Hear-Her-Womens-urgent-warning-signs-h.pdf",
+      "title": "CDC HEAR HER - Women's Urgent Warning Signs (PDF)",
+      "description": "CDC HEAR HER campaign PDF with urgent maternal warning signs and escalation guidance.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 2,
+      "audiences": ["PATIENT", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "WARNING_SIGNS",
+        "URGENT_ESCALATION",
+        "CONTACT_HEALTH_WORKER"
+      ],
+      "defaultMetadata": {
+        "source": "cdc_hear_her_pdf",
+        "trusted": true,
+        "evidenceTag": "CDC_HEAR_HER_CAMPAIGN",
+        "restrictedPatientContext": false
+      }
+    },
+    {
+      "sourceId": "warning_signs_poster",
+      "sourceKind": "PDF",
+      "path": "docs/rag-sources/pdfs/Warning-Signs-Poster_LTR_whitebkg_Bengali.pdf",
+      "title": "Warning Signs Poster - Bengali",
+      "description": "Visual warning signs poster in Bengali for maternal health escalation and awareness.",
+      "language": ["bn"],
+      "trusted": true,
+      "priority": 2,
+      "audiences": ["PATIENT", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "WARNING_SIGNS",
+        "CONTACT_HEALTH_WORKER"
+      ],
+      "defaultMetadata": {
+        "source": "warning_signs_poster_bn",
+        "trusted": true,
+        "visual": true,
+        "localLanguage": true,
+        "restrictedPatientContext": false
+      }
+    },
+    {
+      "sourceId": "ncbi_high_risk",
+      "sourceKind": "PDF",
+      "path": "docs/rag-sources/pdfs/NCBI_bookshelf_high_risk.pdf",
+      "title": "NCBI High Risk Pregnancy Guidance",
+      "description": "NCBI/bookshelf reference on high-risk pregnancy assessment and management guidelines.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 4,
+      "audiences": ["HEALTH_WORKER", "ADMIN"],
+      "allowedGuidanceTypes": [
+        "HEALTH_WORKER_REVIEW",
+        "URGENT_ESCALATION"
+      ],
+      "defaultMetadata": {
+        "source": "ncbi_high_risk",
+        "trusted": true,
+        "evidenceTag": "NCBI_HIGH_RISK_PREGNANCY",
+        "restrictedPatientContext": true,
+        "patientRestricted": true,
+        "notes": "Detailed clinical reference. Health worker review only. Not for patient guidance."
+      }
+    },
+    {
+      "sourceId": "nctb_counselling",
+      "sourceKind": "PDF",
+      "path": "docs/rag-sources/pdfs/NCTB_information_and_counselling_sheets_high_risk.pdf",
+      "title": "NCTB Information and Counselling Sheets - High Risk",
+      "description": "NCTB Bangladesh information and counselling sheets for high-risk pregnancy management.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 3,
+      "audiences": ["HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "HEALTH_WORKER_REVIEW",
+        "REFERRAL_WORKFLOW",
+        "FOLLOW_UP_QUESTION"
+      ],
+      "defaultMetadata": {
+        "source": "nctb_counselling",
+        "trusted": true,
+        "evidenceTag": "NCTB_HIGH_RISK_COUNSELLING",
+        "restrictedPatientContext": true,
+        "localContent": true,
+        "notes": "Bangladesh-specific high-risk counselling. Health worker review. Limited patient guidance."
+      }
+    },
+    {
+      "sourceId": "who_antenatal_kit_pdf",
+      "sourceKind": "PDF",
+      "path": "docs/rag-sources/pdfs/WHO-Antinatal-kit.pdf",
+      "title": "WHO Antenatal Care Kit (PDF)",
+      "description": "WHO antenatal care implementation kit with assessment tools and guidance.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 3,
+      "audiences": ["HEALTH_WORKER", "ADMIN"],
+      "allowedGuidanceTypes": [
+        "HEALTH_WORKER_REVIEW",
+        "DIGITAL_HEALTH_ARCHITECTURE"
+      ],
+      "defaultMetadata": {
+        "source": "who_antenatal_kit",
+        "trusted": true,
+        "evidenceTag": "WHO_ANTENATAL_CARE_KIT",
+        "restrictedPatientContext": true,
+        "notes": "Clinical reference and implementation guidance. Not for patient guidance."
+      }
+    },
+    {
+      "sourceId": "facility_readiness_checklist",
+      "sourceKind": "PDF",
+      "path": "docs/rag-sources/pdfs/Checklist-04-Facility-Readiness.pdf",
+      "title": "Facility Readiness Checklist",
+      "description": "Facility readiness assessment checklist for maternal and neonatal health services.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 4,
+      "audiences": ["ADMIN", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "FACILITY_READINESS"
+      ],
+      "defaultMetadata": {
+        "source": "facility_readiness",
+        "trusted": true,
+        "evidenceTag": "FACILITY_READINESS_CHECKLIST",
+        "restrictedPatientContext": true,
+        "patientRestricted": true,
+        "notes": "Facility assessment only. Not for patient guidance."
+      }
+    },
+    {
+      "sourceId": "mnh_accreditation_manual",
+      "sourceKind": "PDF",
+      "path": "docs/rag-sources/pdfs/MNH-Service-Accreditation-Manual_Clean_Cor-14-4-23.pdf",
+      "title": "MNH Service Accreditation Manual",
+      "description": "Maternal and neonatal health service accreditation manual with standards and audit criteria.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 4,
+      "audiences": ["ADMIN", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "FACILITY_READINESS"
+      ],
+      "defaultMetadata": {
+        "source": "mnh_accreditation_manual",
+        "trusted": true,
+        "evidenceTag": "MNH_ACCREDITATION_MANUAL",
+        "restrictedPatientContext": true,
+        "patientRestricted": true,
+        "notes": "Facility accreditation and standards. Not for patient guidance."
+      }
+    },
+    {
+      "sourceId": "government_strategy",
+      "sourceKind": "PDF",
+      "path": "docs/rag-sources/pdfs/government_Strategy.pdf",
+      "title": "Government Strategy Document",
+      "description": "Government maternal health strategy and policy guidance.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 4,
+      "audiences": ["ADMIN", "DOCS"],
+      "allowedGuidanceTypes": [
+        "SYSTEM_CONTEXT"
+      ],
+      "defaultMetadata": {
+        "source": "government_strategy",
+        "trusted": true,
+        "evidenceTag": "GOVERNMENT_POLICY",
+        "restrictedPatientContext": true,
+        "patientRestricted": true,
+        "notes": "Policy and strategic context only. Not for patient guidance."
+      }
+    },
+    {
+      "sourceId": "cdc_hear_her_html",
+      "sourceKind": "HTML",
+      "path": "docs/rag-sources/html/cdc-hear-her-warning-signs.html",
+      "title": "CDC HEAR HER - Warning Signs (HTML)",
+      "description": "CDC HEAR HER campaign HTML page with urgent maternal warning signs and resources.",
+      "language": ["en"],
+      "trusted": true,
+      "priority": 2,
+      "audiences": ["PATIENT", "HEALTH_WORKER"],
+      "allowedGuidanceTypes": [
+        "WARNING_SIGNS",
+        "URGENT_ESCALATION",
+        "CONTACT_HEALTH_WORKER"
+      ],
+      "defaultMetadata": {
+        "source": "cdc_hear_her_html",
+        "trusted": true,
+        "evidenceTag": "CDC_HEAR_HER_CAMPAIGN",
+        "restrictedPatientContext": false
+      }
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-05-23",
+    "lastUpdated": "2026-05-23",
+    "description": "Source registry for Vector RAG ingestion pipeline. Maintains source metadata and priority ordering.",
+    "priorityScale": {
+      "1": "Highest: Knowledge cards (JSON RAG fallback, safest source)",
+      "2": "High: Curated markdown summaries and CDC/WHO trusted warnings",
+      "3": "Medium: Implementation and local guidance",
+      "4": "Lower: Long-form PDFs, policy, facility assessment (restricted audience)"
+    },
+    "guidanceTypeUsage": {
+      "PATIENT_SAFE": [
+        "URGENT_ESCALATION",
+        "CONTACT_HEALTH_WORKER",
+        "SELF_CARE_AND_MONITOR",
+        "WARNING_SIGNS",
+        "SAFETY_DISCLAIMER",
+        "FOLLOW_UP_QUESTION"
+      ],
+      "WORKER_ONLY": [
+        "HEALTH_WORKER_REVIEW",
+        "REFERRAL_WORKFLOW",
+        "FACILITY_READINESS"
+      ],
+      "SYSTEM_DOCS_ONLY": [
+        "SYSTEM_CONTEXT",
+        "DIGITAL_HEALTH_ARCHITECTURE"
+      ]
+    },
+    "status": "STRUCTURE_READY",
+    "vectorIngestion": "NOT_YET_IMPLEMENTED",
+    "notes": "This registry defines the structure for Vector RAG ingestion. Source documents are staged in backend/data/rag/source-documents/ for future embedding and vector storage. KnowledgeCards.json remains the live JSON RAG fallback and has NOT been moved."
+  }
+}

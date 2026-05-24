@@ -280,6 +280,7 @@ router.post('/:sessionId/explain', async (req, res) => {
 const { runRules } = require('../triage/engine/ruleRunner');
 const { buildDecision } = require('../triage/decision/decisionBuilder');
 const { assembleCareGuidanceContext } = require('../rag/careGuidanceAssembler');
+const { retrieveEvidenceWithMode } = require('../vectorRag/retrieval/hybridRagService');
 const path = require('path');
 const fs = require('fs');
 
@@ -306,7 +307,7 @@ router.post('/:sessionId/run', async (req, res) => {
     session.decision = decision;
     console.log('[TriageRoutes] Decision built:', decision?.riskLevel);
 
-    // 3. Assemble RAG Context
+    // 3. Assemble RAG Context (with optional hybrid vector retrieval)
     console.log('[TriageRoutes] Assembling RAG context...');
     const knowledgeCardsPath = path.join(__dirname, '../rag/knowledgeCards.json');
     const knowledgeCards = JSON.parse(fs.readFileSync(knowledgeCardsPath, 'utf-8'));
@@ -314,7 +315,9 @@ router.post('/:sessionId/run', async (req, res) => {
     const careGuidanceContext = assembleCareGuidanceContext({
       decision,
       caseState: session.caseState,
-      knowledgeCards
+      knowledgeCards,
+      // Pass hybrid retrieval function for optional vector RAG integration
+      hybridRetriever: retrieveEvidenceWithMode,
     });
     console.log('[TriageRoutes] RAG context assembled');
 

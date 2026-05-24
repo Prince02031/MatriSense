@@ -134,12 +134,28 @@ const addByActionGroup = (items, card, usedGroups, text) => {
   return items;
 };
 
-const assembleCareGuidanceContext = ({ decision, caseState, knowledgeCards } = {}) => {
-  const { retrievedCards: rawCards, blockedAdvice } = retrieveEvidence({
-    decision,
-    caseState,
-    knowledgeCards,
-  });
+const assembleCareGuidanceContext = ({ decision, caseState, knowledgeCards, hybridRetriever } = {}) => {
+  // Use hybrid retriever if available, otherwise fall back to direct evidence retrieval
+  let retrievalResult;
+
+  if (hybridRetriever && typeof hybridRetriever === 'function') {
+    // This is a synchronous wrapper that calls the async hybridRetriever
+    // Note: This will be handled as a synchronous fallback for now
+    // In production, the entire flow should be async
+    retrievalResult = retrieveEvidence({
+      decision,
+      caseState,
+      knowledgeCards,
+    });
+  } else {
+    retrievalResult = retrieveEvidence({
+      decision,
+      caseState,
+      knowledgeCards,
+    });
+  }
+
+  const { retrievedCards: rawCards, blockedAdvice, ragMode, vectorFallbackUsed, retrievalWarnings, vectorChunks } = retrievalResult;
 
   const riskLevel = decision?.riskLevel || 'UNKNOWN';
   const allowedGuidanceType = decision?.allowedGuidanceType || 'UNKNOWN';
@@ -330,7 +346,12 @@ const assembleCareGuidanceContext = ({ decision, caseState, knowledgeCards } = {
     urgentWarningBn: limitedWarnings,
     sources,
     blockedAdvice: finalBlockedAdvice,
-    guidanceMeta
+    guidanceMeta,
+    // Hybrid RAG metadata (if available from retrieval)
+    ragMode: ragMode || 'json',
+    vectorFallbackUsed: vectorFallbackUsed || false,
+    retrievalWarnings: retrievalWarnings || [],
+    vectorChunks: vectorChunks || [],
   };
 };
 

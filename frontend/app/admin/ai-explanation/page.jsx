@@ -430,6 +430,13 @@ export default function AITriageLabPage() {
                 <DebugJsonPanel title="6. Rule Events" data={decision?.reasons} />
                 <DebugJsonPanel title="7. Decision" data={decision} initialExpanded={true} />
                 <DebugJsonPanel title="8. Retrieved RAG Cards" data={careGuidanceContext?.retrievedCards} />
+                <DebugJsonPanel title="8a. Vector RAG Debug" data={careGuidanceContext?.vectorRagDebug || {
+                  ragMode: careGuidanceContext?.ragMode,
+                  vectorChunksCount: careGuidanceContext?.vectorChunks?.length,
+                  vectorFallbackUsed: careGuidanceContext?.vectorFallbackUsed,
+                  vectorChunks: careGuidanceContext?.vectorChunks,
+                  retrievalWarnings: careGuidanceContext?.retrievalWarnings
+                }} />
                 <DebugJsonPanel title="9. Care Guidance Context" data={careGuidanceContext} />
                 <DebugJsonPanel title="10. Pre-generation Safety" data={preGenerationSafety} />
                 <DebugJsonPanel title="11. LLM Output" data={llmOutput} />
