@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { getFollowUpQuestions, submitFollowUpAnswers } from '../../api/triageApi';
@@ -10,7 +10,7 @@ import ReadAloudButton from '../../../src/components/voice/ReadAloudButton';
  * FollowUpPage - Phase 3
  * User answers follow-up questions to refine the triage
  */
-export default function FollowUpPage() {
+function FollowUpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth();
@@ -239,5 +239,20 @@ export default function FollowUpPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function FollowUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-matri-teal border-t-transparent mx-auto mb-4"></div>
+          <p className="text-sm font-medium text-slate-600">অনুসন্ধানমূলক প্রশ্নাবলী লোড হচ্ছে...</p>
+        </div>
+      </div>
+    }>
+      <FollowUpPageContent />
+    </Suspense>
   );
 }

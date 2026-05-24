@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 
@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
  * User reviews and confirms/edits extracted symptoms
  * Before proceeding to follow-up questions
  */
-export default function ConfirmSymptomsPage() {
+function ConfirmSymptomsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth();
@@ -201,5 +201,20 @@ export default function ConfirmSymptomsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ConfirmSymptomsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-matri-teal border-t-transparent mx-auto mb-4"></div>
+          <p className="text-sm font-medium text-slate-600">লক্ষণ বিশ্লেষণ যাচাই করা হচ্ছে...</p>
+        </div>
+      </div>
+    }>
+      <ConfirmSymptomsPageContent />
+    </Suspense>
   );
 }
