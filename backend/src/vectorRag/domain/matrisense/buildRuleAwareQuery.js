@@ -62,9 +62,11 @@ function buildRuleAwareQuery(config) {
   // Extract confirmed symptoms
   const confirmedSymptoms = extractConfirmedSymptoms(caseState);
 
-  // Extract symptoms from patient input if provided
-  const patientSymptoms = patientInput
-    ? extractKeywordsFromText(patientInput)
+  const rawInput = extractRawInputText({ patientInput, caseState, decision });
+
+  // Extract symptoms from raw input if provided
+  const patientSymptoms = rawInput
+    ? extractKeywordsFromText(rawInput)
     : [];
 
   // Build query text components
@@ -88,9 +90,17 @@ function buildRuleAwareQuery(config) {
     queryComponents.push(`Additional findings: ${patientSymptoms.join(', ')}`);
   }
 
+  // Raw patient context (Bangla or mixed language) for semantic retrieval only
+  if (rawInput) {
+    queryComponents.push(`Patient raw input: ${rawInput}`);
+  }
+
   // Rule context if available
   if (decision.matchedRuleName) {
     queryComponents.push(`Context: ${decision.matchedRuleName}`);
+  }
+  if (Array.isArray(decision.matchedRules) && decision.matchedRules.length > 0) {
+    queryComponents.push(`Matched rules: ${decision.matchedRules.join(', ')}`);
   }
 
   // Guidance type context
@@ -127,9 +137,36 @@ function buildRuleAwareQuery(config) {
       guidanceTypes: allowedGuidanceTypes,
       confirmedSymptoms,
       patientSymptoms,
+      rawInputIncluded: !!rawInput,
+      rawInput,
       matchedRule: decision.matchedRuleName,
+      matchedRules: Array.isArray(decision.matchedRules) ? decision.matchedRules : [],
     },
   };
+}
+
+function extractRawInputText({ patientInput, caseState, decision }) {
+  const candidates = [
+    patientInput,
+    caseState?.rawInput,
+    caseState?.rawSymptomText,
+    caseState?.symptomText,
+    caseState?.originalInput,
+    caseState?.originalInputBn,
+    caseState?.userInput,
+    caseState?.banglaInput,
+    caseState?.meta?.rawInput,
+    caseState?.meta?.rawSymptomText,
+    caseState?.meta?.originalInput,
+    caseState?.meta?.originalInputBn,
+    caseState?.session?.rawInput,
+    decision?.session?.rawInput,
+  ];
+
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim().length > 0) return c.trim();
+  }
+  return '';
 }
 
 /**
@@ -221,6 +258,7 @@ function getQuerySummary(queryConfig) {
     confidence: queryConfig.confidence.toFixed(2),
     evidenceTagCount: queryConfig.evidenceTags.length,
     symptomCount: queryConfig.components.confirmedSymptoms.length,
+    rawInputIncluded: !!queryConfig.components.rawInputIncluded,
   };
 }
 

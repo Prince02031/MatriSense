@@ -52,6 +52,16 @@ async function retrieveEvidenceHybrid(config = {}) {
     vectorChunks: [],
     vectorFallbackUsed: false,
     retrievalWarnings: [],
+    vectorAttempted: false,
+    vectorSkippedReason: null,
+    vectorQueryText: null,
+    filtersApplied: null,
+    rejectedChunksCount: 0,
+    rejectedChunksPreview: [],
+    embeddingProvider: process.env.EMBEDDING_PROVIDER || 'local',
+    embeddingModel: process.env.EMBEDDING_MODEL || null,
+    vectorIndexName: process.env.VECTOR_INDEX_NAME || 'vector_index',
+    vectorCollectionName: 'vectorKnowledgeChunks',
     sourceMetadata: {
       jsonCardsCount: 0,
       vectorChunksCount: 0,
@@ -74,28 +84,53 @@ async function retrieveEvidenceHybrid(config = {}) {
 
     if (!shouldTryVector) {
       result.ragMode = 'json';
+      if (ragMode === 'json') {
+        result.vectorSkippedReason = 'RAG_MODE=json';
+      } else if (!vectorRetriever) {
+        result.vectorSkippedReason = 'hybrid retriever not wired';
+      } else if (!embeddingClient) {
+        result.vectorSkippedReason = 'embedding client not available';
+      } else if (!VectorKnowledgeChunk) {
+        result.vectorSkippedReason = 'vector model not available';
+      } else {
+        result.vectorSkippedReason = 'vector prerequisites missing';
+      }
       return result;
     }
 
     // Step 3: Attempt vector retrieval
     let vectorResult = null;
+    result.vectorAttempted = true;
     try {
-      vectorResult = await vectorRetriever.retrieve(
-        {
+      if (typeof vectorRetriever === 'function') {
+        vectorResult = await vectorRetriever({
           decision,
           caseState,
+          audience: 'PATIENT',
+          topK: 5,
           embeddingClient,
           VectorKnowledgeChunk,
-        },
-        {
-          audience: 'PATIENT',
-          decisionContext: decision,
-          maxResults: 5,
           dryRun,
-        }
-      );
+        });
+      } else {
+        vectorResult = await vectorRetriever.retrieve(
+          {
+            decision,
+            caseState,
+            embeddingClient,
+            VectorKnowledgeChunk,
+          },
+          {
+            audience: 'PATIENT',
+            decisionContext: decision,
+            maxResults: 5,
+            dryRun,
+          }
+        );
+      }
     } catch (vectorError) {
       result.vectorFallbackUsed = true;
+      result.vectorSkippedReason = 'vector_retrieval_exception';
       result.retrievalWarnings.push(`Vector retrieval error: ${vectorError.message}`);
     }
 
@@ -106,6 +141,9 @@ async function retrieveEvidenceHybrid(config = {}) {
       result.ragMode = ragMode === 'vector' ? 'json-fallback' : 'json';
       
       if (vectorResult?.error) {
+        result.vectorSkippedReason = vectorResult.error === 'Embedding failed'
+          ? 'embedding_failed'
+          : 'atlas_vector_search_failed';
         result.retrievalWarnings.push(`Vector retrieval failed: ${vectorResult.error}`);
       }
       
@@ -117,6 +155,13 @@ async function retrieveEvidenceHybrid(config = {}) {
         result.retrievalWarnings.push('Vector provider fallback recommended (quota/rate-limit)');
       }
 
+      result.vectorQueryText = vectorResult?.queryText || null;
+      result.filtersApplied = vectorResult?.filtersApplied || null;
+      result.rejectedChunksCount = vectorResult?.totalRejected || 0;
+      result.rejectedChunksPreview = Array.isArray(vectorResult?.rejectedChunks)
+        ? vectorResult.rejectedChunks.slice(0, 5)
+        : [];
+
       return result;
     }
 
@@ -125,6 +170,15 @@ async function retrieveEvidenceHybrid(config = {}) {
     const convertedChunks = convertVectorChunksToCards(vectorChunks, decision);
     result.vectorChunks = convertedChunks;
     result.sourceMetadata.vectorChunksCount = convertedChunks.length;
+    result.vectorQueryText = vectorResult.queryText || null;
+    result.filtersApplied = vectorResult.filtersApplied || null;
+    result.rejectedChunksCount = vectorResult.totalRejected || 0;
+    result.rejectedChunksPreview = Array.isArray(vectorResult.rejectedChunks)
+      ? vectorResult.rejectedChunks.slice(0, 5)
+      : [];
+    if (convertedChunks.length === 0) {
+      result.vectorSkippedReason = 'no_chunks_passed_guards';
+    }
 
     // Step 6: Merge results based on mode
     if (ragMode === 'hybrid') {
@@ -158,6 +212,7 @@ async function retrieveEvidenceHybrid(config = {}) {
     result.ragMode = 'json-fallback';
     result.vectorFallbackUsed = true;
     result.retrievalWarnings.push(`Hybrid retrieval error: ${error.message}`);
+    result.vectorSkippedReason = 'hybrid_pipeline_error';
     // Return JSON cards only (already populated)
     return result;
   }
@@ -173,20 +228,26 @@ function convertVectorChunksToCards(chunks, decision) {
   return chunks.map((chunk, idx) => ({
     id: `vector_${chunk.sourceId}_${idx}`,
     sourceId: chunk.sourceId,
-    sourceKind: chunk.metadata?.sourceKind || 'VECTOR_RAG',
-    evidenceTag: chunk.metadata?.evidenceTags?.[0] || 'vector_chunk',
-    text: chunk.text,
-    textSummary: chunk.text.substring(0, 150),
-    guidanceType: chunk.metadata?.allowedGuidanceTypes?.[0] || 'SUPPORTIVE_ACTION',
+    sourceKind: chunk.sourceKind || 'VECTOR_RAG',
+    evidenceTag: (Array.isArray(chunk.evidenceTags) && chunk.evidenceTags[0]) || 'vector_chunk',
+    text: chunk.text || '',
+    textSummary: (chunk.text || '').substring(0, 150),
+    guidanceType:
+      (Array.isArray(chunk.guidanceTypes) && chunk.guidanceTypes[0]) || 'SUPPORTIVE_ACTION',
     riskLevelAllowed: [decision.riskLevel],
-    symptoms: chunk.metadata?.symptoms || [],
+    symptoms: chunk.symptoms || [],
     priority: Math.round((chunk.score || 0) * 100),
     messageRole: 'SUPPORTIVE_ACTION', // Vector chunks are supplementary
+    stepsBn: chunk.text ? [chunk.text.substring(0, 240)] : [],
+    monitorBn: [],
+    escalationTriggersBn: [],
+    sourceName: chunk.sourceTitle || chunk.sourceId || 'Vector RAG',
+    citation: chunk.sourceTitle || chunk.sourceId || 'Vector RAG',
     isVectorChunk: true,
     vectorScore: chunk.score,
     vectorMetadata: {
       sourceId: chunk.sourceId,
-      textHash: chunk.metadata?.textHash,
+      textHash: chunk.textHash,
       retrievalConfidence: chunk.score,
     },
   }));

@@ -192,11 +192,11 @@ router.post('/case-state/validate', (req, res) => {
 // ─────────────────────────────────────────────
 
 // POST /api/admin/rag-preview/assemble
-router.post('/rag-preview/assemble', (req, res) => {
+router.post('/rag-preview/assemble', async (req, res) => {
   try {
     const { decision, caseState } = req.body;
     const { assembleCareGuidanceContext, knowledgeCards, hybridRetriever } = getRagModules();
-    const result = assembleCareGuidanceContext({ decision, caseState, knowledgeCards, hybridRetriever });
+    const result = await assembleCareGuidanceContext({ decision, caseState, knowledgeCards, hybridRetriever });
     res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -287,7 +287,7 @@ router.post('/safety-test/validate-output', (req, res) => {
 // POST /api/admin/ai-explanation/test
 router.post('/ai-explanation/test', async (req, res) => {
   try {
-    const { scenario } = req.body;
+    const { scenario, ragMode } = req.body;
     const { runRules, buildDecision } = getTriageModules();
     const { assembleCareGuidanceContext, knowledgeCards } = getRagModules();
     const { generateTriageExplanation } = require('../ai');
@@ -325,7 +325,12 @@ router.post('/ai-explanation/test', async (req, res) => {
     const events = Array.isArray(runResult) ? runResult : (runResult?.events || []);
     const decision = buildDecision(events, caseState);
     const { hybridRetriever } = getRagModules();
-    const careGuidanceContext = assembleCareGuidanceContext({ decision, caseState, knowledgeCards, hybridRetriever });
+    const careGuidanceContext = await assembleCareGuidanceContext({
+      decision,
+      caseState,
+      knowledgeCards,
+      hybridRetriever: (cfg) => hybridRetriever({ ...cfg, ragMode }),
+    });
 
     // 3. Generate Explanation
     const aiResult = await generateTriageExplanation({ decision, careGuidanceContext, caseState });
@@ -338,10 +343,20 @@ router.post('/ai-explanation/test', async (req, res) => {
       // Add vector RAG debug info to response
       vectorRagDebug: {
         ragMode: careGuidanceContext.ragMode,
+        vectorAttempted: careGuidanceContext.vectorAttempted,
+        vectorSkippedReason: careGuidanceContext.vectorSkippedReason,
         vectorChunksCount: careGuidanceContext.vectorChunks?.length || 0,
         vectorFallbackUsed: careGuidanceContext.vectorFallbackUsed,
         vectorChunks: careGuidanceContext.vectorChunks,
-        retrievalWarnings: careGuidanceContext.retrievalWarnings
+        retrievalWarnings: careGuidanceContext.retrievalWarnings,
+        vectorQueryText: careGuidanceContext.vectorQueryText,
+        filtersApplied: careGuidanceContext.filtersApplied,
+        rejectedChunksCount: careGuidanceContext.rejectedChunksCount,
+        rejectedChunksPreview: careGuidanceContext.rejectedChunksPreview,
+        embeddingProvider: careGuidanceContext.embeddingProvider,
+        embeddingModel: careGuidanceContext.embeddingModel,
+        vectorIndexName: careGuidanceContext.vectorIndexName,
+        vectorCollectionName: careGuidanceContext.vectorCollectionName,
       }
     });
   } catch (e) {

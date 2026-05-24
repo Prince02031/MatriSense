@@ -146,7 +146,7 @@ router.post('/triage-lab/run', async (req, res) => {
     if (decision) {
       try {
         const knowledgeCards = JSON.parse(fs.readFileSync(knowledgeCardsPath, 'utf-8'));
-        careGuidanceContext = assembleCareGuidanceContext({ decision, caseState, knowledgeCards });
+        careGuidanceContext = await assembleCareGuidanceContext({ decision, caseState, knowledgeCards });
         results.careGuidanceContext = careGuidanceContext;
         results.retrievedCards = careGuidanceContext.retrievedCards;
       } catch (e) {

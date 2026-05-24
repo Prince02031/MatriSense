@@ -312,7 +312,7 @@ router.post('/:sessionId/run', async (req, res) => {
     const knowledgeCardsPath = path.join(__dirname, '../rag/knowledgeCards.json');
     const knowledgeCards = JSON.parse(fs.readFileSync(knowledgeCardsPath, 'utf-8'));
 
-    const careGuidanceContext = assembleCareGuidanceContext({
+    const careGuidanceContext = await assembleCareGuidanceContext({
       decision,
       caseState: session.caseState,
       knowledgeCards,

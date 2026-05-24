@@ -12,14 +12,12 @@ const VectorKnowledgeChunkSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
 
     // Reference to source document
     sourceId: {
       type: String,
       required: true,
-      index: true,
     },
 
     // Type of source document
@@ -27,7 +25,6 @@ const VectorKnowledgeChunkSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ['KNOWLEDGE_CARD', 'MARKDOWN', 'PDF', 'HTML'],
-      index: true,
     },
 
     // Human-readable source title
@@ -75,7 +72,6 @@ const VectorKnowledgeChunkSchema = new mongoose.Schema(
     textHash: {
       type: String,
       required: true,
-      index: true,
     },
 
     // Language of chunk
@@ -89,6 +85,18 @@ const VectorKnowledgeChunkSchema = new mongoose.Schema(
     // Dimensionality depends on model (typically 768 or 1536)
     embedding: {
       type: [Number],
+      default: null,
+    },
+    embeddingProvider: {
+      type: String,
+      default: null,
+    },
+    embeddingModel: {
+      type: String,
+      default: null,
+    },
+    embeddingDimensions: {
+      type: Number,
       default: null,
     },
 
@@ -157,7 +165,6 @@ const VectorKnowledgeChunkSchema = new mongoose.Schema(
     priority: {
       type: Number,
       default: 3,
-      index: true,
     },
 
     // Retrieval score (for ranking search results)
@@ -194,6 +201,7 @@ const VectorKnowledgeChunkSchema = new mongoose.Schema(
 VectorKnowledgeChunkSchema.index({ sourceId: 1 });
 VectorKnowledgeChunkSchema.index({ sourceKind: 1 });
 VectorKnowledgeChunkSchema.index({ textHash: 1 }, { unique: false });
+VectorKnowledgeChunkSchema.index({ sourceId: 1, textHash: 1, embeddingProvider: 1, embeddingModel: 1, embeddingDimensions: 1 });
 VectorKnowledgeChunkSchema.index({ audience: 1 });
 VectorKnowledgeChunkSchema.index({ guidanceTypes: 1 });
 VectorKnowledgeChunkSchema.index({ riskLevelAllowed: 1 });

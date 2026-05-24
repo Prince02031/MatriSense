@@ -25,6 +25,15 @@ const validateEnv = () => {
 
 validateEnv();
 
+const logRagConfig = () => {
+  console.log('[RAG Config]');
+  console.log(`  RAG_MODE=${process.env.RAG_MODE || 'hybrid(default)'}`);
+  console.log(`  EMBEDDING_PROVIDER=${process.env.EMBEDDING_PROVIDER || 'local(default)'}`);
+  console.log(`  EMBEDDING_MODEL=${process.env.EMBEDDING_MODEL || 'Xenova/multilingual-e5-small(default)'}`);
+  console.log(`  EMBEDDING_DIMENSIONS=${process.env.EMBEDDING_DIMENSIONS || '384(default)'}`);
+  console.log(`  VECTOR_INDEX_NAME=${process.env.VECTOR_INDEX_NAME || 'vector_index(default)'}`);
+};
+
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -39,6 +48,7 @@ const port = process.env.PORT || 5000;
 
 // Connect to MongoDB
 connectDB();
+logRagConfig();
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
