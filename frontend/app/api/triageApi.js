@@ -89,3 +89,24 @@ export const getTriageResult = async (sessionId) => {
 
   return await response.json();
 };
+
+export const sendCareAssistantMessage = async (sessionId, payload) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('matrisense_token') : null;
+  const response = await fetch(`${apiBase}/api/triage/${sessionId}/assistant/message`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to send care assistant message');
+  }
+
+  return await response.json();
+};
+

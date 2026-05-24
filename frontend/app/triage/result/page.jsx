@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { runTriage, explainTriage, getTriageResult } from '../../api/triageApi';
 import ReadAloudButton from '../../../src/components/voice/ReadAloudButton';
+import CareAssistantPanel from '../../components/triage/CareAssistantPanel';
 
 /**
  * ResultPage - Phase 9 (Enhanced)
  * Display final triage result with risk level, care guidance, and safety disclaimers
  */
-export default function ResultPage() {
+function ResultPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth();
@@ -21,6 +22,7 @@ export default function ResultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [explanationExpanded, setExplanationExpanded] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   useEffect(() => {
     if (!sessionId) {
@@ -313,6 +315,31 @@ export default function ResultPage() {
           </div>
         )}
 
+        {/* Care Assistant Trigger Block */}
+        <div 
+          onClick={() => setAssistantOpen(true)}
+          className="rounded-2xl border-2 border-dashed border-teal-200 bg-teal-50/50 hover:bg-teal-50 p-6 shadow-sm mb-8 flex items-center justify-between cursor-pointer group transition duration-300"
+        >
+          <div className="flex items-center gap-4">
+            <span className="text-3xl group-hover:scale-110 transition-transform">💬</span>
+            <div className="text-left">
+              <h3 className="font-bold text-slate-800 text-lg">এই ফলাফল নিয়ে MatriSense-কে জিজ্ঞেস করুন...</h3>
+              <p className="text-xs text-slate-500">আপনার অবস্থা, লক্ষণ বা পরবর্তী যত্ন নিয়ে প্রশ্ন করুন।</p>
+            </div>
+          </div>
+          <span className="rounded-full bg-matri-teal text-white px-3 py-1.5 shadow group-hover:translate-x-1 transition-transform">
+            ➔
+          </span>
+        </div>
+
+        {/* Care Assistant Overlay */}
+        <CareAssistantPanel 
+          sessionId={sessionId}
+          riskLevel={riskLevel}
+          isOpen={assistantOpen}
+          onClose={() => setAssistantOpen(false)}
+        />
+
         {/* Safety Disclaimer */}
         <div className="rounded-2xl border-l-4 border-rose-500 bg-rose-50 p-8 shadow-soft mb-8">
           <h3 className="font-bold text-rose-700 text-lg">⚠️ অত্যন্ত গুরুত্বপূর্ণ সতর্কতা</h3>
@@ -350,5 +377,20 @@ export default function ResultPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-matri-teal border-t-transparent mx-auto mb-4"></div>
+          <p className="text-sm font-medium text-slate-600">ত্রিয়েজ ফলাফল লোড হচ্ছে...</p>
+        </div>
+      </div>
+    }>
+      <ResultPageContent />
+    </Suspense>
   );
 }

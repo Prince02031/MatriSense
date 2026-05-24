@@ -34,7 +34,9 @@
     "rag:pdf-smoke": "node src/vectorRag/tests/runPdfHtmlSmokeTest.js",
     "rag:retrieval-test": "node src/vectorRag/tests/runRuleAwareVectorRagTest.js",
     "rag:fallback-test": "node src/vectorRag/tests/runHybridFallbackTest.js",
-    "rag:hybrid-integration": "node src/vectorRag/tests/runHybridRagIntegrationTest.js"
+    "rag:hybrid-integration": "node src/vectorRag/tests/runHybridRagIntegrationTest.js",
+    "assistant:test": "node src/careAssistant/tests/runCareAssistantSafetyTest.js",
+    "assistant:test:verbose": "cross-env VERBOSE_PROMPTS=true node src/careAssistant/tests/runCareAssistantSafetyTest.js"
   },
   "dependencies": {
     "@google/genai": "^2.0.1",

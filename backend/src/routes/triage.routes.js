@@ -506,10 +506,14 @@ router.get('/patient/:patientId/history', async (req, res) => {
         symptoms: latestSession.caseState?.symptoms || []
       } : null
     });
-  } catch (error) {
+    } catch (error) {
     console.error('[TriageRoutes] History Error:', error);
     res.status(500).json({ error: 'Failed to retrieve history', message: error.message });
   }
 });
+
+// Guided Care Assistant route
+const careAssistantController = require('../careAssistant/careAssistant.controller');
+router.post('/:sessionId/assistant/message', careAssistantController.handleAssistantMessage);
 
 module.exports = router;
