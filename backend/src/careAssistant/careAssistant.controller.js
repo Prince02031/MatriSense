@@ -3,6 +3,45 @@ const { sanitizeChatHistory } = require('./careAssistantPolicy');
 const { buildAssistantPrompt } = require('./careAssistantPromptBuilder');
 const { generateJson } = require('../ai/llmClient');
 const { validateLLMOutput } = require('../safety');
+const { classifyIntent, getIntentName, INTENT_TYPES } = require('./careAssistantIntentClassifier');
+const { getFallbackByIntent } = require('./careAssistantIntentFallbacks');
+
+/**
+ * Helper: Ensure safetyDisclaimer field contains required Bangla phrase.
+ * Repairs LLM responses that miss the disclaimer or have incorrect format.
+ * This is a post-processing safety net before validation.
+ */
+const ensureSafetyDisclaimer = (llmOutput, riskLevel) => {
+  const REQUIRED_PHRASE = 'রেজিস্টার্ড চিকিৎসকের';
+  
+  if (!llmOutput) {
+    return llmOutput;
+  }
+
+  // Check if disclaimer exists and has required phrase
+  if (llmOutput.safetyDisclaimer && llmOutput.safetyDisclaimer.includes(REQUIRED_PHRASE)) {
+    return llmOutput; // Already valid
+  }
+
+  // Build risk-appropriate disclaimer if missing
+  let builtDisclaimer = '';
+  switch ((riskLevel || 'MEDIUM').toUpperCase()) {
+    case 'HIGH':
+      builtDisclaimer = `এটি একটি গুরুত্বপূর্ণ বিষয়। দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন বা নিকটস্থ হাসপাতালে যান।`;
+      break;
+    case 'LOW':
+      builtDisclaimer = `আপনার স্বাস্থ্য যত্নের জন্য নিয়মিত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`;
+      break;
+    case 'MEDIUM':
+    default:
+      builtDisclaimer = `কোনো জটিলতার জন্য দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`;
+  }
+
+  llmOutput.safetyDisclaimer = builtDisclaimer;
+  console.log('[EnsureSafetyDisclaimer] Repaired missing/invalid disclaimer. New:', builtDisclaimer);
+  
+  return llmOutput;
+};
 
 // Standard safe disclaimers/fallbacks based on patient risk level
 const GET_CONSERVATIVE_FALLBACK = (riskLevel) => {
@@ -69,13 +108,15 @@ exports.handleAssistantMessage = async (req, res) => {
     // 2. Sanitize and trim memory bounds
     const cleanHistory = sanitizeChatHistory(chatHistory);
 
-    // 3. Assemble safety-first dynamic prompt
-    const { systemInstruction, userPrompt } = buildAssistantPrompt({
+    // 3. Assemble safety-first dynamic prompt with intent detection
+    const { systemInstruction, userPrompt, detectedIntent } = buildAssistantPrompt({
       userMessage: message,
       sanitizedChatHistory: cleanHistory,
       officialTriageContext: context,
       language: language || 'bn'
     });
+
+    console.log(`[CareAssistantController] Detected intent: ${getIntentName(detectedIntent)}`);
 
     // Define response schema for assistant JSON parsing
     const assistantSchema = {
@@ -131,6 +172,9 @@ exports.handleAssistantMessage = async (req, res) => {
           throw new Error('Malformed or empty JSON response from LLM');
         }
 
+        // 4.5 POST-PROCESSING: Ensure safety disclaimer exists and has required phrase
+        assistantOutput = ensureSafetyDisclaimer(assistantOutput, context.riskLevel);
+
         // 5. Execute Clinical Safety Validator on LLM Output
         // Formulate validator payload mapping assistant properties into explanation schema structures
         const safetyCheckInput = {
@@ -144,16 +188,45 @@ exports.handleAssistantMessage = async (req, res) => {
         const safetyValidation = validateLLMOutput(safetyCheckInput, { riskLevel: context.riskLevel }, context.careGuidanceContext);
 
         if (!safetyValidation.valid) {
-          console.warn('[CareAssistantController] Safety Validator Rejected Response. Issues:', safetyValidation.issues);
+          console.warn('[CareAssistantController] Safety Validator Rejected Response.');
+          console.warn('[CareAssistantController] Issues:', JSON.stringify(safetyValidation.issues, null, 2));
+          console.warn('[CareAssistantController] Intent was:', getIntentName(detectedIntent));
+          console.warn('[CareAssistantController] LLM Output was:', JSON.stringify(assistantOutput, null, 2));
+          
           safetyValidationErrors = safetyValidation.issues;
           safetyPassed = false;
           fallbackUsed = true;
-          assistantOutput = GET_CONSERVATIVE_FALLBACK(context.riskLevel);
+          
+          // Use intent-based fallback instead of generic one
+          const intentFallback = getFallbackByIntent(detectedIntent, context.riskLevel);
+          assistantOutput = {
+            reply: intentFallback.replyBn,
+            suggestedQuickReplies: [
+              "আর কোনো প্রশ্ন আছে কি?",
+              "আমি এটা বুঝতে পারছি না"
+            ],
+            safetyDisclaimer: intentFallback.disclaimerBn
+          };
+        } else {
+          console.log('[CareAssistantController] Safety Validation PASSED. Response approved.');
+          console.log('[CareAssistantController] Intent:', getIntentName(detectedIntent));
+          console.log('[CareAssistantController] Disclaimer included:', assistantOutput.safetyDisclaimer ? 'YES' : 'NO');
         }
 
       } catch (llmError) {
         console.error('[CareAssistantController] LLM Execution Failed:', llmError);
-        assistantOutput = GET_CONSERVATIVE_FALLBACK(context.riskLevel);
+        console.error('[CareAssistantController] Detected intent was:', getIntentName(detectedIntent));
+        
+        // Use intent-based fallback on LLM error too
+        const intentFallback = getFallbackByIntent(detectedIntent, context.riskLevel);
+        assistantOutput = {
+          reply: intentFallback.replyBn,
+          suggestedQuickReplies: [
+            "আরকোনো প্রশ্ন আছে কি?",
+            "আমি এটা বুঝতে পারছি না"
+          ],
+          safetyDisclaimer: intentFallback.disclaimerBn
+        };
         fallbackUsed = true;
         safetyPassed = true; // Preset is guaranteed safe
         safetyValidationErrors = [`LLM_ERROR: ${llmError.message}`];
