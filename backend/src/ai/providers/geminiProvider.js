@@ -26,19 +26,21 @@ const generateJsonWithGemini = async ({ systemInstruction, userPrompt, responseS
       }
     });
 
-    console.log('[GeminiProvider] RAW SDK Result:', JSON.stringify(result, null, 2));
+    // @google/genai v2 SDK returns result.text (a getter), not result.value
+    // Try .text first, then fall back to candidates array
+    const rawText = result?.text ?? result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!result || !result.value) {
-      // Check if it's in candidates or something else
-      const altValue = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (altValue) {
-        console.log('[GeminiProvider] Found data in candidates, parsing manually...');
-        return JSON.parse(altValue);
-      }
+    if (!rawText) {
+      console.error('[GeminiProvider] Empty response. Raw result:', JSON.stringify(result, null, 2));
       throw new Error('[GeminiProvider] Received empty response from Gemini API.');
     }
 
-    return result.value;
+    // When responseMimeType is 'application/json', the SDK may return a parsed object or a JSON string
+    if (typeof rawText === 'object') {
+      return rawText;
+    }
+
+    return JSON.parse(rawText);
 
   } catch (error) {
     console.error('[GeminiProvider] SDK Failure:', error);

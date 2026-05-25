@@ -91,8 +91,10 @@ export const getTriageResult = async (sessionId) => {
 };
 
 export const sendCareAssistantMessage = async (sessionId, payload) => {
+  // Use relative URL to route through the Next.js proxy — same as all other triage routes.
+  // Direct ${apiBase} calls bypass the proxy and cause CORS failures in the browser.
   const token = typeof window !== 'undefined' ? localStorage.getItem('matrisense_token') : null;
-  const response = await fetch(`${apiBase}/api/triage/${sessionId}/assistant/message`, {
+  const response = await fetch(`/api/triage/${sessionId}/assistant/message`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -103,8 +105,8 @@ export const sendCareAssistantMessage = async (sessionId, payload) => {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to send care assistant message');
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `Server error ${response.status}`);
   }
 
   return await response.json();
