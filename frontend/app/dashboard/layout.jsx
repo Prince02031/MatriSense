@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { normalizeRole } from '../../src/utils/roleHelpers';
 
 // Updated config to match backend Enums
@@ -57,6 +58,7 @@ const navConfig = {
 
 export default function DashboardLayout({ children }) {
     const { user, loading, logout, isAuthenticated } = useAuth();
+    const { language, setLanguage, t } = useLanguage();
     const router = useRouter();
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -106,9 +108,13 @@ export default function DashboardLayout({ children }) {
                 <div className="sidebar-header">
                     <Link href="/" className="sidebar-logo">
                         <span className="logo-icon">🩺</span>
-                        MatriSense
+                        {language === 'bn' ? 'মাতৃসেন্স' : 'MatriSense'}
                     </Link>
-                    <span className={`sidebar-role ${roleClass}`}>{nav.label}</span>
+                    <span className={`sidebar-role ${roleClass}`}>
+                        {language === 'bn' && nav.roleKey === 'patient' ? 'রোগী' :
+                            language === 'bn' && nav.roleKey === 'worker' ? 'স্বাস্থ্যকর্মী' :
+                                language === 'bn' && nav.roleKey === 'admin' ? 'অ্যাডমিন' : nav.label}
+                    </span>
                 </div>
 
                 <nav className="sidebar-nav">
@@ -161,6 +167,13 @@ export default function DashboardLayout({ children }) {
                         </h2>
                     </div>
                     <div className="header-actions">
+                        <button
+                            className="btn btn-sm"
+                            style={{ marginRight: '16px', border: '1px solid currentColor', background: 'transparent' }}
+                            onClick={() => setLanguage(language === 'bn' ? 'en' : 'bn')}
+                        >
+                            {language === 'bn' ? 'English' : 'বাংলা'}
+                        </button>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             {user.name}
                         </span>

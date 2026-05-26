@@ -1,0 +1,1 @@
+admin.routes.js\nauth.routes.js\ndev.routes.js\ndocument.routes.js\npatient.routes.js\nreferral.routes.js\nspeech.routes.js\ntriage.routes.js\nworker.routes.js

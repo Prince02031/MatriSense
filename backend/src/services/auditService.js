@@ -1,9 +1,10 @@
 const AuditLog = require('../models/AuditLog');
 
-const logAction = async (sessionId, action, actorRole, details = {}) => {
+const logAction = async (sessionId, action, actorRole, details = {}, userId = null) => {
     try {
         const log = new AuditLog({
-            triageSessionId: sessionId,
+            triageSessionId: sessionId || undefined,
+            userId: userId || undefined,
             action,
             actorRole,
             details

@@ -28,6 +28,7 @@ yarn-error.log*
 
 # Uploads / media (user-uploaded files)
 uploads/
+backend/uploads/
 *.mp3
 *.wav
 *.webm

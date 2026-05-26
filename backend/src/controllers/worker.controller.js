@@ -171,3 +171,50 @@ exports.getAuditLogs = async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
+
+// ============================================================================
+// GET /api/worker/cases/:sessionId/documents
+// Get patient documents related to this case
+// ============================================================================
+exports.getCaseDocuments = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+
+        // 1. Authenticate worker access implicitly by finding the session
+        const session = await TriageSession.findById(sessionId).populate('patientId');
+
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+
+        if (!session.patientId) {
+            return res.json({ success: true, documents: [] });
+        }
+
+        // 2. Fetch active PATIENT documents for this patient
+        const UploadedDocument = require('../models/UploadedDocument');
+        const docs = await UploadedDocument.find({
+            ownerId: session.patientId._id,
+            ownerType: 'PATIENT',
+            isActive: true
+        }).sort({ uploadedAt: -1 });
+
+        // 3. Map to safe metadata
+        const safeDocs = docs.map(d => ({
+            _id: d._id,
+            documentType: d.documentType,
+            title: d.title,
+            description: d.description,
+            originalName: d.originalName,
+            mimeType: d.mimeType,
+            sizeBytes: d.sizeBytes,
+            uploadedAt: d.uploadedAt
+            // storagePath is intentionally EXCLUDED
+        }));
+
+        res.json({ success: true, documents: safeDocs });
+    } catch (error) {
+        console.error('[Worker Controller] Failed to fetch case documents:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch case documents' });
+    }
+};

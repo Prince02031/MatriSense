@@ -103,3 +103,60 @@ export async function getAuditLog(sessionId) {
     });
     return handleResponse(res);
 }
+
+// 6. Get patient documents related to a case
+export async function getCaseDocuments(sessionId) {
+    if (!sessionId) throw new Error("Local Error: Cannot fetch documents without Session ID.");
+
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/documents`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+// ============================================================================
+// PROFILE & CERTIFICATION ENDPOINTS
+// ============================================================================
+
+export async function getMyWorkerProfile() {
+    const res = await fetch(`${apiBase}/api/worker/profile/me`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+export async function updateMyWorkerProfile(payload) {
+    const res = await fetch(`${apiBase}/api/worker/profile/me`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+    });
+    return handleResponse(res);
+}
+
+export async function uploadWorkerCertification(formData) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('matrisense_token') : null;
+
+    // We explicitly DO NOT set Content-Type so the browser can set the multipart boundary
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    const res = await fetch(`${apiBase}/api/worker/profile/certification`, {
+        method: 'POST',
+        headers,
+        body: formData
+    });
+    return handleResponse(res);
+}
+
+export async function getMyWorkerCertification() {
+    const res = await fetch(`${apiBase}/api/worker/profile/certification`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}

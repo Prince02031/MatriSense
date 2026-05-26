@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema(
     {
+        // --- Core auth fields (unchanged) ---
         name: {
             type: String,
             required: [true, 'Name is required'],
@@ -35,6 +36,27 @@ const UserSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+
+        // --- Health-worker professional fields (all optional) ---
+        professionalTitle: { type: String, trim: true },
+        organizationName: { type: String, trim: true },
+        workplaceName: { type: String, trim: true },
+        registrationNumber: { type: String, trim: true },
+        certificationType: { type: String, trim: true },
+        yearsOfExperience: { type: Number },
+        coverageDistricts: { type: [String], default: undefined },
+        coverageUpazilas: { type: [String], default: undefined },
+
+        // --- Certification / verification lifecycle ---
+        certificationStatus: {
+            type: String,
+            enum: ['MISSING', 'PENDING', 'VERIFIED', 'REJECTED'],
+            default: 'MISSING',
+        },
+        certificationSubmittedAt: { type: Date },
+        verifiedAt: { type: Date },
+        verifiedByAdminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        verificationNote: { type: String },
     },
     {
         timestamps: true,
