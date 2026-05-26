@@ -1,0 +1,124 @@
+--- STARTING E2E BACKEND TESTS (AXIOS) ---
+
+--- 1. Register/Login as Patient ---
+Reg Pt: 500 {"success":false,"message":"Internal server error"}
+Login Pt: 400 false
+
+--- 2. Create Profile ---
+Create Prof: 500 false
+
+--- 3. Upload PDF ---
+Upload PDF: 401 false
+
+--- 4. List Docs ---
+Docs List: 401 false
+
+--- 5. Upload Invalid File ---
+Upload Txt (400): 401 undefined
+
+--- 6. Upload Large File ---
+Upload Lrg (400/500): 401 undefined
+
+--- 7. Register/Login Worker ---
+Reg Wrk: 500 {"success":false,"message":"Internal server error"}
+Login Wrk: 400 false
+
+--- 8. Unauthorized Doc Access (blocked) ---
+Block 403: 401
+
+--- 9. Delete Doc ---
+Del Doc: 401 false
+--- DONE ---
+--- STARTING E2E BACKEND TESTS (AXIOS) ---
+
+--- 1. Register/Login as Patient ---
+Reg Pt: 500 {"success":false,"message":"Internal server error"}
+Login Pt: 400 false
+
+--- 2. Create Profile ---
+Create Prof: 500 false
+
+--- 3. Upload PDF ---
+Upload PDF: 401 false
+
+--- 4. List Docs ---
+Docs List: 401 false
+
+--- 5. Upload Invalid File ---
+Upload Txt (400): 401 undefined
+
+--- 6. Upload Large File ---
+Upload Lrg (400/500): 401 undefined
+
+--- 7. Register/Login Worker ---
+Reg Wrk: 500 {"success":false,"message":"Internal server error"}
+Login Wrk: 400 false
+
+--- 8. Unauthorized Doc Access (blocked) ---
+Block 403: 401
+
+--- 9. Delete Doc ---
+Del Doc: 401 false
+--- DONE ---
+--- STARTING E2E BACKEND TESTS (AXIOS) ---
+
+--- 1. Register/Login as Patient ---
+Reg Pt: 500 {"success":false,"message":"Internal server error"}
+Login Pt: 400 false
+
+--- 2. Create Profile ---
+Create Prof: 500 false
+
+--- 3. Upload PDF ---
+Upload PDF: 401 false
+
+--- 4. List Docs ---
+Docs List: 401 false
+
+--- 5. Upload Invalid File ---
+Upload Txt (400): 401 undefined
+
+--- 6. Upload Large File ---
+Upload Lrg (400/500): 401 undefined
+
+--- 7. Register/Login Worker ---
+Reg Wrk: 500 {"success":false,"message":"Internal server error"}
+Login Wrk: 400 false
+
+--- 8. Unauthorized Doc Access (blocked) ---
+Block 403: 401
+
+--- 9. Delete Doc ---
+Del Doc: 401 false
+--- DONE ---
+--- STARTING E2E BACKEND TESTS (AXIOS) ---
+
+--- 1. Register/Login as Patient ---
+Reg Pt: 201 {"success":true,"message":"User registered successfully","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTE1OTlhMmE5YTQ1OTZjNDEyMzExMzYiLCJyb2xlIjoiTU9USEVSIiwiaWF0IjoxNzc5ODAwNDgzLCJleHAiOjE3ODA0MDUyODN9.rc89E6fJOH5Is7gtd40TY01nPWw7KZjBNQ_oxC9QYvw","user":{"name":"Test Pt","phone":"pt_1779800482796@test.com","role":"MOTHER","isActive":true,"certificationStatus":"MISSING","_id":"6a1599a2a9a4596c41231136","createdAt":"2026-05-26T13:01:22.960Z","updatedAt":"2026-05-26T13:01:22.960Z"}}
+Login Pt: 400 false
+
+--- 2. Create Profile ---
+Create Prof: 201 true
+
+--- 3. Upload PDF ---
+Upload PDF: 401 false
+
+--- 4. List Docs ---
+Docs List: 401 false
+
+--- 5. Upload Invalid File ---
+Upload Txt (400): 401 undefined
+
+--- 6. Upload Large File ---
+Upload Lrg (400/500): 401 undefined
+
+--- 7. Register/Login Worker ---
+Reg Wrk: 201 {"success":true,"message":"User registered successfully","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTE1OTlhM2E5YTQ1OTZjNDEyMzExMzkiLCJyb2xlIjoiTU9USEVSIiwiaWF0IjoxNzc5ODAwNDgzLCJleHAiOjE3ODA0MDUyODN9.-kEoII9snkxJfyUP_jTj6i6t_QP3ZH9qla8k1vQ8eF0","user":{"name":"Test Wrk","phone":"wrk_1779800483223@test.com","role":"MOTHER","isActive":true,"certificationStatus":"MISSING","_id":"6a1599a3a9a4596c41231139","createdAt":"2026-05-26T13:01:23.334Z","updatedAt":"2026-05-26T13:01:23.334Z"}}
+Login Wrk: 400 false
+
+--- 8. Unauthorized Doc Access (blocked) ---
+Block 403: 401
+
+--- 9. Delete Doc ---
+Del Doc: 401 false
+--- DONE ---

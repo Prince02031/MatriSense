@@ -1,0 +1,71 @@
+﻿node : ΓÜá∩╕Å  
+LLM_PROVIDER is set to 
+gemini, but 
+GEMINI_API_KEY is 
+missing. AI explanations 
+will use fallback 
+templates.
+At line:1 char:1
++ node src/index.js > 
+logs.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (Γ  
+  Üá∩╕Å  LLM_PRO...back   
+  templates.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+[RAG Config]
+  RAG_MODE=hybrid(default)
+  EMBEDDING_PROVIDER=local(default)
+  EMBEDDING_MODEL=Xenova/multilingual-e5-small(default)
+  EMBEDDING_DIMENSIONS=384(default)
+  VECTOR_INDEX_NAME=vector_index(default)
+Express server running on http://localhost:5000
+Γ¥î MongoDB connection 
+error: bad auth : 
+authentication failed
+   The server will 
+continue running but 
+database operations will 
+fail.
+Register error: 
+MongooseError: Operation 
+`users.findOne()` 
+buffering timed out after 
+10000ms
+    at Timeout._onTimeout 
+(E:\MatriSense\backend\nod
+e_modules\mongoose\lib\dri
+vers\node-mongodb-native\c
+ollection.js:142:25)
+    at listOnTimeout (node
+:internal/timers:605:17)
+    at 
+process.processTimers (nod
+e:internal/timers:541:7)
+[PatientRoutes] POST 
+/api/patients error: 
+Operation 
+`patients.insertOne()` 
+buffering timed out after 
+10000ms
+Register error: 
+MongooseError: Operation 
+`users.findOne()` 
+buffering timed out after 
+10000ms
+    at Timeout._onTimeout 
+(E:\MatriSense\backend\nod
+e_modules\mongoose\lib\dri
+vers\node-mongodb-native\c
+ollection.js:142:25)
+    at listOnTimeout (node
+:internal/timers:605:17)
+    at 
+process.processTimers (nod
+e:internal/timers:541:7)

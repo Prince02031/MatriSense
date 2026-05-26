@@ -7,6 +7,7 @@ import { createReferralNote, getReferralNote } from '../../../api/referralApi';
 import { useAuth } from '../../../context/AuthContext';
 
 import PatientProfilePanel from '../../../components/dashboard/casedetail/PatientProfilePanel';
+import PatientDocumentsPanel from '../../../components/dashboard/casedetail/PatientDocumentsPanel';
 import FollowUpAnswersPanel from '../../../components/dashboard/casedetail/FollowUpAnswersPanel';
 import HealthWorkerSummaryCard from '../../../components/dashboard/casedetail/HealthWorkerSummaryCard';
 import MatchedRulesPanel from '../../../components/dashboard/casedetail/MatchedRulesPanel';
@@ -58,6 +59,7 @@ export default function WorkerCaseDetailPage({ params }) {
             }
         } catch (err) {
             console.error(err);
+            alert('Failed to load case');
         } finally {
             setLoading(false);
         }
@@ -71,9 +73,11 @@ export default function WorkerCaseDetailPage({ params }) {
         e.preventDefault();
         setIsSubmittingStatus(true);
         try {
-            await updateWorkerCaseStatus(sessionId, status);
-            await fetchDetail(); // refresh data
-            alert('Status updated successfully');
+            const data = await updateWorkerCaseStatus(sessionId, status, user?._id || user?.id);
+            if (data.success) {
+                setCaseDetail(data.session);
+                alert('Status updated successfully');
+            }
         } catch (err) {
             console.error(err);
             alert('Failed to update status');
@@ -86,25 +90,21 @@ export default function WorkerCaseDetailPage({ params }) {
         e.preventDefault();
         setIsSubmittingNote(true);
         try {
-            const data = await createReferralNote({
-                triageSessionId: sessionId,
-                patientId: caseDetail.patientId?._id || 'unknown',
+            const workerId = user?._id || user?.id;
+            const data = await createReferralNote(
+                sessionId,
+                workerId,
+                noteText,
                 actionTaken,
                 referredTo,
-                followUpDate: followUpDate || undefined,
-                note: noteText,
-                statusAfterNote: status
-            });
+                followUpDate
+            );
+
             if (data.success) {
-                // If a next checkup date is set, also save it
-                if (nextCheckupDate) {
-                    await setFollowUpDate(sessionId, nextCheckupDate, user?._id || user?.id);
-                }
-                await fetchDetail(); // refresh case and timeline
+                setNotes([data.note, ...notes]);
                 setNoteText('');
                 setReferredTo('');
                 setFollowUpDate('');
-                alert('Note added successfully');
             }
         } catch (err) {
             console.error(err);
@@ -158,6 +158,8 @@ export default function WorkerCaseDetailPage({ params }) {
                         nextCheckupDate={caseDetail.nextCheckupDate}
                         followUpDateSetBy={caseDetail.followUpDateSetBy}
                     />
+
+                    <PatientDocumentsPanel sessionId={sessionId} />
 
                     <HealthWorkerSummaryCard
                         safeOutput={caseDetail.safeOutput}

@@ -14,12 +14,12 @@ const CASES_PER_PAGE = 20;
 export default function WorkerDashboard() {
     const { user } = useAuth();
     const router = useRouter();
-    
+
     const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    
+
     // Filter and sort states
     const [filterMode, setFilterMode] = useState('all'); // 'all' or 'latest-patient'
     const [sortBy, setSortBy] = useState('risk'); // 'risk' or 'date'
@@ -33,7 +33,7 @@ export default function WorkerDashboard() {
             setLoading(true);
             const skip = (page - 1) * CASES_PER_PAGE;
             const data = await getWorkerCases(CASES_PER_PAGE, skip, filterMode, sortBy);
-            
+
             if (data.success) {
                 setCases(data.cases);
                 setTotalPages(Math.ceil(data.pagination.total / CASES_PER_PAGE));
@@ -59,7 +59,13 @@ export default function WorkerDashboard() {
     };
 
     return (
-        <>
+        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h1 className="section-title" style={{ margin: 0 }}>📋 Triage Cases</h1>
+                <Link href="/dashboard/worker/profile" className="button button-outline" style={{ display: 'inline-block', padding: '8px 16px', borderRadius: '8px', textDecoration: 'none', fontWeight: '500' }}>
+                    👤 Professional Profile
+                </Link>
+            </div>
             {/* Welcome Card */}
             <div className="welcome-card" style={{ marginBottom: '24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -280,6 +286,6 @@ export default function WorkerDashboard() {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 }
