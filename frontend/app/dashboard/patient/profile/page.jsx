@@ -456,7 +456,7 @@ export default function PatientProfilePage() {
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <a
-                                            href={`${API_BASE}/api/documents/${doc._id}/download`}
+                                            href={`${API_BASE}/api/documents/${doc._id}/download?token=${localStorage.getItem('matrisense_token') || ''}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="badge badge-success"

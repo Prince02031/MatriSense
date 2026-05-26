@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { getMyPatient } from '../../api/patientApi';
 import VoiceRecorderButton from '../../../src/components/voice/VoiceRecorderButton';
 import ReadAloudButton from '../../../src/components/voice/ReadAloudButton';
 
@@ -21,6 +22,40 @@ export default function TriageStartPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [voiceError, setVoiceError] = useState(null);
+
+  // Auto-populate gestational week and trimester from saved patient profile
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const loadPatientDefaults = async () => {
+      try {
+        const res = await getMyPatient();
+        if (res.success && res.patient) {
+          const p = res.patient;
+          // Set trimester if known
+          if (p.trimester && p.trimester !== 'unknown') {
+            setTrimester(p.trimester);
+          }
+          // Set gestational week directly if stored
+          if (p.gestationalWeek) {
+            setGestationalWeek(String(p.gestationalWeek));
+          } else if (p.expectedDeliveryDate) {
+            // Calculate gestational week from EDD: full term is 40 weeks
+            const edd = new Date(p.expectedDeliveryDate);
+            const today = new Date();
+            const weeksRemaining = (edd - today) / (7 * 24 * 60 * 60 * 1000);
+            const calculated = Math.round(40 - weeksRemaining);
+            if (calculated >= 1 && calculated <= 42) {
+              setGestationalWeek(String(calculated));
+            }
+          }
+        }
+      } catch (err) {
+        // Silent fail — user can still enter manually
+        console.warn('Could not load patient profile defaults:', err.message);
+      }
+    };
+    loadPatientDefaults();
+  }, [isAuthenticated]);
 
   const commonDangerSigns = [
     { id: 'vaginal_bleeding', labelBn: 'যোনি থেকে রক্তপাত' },
@@ -43,7 +78,7 @@ export default function TriageStartPage() {
     setVoiceError(null);
     if (data.transcript) {
       // Append transcript to existing text with space
-      setInputTextBn((prev) => 
+      setInputTextBn((prev) =>
         prev.trim() ? `${prev} ${data.transcript}` : data.transcript
       );
     }
@@ -177,7 +212,7 @@ export default function TriageStartPage() {
         <div className="rounded-2xl bg-white p-8 shadow-soft mb-8">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-bold text-slate-900">জরুরি সতর্কতা চিহ্ন</h2>
-            <ReadAloudButton 
+            <ReadAloudButton
               text="যদি আপনি এই সতর্কতা চিহ্নগুলির মধ্যে কোনটি অনুভব করছেন তাহলে চেক করুন। এগুলি স্বয়ংক্রিয়ভাবে সনাক্ত হবে। জরুরি সেবার প্রয়োজনে অবিলম্বে একজন যোগ্য চিকিৎসককে যোগাযোগ করুন।"
               label="শুনুন"
               language="bn-BD"
@@ -210,7 +245,7 @@ export default function TriageStartPage() {
         <div className="rounded-2xl bg-white p-8 shadow-soft mb-8">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-bold text-slate-900">আপনার লক্ষণগুলি বর্ণনা করুন</h2>
-            <ReadAloudButton 
+            <ReadAloudButton
               text="বাংলায় আপনি যেসব লক্ষণ অনুভব করছেন বর্ণনা করুন। যত বেশি বিস্তারিত, তত ভালো পরামর্শ পাবেন। আপনি বলতে পারেন বা লিখতে পারেন।"
               label="শুনুন"
               language="bn-BD"
@@ -233,7 +268,7 @@ export default function TriageStartPage() {
 
             {/* Voice input on the right */}
             <div className="flex flex-col items-center justify-start pt-2">
-              <VoiceRecorderButton 
+              <VoiceRecorderButton
                 onTranscript={handleVoiceTranscript}
                 onError={handleVoiceError}
                 disabled={loading}

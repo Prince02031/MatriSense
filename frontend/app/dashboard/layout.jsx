@@ -33,7 +33,7 @@ const navConfig = {
                 links: [
                     { href: '/dashboard/worker', icon: '🏠', label: 'Dashboard' },
                     { href: '/dashboard/worker#cases', icon: '📂', label: 'Case Queue' },
-                    { href: '/dashboard/worker#patients', icon: '👥', label: 'Patients' },
+                    { href: '/dashboard/worker/patients', icon: '👥', label: 'Patient List' },
                     { href: '/dashboard/worker#alerts', icon: '🔔', label: 'Alerts' },
                 ],
             },
@@ -123,7 +123,7 @@ export default function DashboardLayout({ children }) {
                             <div className="nav-section-label">{section.title}</div>
                             {section.links.map((link) => (
                                 <Link
-                                    key={link.href}
+                                    key={link.label}
                                     href={link.href}
                                     className={`nav-link ${pathname === link.href.split('#')[0] && !link.href.includes('#') ? 'active' : ''
                                         }`}
