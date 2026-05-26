@@ -5,9 +5,15 @@ const protect = async (req, res, next) => {
     let token;
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            token = req.headers.authorization.split(' ')[1];
+        // Primary: Authorization header (API calls)
+        token = req.headers.authorization.split(' ')[1];
+    } else if (req.query.token) {
+        // Fallback: query-string token (browser-opened URLs like document downloads)
+        token = req.query.token;
+    }
 
+    if (token) {
+        try {
             // Verify token payload
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 

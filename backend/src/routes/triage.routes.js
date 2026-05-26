@@ -32,7 +32,7 @@ router.post('/start', async (req, res) => {
         if (!user) {
           return res.status(404).json({ error: `User not found for id: ${userId}` });
         }
-        
+
         patient = new Patient({
           userId,
           name: user.name || 'Unknown',
@@ -289,7 +289,7 @@ router.post('/:sessionId/run', async (req, res) => {
   try {
     const { sessionId } = req.params;
     console.log('[TriageRoutes] Starting run for sessionId:', sessionId);
-    
+
     const session = await TriageSession.findById(sessionId);
 
     if (!session) return res.status(404).json({ error: 'Session not found' });
@@ -345,7 +345,7 @@ router.post('/:sessionId/confirm', async (req, res) => {
   try {
     const { sessionId } = req.params;
     const { confirmedSymptoms, editedByUser } = req.body;
-    
+
     const session = await TriageSession.findById(sessionId);
     if (!session) return res.status(404).json({ error: 'Session not found' });
 
@@ -356,16 +356,16 @@ router.post('/:sessionId/confirm', async (req, res) => {
     // 1. Save confirmation data
     session.confirmedSymptoms = confirmedSymptoms || session.caseState.symptoms;
     session.editedByUser = editedByUser || false;
-    
+
     // 2. Update case state with confirmed symptoms
     session.caseState.symptoms = session.confirmedSymptoms;
-    
+
     // 3. Update status
     session.status = 'confirmed';
     session.updatedAt = new Date();
-    
+
     await session.save();
-    
+
     await logAction(sessionId, 'Symptoms confirmed by user', 'PATIENT');
 
     res.json({
@@ -469,7 +469,7 @@ router.get('/patient/:patientId/history', async (req, res) => {
       const nullSessions = await TriageSession.find({ patientId: null })
         .sort({ createdAt: -1 })
         .lean();
-      
+
       // Filter to sessions that belong to this userId by checking if they have completed decisions
       // (This is a safety measure - ideally we'd have userId on sessions)
       if (nullSessions.length > 0) {
@@ -482,9 +482,17 @@ router.get('/patient/:patientId/history', async (req, res) => {
     // Count total sessions for pagination
     const total = await TriageSession.countDocuments({ patientId: actualPatientId });
 
-    // Get the most recent session for summary
+    // Get most recently created session for summary data
     const latestSession = await TriageSession.findOne({ patientId: actualPatientId })
       .sort({ createdAt: -1 })
+      .lean();
+
+    // Get most recently SCHEDULED checkup date across all sessions (may differ from latestSession)
+    const sessionWithCheckup = await TriageSession.findOne({
+      patientId: actualPatientId,
+      nextCheckupDate: { $ne: null }
+    })
+      .sort({ nextCheckupDate: -1 })
       .lean();
 
     res.json({
@@ -503,10 +511,11 @@ router.get('/patient/:patientId/history', async (req, res) => {
         sessionId: latestSession._id,
         createdAt: latestSession.createdAt,
         riskLevel: latestSession.decision?.riskLevel || 'UNKNOWN',
-        symptoms: latestSession.caseState?.symptoms || []
+        symptoms: latestSession.caseState?.symptoms || [],
+        nextCheckupDate: sessionWithCheckup?.nextCheckupDate || latestSession.nextCheckupDate || null
       } : null
     });
-    } catch (error) {
+  } catch (error) {
     console.error('[TriageRoutes] History Error:', error);
     res.status(500).json({ error: 'Failed to retrieve history', message: error.message });
   }

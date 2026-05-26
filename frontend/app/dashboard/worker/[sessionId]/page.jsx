@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getWorkerCase, updateWorkerCaseStatus, getAuditLog, setFollowUpDate } from '../../../api/workerApi';
 import { createReferralNote, getReferralNote } from '../../../api/referralApi';
 import { useAuth } from '../../../context/AuthContext';
+import ProtectedRoute from '../../../components/ProtectedRoute';
 
 import PatientProfilePanel from '../../../components/dashboard/casedetail/PatientProfilePanel';
 import PatientDocumentsPanel from '../../../components/dashboard/casedetail/PatientDocumentsPanel';
@@ -31,7 +32,7 @@ export default function WorkerCaseDetailPage({ params }) {
     const [noteText, setNoteText] = useState('');
     const [actionTaken, setActionTaken] = useState('CONTACTED');
     const [referredTo, setReferredTo] = useState('');
-    const [followUpDate, setFollowUpDate] = useState('');
+    const [noteFollowUpDate, setNoteFollowUpDate] = useState('');  // follow-up date for the note
     const [nextCheckupDate, setNextCheckupDate] = useState('');
 
     // Status states
@@ -90,21 +91,20 @@ export default function WorkerCaseDetailPage({ params }) {
         e.preventDefault();
         setIsSubmittingNote(true);
         try {
-            const workerId = user?._id || user?.id;
-            const data = await createReferralNote(
-                sessionId,
-                workerId,
-                noteText,
+            const data = await createReferralNote({
+                triageSessionId: sessionId,
                 actionTaken,
-                referredTo,
-                followUpDate
-            );
+                referredTo: referredTo || undefined,
+                followUpDate: noteFollowUpDate || undefined,
+                note: noteText,
+                statusAfterNote: status
+            });
 
             if (data.success) {
                 setNotes([data.note, ...notes]);
                 setNoteText('');
                 setReferredTo('');
-                setFollowUpDate('');
+                setNoteFollowUpDate('');
             }
         } catch (err) {
             console.error(err);
@@ -139,138 +139,140 @@ export default function WorkerCaseDetailPage({ params }) {
     if (!caseDetail) return <div style={{ padding: '48px', textAlign: 'center' }}>Case not found.</div>;
 
     return (
-        <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <button onClick={() => router.back()} className="btn btn-secondary">← Back to Dashboard</button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontWeight: '600' }}>Current Status:</span>
-                    <CaseStatusBadge status={status} />
+        <ProtectedRoute allowedRoles={['worker']}>
+            <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <button onClick={() => router.back()} className="btn btn-secondary">← Back to Dashboard</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontWeight: '600' }}>Current Status:</span>
+                        <CaseStatusBadge status={status} />
+                    </div>
                 </div>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '24px', alignItems: 'start' }}>
-                {/* Left Column - Main Content */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    <PatientProfilePanel
-                        patient={caseDetail.patientId}
-                        decision={caseDetail.decision}
-                        caseState={caseDetail.caseState}
-                        nextCheckupDate={caseDetail.nextCheckupDate}
-                        followUpDateSetBy={caseDetail.followUpDateSetBy}
-                    />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '24px', alignItems: 'start' }}>
+                    {/* Left Column - Main Content */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        <PatientProfilePanel
+                            patient={caseDetail.patientId}
+                            decision={caseDetail.decision}
+                            caseState={caseDetail.caseState}
+                            nextCheckupDate={caseDetail.nextCheckupDate}
+                            followUpDateSetBy={caseDetail.followUpDateSetBy}
+                        />
 
-                    <PatientDocumentsPanel sessionId={sessionId} />
+                        <PatientDocumentsPanel sessionId={sessionId} />
 
-                    <HealthWorkerSummaryCard
-                        safeOutput={caseDetail.safeOutput}
-                    />
+                        <HealthWorkerSummaryCard
+                            safeOutput={caseDetail.safeOutput}
+                        />
 
-                    <FollowUpAnswersPanel
-                        inputTextBn={caseDetail.inputTextBn}
-                        caseState={caseDetail.caseState}
-                    />
+                        <FollowUpAnswersPanel
+                            inputTextBn={caseDetail.inputTextBn}
+                            caseState={caseDetail.caseState}
+                        />
 
-                    <div className="dash-card">
-                        <h3>🗒️ Activity & Notes History</h3>
-                        <div style={{ marginTop: '16px' }}>
-                            <ReferralNoteList notes={notes} />
+                        <div className="dash-card">
+                            <h3>🗒️ Activity & Notes History</h3>
+                            <div style={{ marginTop: '16px' }}>
+                                <ReferralNoteList notes={notes} />
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Right Column - Audit & Action Tools */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {/* Right Column - Audit & Action Tools */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                    <div className="dash-card">
-                        <h3>🛠️ Case Management</h3>
-                        <form onSubmit={handleUpdateStatus} style={{ marginTop: '16px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.85rem', fontWeight: '600' }}>Update Status: </label>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <select value={status} onChange={(e) => setStatus(e.target.value)} className="form-input" style={{ flex: 1 }}>
-                                    <option value="NEW">New</option>
-                                    <option value="VIEWED">Viewed</option>
-                                    <option value="CONTACTED">Contacted Patient</option>
-                                    <option value="REFERRED">Referred to Clinic</option>
-                                    <option value="FOLLOW_UP_NEEDED">Follow-up Needed</option>
-                                    <option value="RESOLVED">Resolved</option>
-                                </select>
-                                <button type="submit" className="btn btn-primary" disabled={isSubmittingStatus}>
-                                    {isSubmittingStatus ? 'Saving...' : 'Save'}
-                                </button>
-                            </div>
-                        </form>
+                        <div className="dash-card">
+                            <h3>🛠️ Case Management</h3>
+                            <form onSubmit={handleUpdateStatus} style={{ marginTop: '16px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: '600' }}>Update Status: </label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="form-input" style={{ flex: 1 }}>
+                                        <option value="NEW">New</option>
+                                        <option value="VIEWED">Viewed</option>
+                                        <option value="CONTACTED">Contacted Patient</option>
+                                        <option value="REFERRED">Referred to Clinic</option>
+                                        <option value="FOLLOW_UP_NEEDED">Follow-up Needed</option>
+                                        <option value="RESOLVED">Resolved</option>
+                                    </select>
+                                    <button type="submit" className="btn btn-primary" disabled={isSubmittingStatus}>
+                                        {isSubmittingStatus ? 'Saving...' : 'Save'}
+                                    </button>
+                                </div>
+                            </form>
 
-                        <hr style={{ margin: '16px 0', borderColor: 'var(--border-subtle)' }} />
+                            <hr style={{ margin: '16px 0', borderColor: 'var(--border-subtle)' }} />
 
-                        <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>Set Next Checkup Date</h4>
-                        <form onSubmit={handleSetFollowUpDate} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                            <input
-                                type="date"
-                                value={nextCheckupDate}
-                                onChange={e => setNextCheckupDate(e.target.value)}
-                                className="form-input"
-                            />
-                            <button type="submit" className="btn btn-primary" disabled={isSubmittingFollowUp}>
-                                {isSubmittingFollowUp ? 'Setting...' : 'Set Checkup Date'}
-                            </button>
-                        </form>
-
-                        <hr style={{ margin: '16px 0', borderColor: 'var(--border-subtle)' }} />
-
-                        <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>Add Referral / Follow-up Note</h4>
-                        <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <select value={actionTaken} onChange={e => setActionTaken(e.target.value)} className="form-input">
-                                <option value="CONTACTED">Contacted Patient</option>
-                                <option value="URGENT_REFERRAL">Urgent Referral</option>
-                                <option value="MONITOR">Monitor Only</option>
-                            </select>
-
-                            {actionTaken === 'URGENT_REFERRAL' && (
-                                <input
-                                    type="text"
-                                    placeholder="Referred To (Clinic/Hospital)"
-                                    value={referredTo}
-                                    onChange={e => setReferredTo(e.target.value)}
-                                    className="form-input"
-                                />
-                            )}
-
-                            <div>
-                                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Follow-up Date (Optional)</label>
+                            <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>Set Next Checkup Date</h4>
+                            <form onSubmit={handleSetFollowUpDate} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                                 <input
                                     type="date"
-                                    value={followUpDate}
-                                    onChange={e => setFollowUpDate(e.target.value)}
+                                    value={nextCheckupDate}
+                                    onChange={e => setNextCheckupDate(e.target.value)}
                                     className="form-input"
                                 />
-                            </div>
+                                <button type="submit" className="btn btn-primary" disabled={isSubmittingFollowUp}>
+                                    {isSubmittingFollowUp ? 'Setting...' : 'Set Checkup Date'}
+                                </button>
+                            </form>
 
-                            <textarea
-                                placeholder="Enter clinical notes..."
-                                value={noteText}
-                                onChange={e => setNoteText(e.target.value)}
-                                className="form-input"
-                                rows="3"
-                                required
-                            />
+                            <hr style={{ margin: '16px 0', borderColor: 'var(--border-subtle)' }} />
 
-                            <button type="submit" className="btn btn-outline" style={{ width: '100%', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }} disabled={isSubmittingNote}>
-                                {isSubmittingNote ? 'Adding Note...' : 'Add Note'}
-                            </button>
-                        </form>
+                            <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>Add Referral / Follow-up Note</h4>
+                            <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <select value={actionTaken} onChange={e => setActionTaken(e.target.value)} className="form-input">
+                                    <option value="CONTACTED">Contacted Patient</option>
+                                    <option value="URGENT_REFERRAL">Urgent Referral</option>
+                                    <option value="MONITOR">Monitor Only</option>
+                                </select>
+
+                                {actionTaken === 'URGENT_REFERRAL' && (
+                                    <input
+                                        type="text"
+                                        placeholder="Referred To (Clinic/Hospital)"
+                                        value={referredTo}
+                                        onChange={e => setReferredTo(e.target.value)}
+                                        className="form-input"
+                                    />
+                                )}
+
+                                <div>
+                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Follow-up Date (Optional)</label>
+                                    <input
+                                        type="date"
+                                        value={noteFollowUpDate}
+                                        onChange={e => setNoteFollowUpDate(e.target.value)}
+                                        className="form-input"
+                                    />
+                                </div>
+
+                                <textarea
+                                    placeholder="Enter clinical notes..."
+                                    value={noteText}
+                                    onChange={e => setNoteText(e.target.value)}
+                                    className="form-input"
+                                    rows="3"
+                                    required
+                                />
+
+                                <button type="submit" className="btn btn-outline" style={{ width: '100%', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }} disabled={isSubmittingNote}>
+                                    {isSubmittingNote ? 'Adding Note...' : 'Add Note'}
+                                </button>
+                            </form>
+                        </div>
+
+                        <MatchedRulesPanel decision={caseDetail.decision} />
+
+                        <EvidencePanel
+                            evidenceTags={caseDetail.decision?.evidenceTags}
+                            careGuidanceContext={caseDetail.careGuidanceContext}
+                        />
+
+                        <AuditTimeline session={caseDetail} auditLogs={auditLogs} />
+
                     </div>
-
-                    <MatchedRulesPanel decision={caseDetail.decision} />
-
-                    <EvidencePanel
-                        evidenceTags={caseDetail.decision?.evidenceTags}
-                        careGuidanceContext={caseDetail.careGuidanceContext}
-                    />
-
-                    <AuditTimeline session={caseDetail} auditLogs={auditLogs} />
-
                 </div>
             </div>
-        </div>
+        </ProtectedRoute>
     );
 }

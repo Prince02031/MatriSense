@@ -11,7 +11,8 @@ export default function PatientDashboard() {
     const [summary, setSummary] = useState({
         totalSessions: 0,
         latestRisk: 'LOW',
-        latestDate: null
+        latestDate: null,
+        nextCheckupDate: null
     });
     const [loading, setLoading] = useState(true);
 
@@ -40,7 +41,10 @@ export default function PatientDashboard() {
                     setSummary({
                         totalSessions: data.total || 0,
                         latestRisk: data.latest?.riskLevel || 'LOW',
-                        latestDate: data.latest?.createdAt ? new Date(data.latest.createdAt).toLocaleDateString() : null
+                        latestDate: data.latest?.createdAt ? new Date(data.latest.createdAt).toLocaleDateString() : null,
+                        nextCheckupDate: data.latest?.nextCheckupDate
+                            ? new Date(data.latest.nextCheckupDate).toLocaleDateString()
+                            : null
                     });
                 }
             } catch (error) {
@@ -113,7 +117,7 @@ export default function PatientDashboard() {
                     <div className="dash-card-header">
                         <div className="dash-card-icon icon-teal">📅</div>
                     </div>
-                    <div className="dash-card-value">{loading ? '...' : (summary.latestDate || '—')}</div>
+                    <div className="dash-card-value">{loading ? '...' : (summary.nextCheckupDate || summary.latestDate || '—')}</div>
                     <div className="dash-card-sub">{t.nextCheckup}</div>
                 </div>
                 <div className="dash-card">

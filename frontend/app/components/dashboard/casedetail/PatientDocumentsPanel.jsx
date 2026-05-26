@@ -92,7 +92,7 @@ export default function PatientDocumentsPanel({ sessionId }) {
                         <div>
                             {/* Uses the protected download endpoint built previously */}
                             <a
-                                href={`${API_BASE}/api/documents/${doc._id}/download`}
+                                href={`${API_BASE}/api/documents/${doc._id}/download?token=${typeof window !== 'undefined' ? localStorage.getItem('matrisense_token') || '' : ''}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="badge badge-indigo"
