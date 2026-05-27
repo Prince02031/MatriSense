@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-export default function LeafletMap({ patientLat, patientLng, patientName, hospitals }) {
+export default function LeafletMap({ patientLat, patientLng, patientName, hospitals, onHospitalSelect }) {
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const [leafletLoaded, setLeafletLoaded] = useState(false);
@@ -76,16 +76,23 @@ export default function LeafletMap({ patientLat, patientLng, patientName, hospit
         // Add Hospital Markers
         const hospitalIcon = L.divIcon({
             className: 'custom-hospital-marker',
-            html: `<div style="background-color: #0d9488; color: white; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.3)">≡ƒÅÑ</div>`,
+            html: `<div style="background-color: #0d9488; color: white; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer;">🏥</div>`,
             iconSize: [30, 30],
             iconAnchor: [15, 15]
         });
 
         hospitals.forEach(h => {
             if (h.latitude && h.longitude) {
-                L.marker([h.latitude, h.longitude], { icon: hospitalIcon })
+                const marker = L.marker([h.latitude, h.longitude], { icon: hospitalIcon })
                     .addTo(map)
-                    .bindPopup(`<b>≡ƒÅÑ ${h.name}</b><br/>${h.type?.replace(/_/g, ' ')}<br/>${h.distance !== null && h.distance !== undefined ? `${h.distance} km away` : ''}`);
+                    .bindPopup(`<b>🏥 ${h.name}</b><br/>${h.type?.replace(/_/g, ' ')}<br/>${h.distance !== null && h.distance !== undefined ? `${h.distance} km away` : ''}<br/><small style="color: #0d9488; font-weight: bold;">Click marker to select</small>`);
+                
+                // Make marker clickable to select hospital
+                marker.on('click', () => {
+                    if (onHospitalSelect) {
+                        onHospitalSelect(h);
+                    }
+                });
             }
         });
 
@@ -100,7 +107,7 @@ export default function LeafletMap({ patientLat, patientLng, patientName, hospit
             map.fitBounds(coordinates, { padding: [50, 50] });
         }
 
-    }, [leafletLoaded, patientLat, patientLng, hospitals, patientName]);
+    }, [leafletLoaded, patientLat, patientLng, hospitals, patientName, onHospitalSelect]);
 
     if (!patientLat || !patientLng) {
         return (
