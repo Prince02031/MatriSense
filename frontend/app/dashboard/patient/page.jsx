@@ -82,7 +82,7 @@ export default function PatientDashboard() {
                         <p>{t.viewHistoryHelp}</p>
                     </div>
                 </Link>
-                <Link href="/settings" className="action-card">
+                <Link href="/dashboard/patient/profile" className="action-card">
                     <div className="action-icon icon-rose">👤</div>
                     <div className="action-text">
                         <h3>{t.myProfile}</h3>

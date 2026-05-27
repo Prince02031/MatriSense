@@ -1,22 +1,93 @@
+const mongoose = require('mongoose');
 const TriageSession = require('../models/TriageSession');
 const AuditLog = require('../models/AuditLog');
 const { logAction } = require('../services/auditService');
 
 exports.getCases = async (req, res) => {
     try {
-        const { limit = 20, skip = 0, filterMode = 'all', sortBy = 'risk' } = req.query;
+        const { limit = 20, skip = 0, filterMode = 'all', sortBy = 'risk', district, riskLevel, status, assignedHospitalId } = req.query;
         const pageLimit = Math.min(parseInt(limit), 100); // Max 100 per page
         const pageSkip = parseInt(skip);
 
-        let query = TriageSession.find()
+        // Build search query conditions
+        const filter = {};
+
+        // 1. Regional filtering based on Worker's coverage (if restrictions apply)
+        if (req.user && req.user.role === 'HEALTH_WORKER' && !req.user.canViewAllDistricts) {
+            const coverage = req.user.coverageDistricts || [];
+            if (coverage.length > 0) {
+                const regexList = coverage.map(d => new RegExp(`^${d.trim()}$`, 'i'));
+                
+                // Find matching patients in coverage districts to catch legacy records
+                const matchingPatients = await mongoose.model('Patient').find({
+                    district: { $in: regexList }
+                }).select('_id');
+                const patientIds = matchingPatients.map(p => p._id);
+
+                filter.$or = [
+                    { 'profileSnapshot.district': { $in: regexList } },
+                    { 'patientId': { $in: patientIds } }
+                ];
+            }
+        }
+
+        // 2. Explicit Query Filters
+        if (district) {
+            const districtRegex = new RegExp(`^${district.trim()}$`, 'i');
+            
+            const matchingPatients = await mongoose.model('Patient').find({
+                district: districtRegex
+            }).select('_id');
+            const patientIds = matchingPatients.map(p => p._id);
+
+            const districtCondition = {
+                $or: [
+                    { 'profileSnapshot.district': districtRegex },
+                    { 'patientId': { $in: patientIds } }
+                ]
+            };
+
+            if (filter.$or) {
+                // If we already have $or constraints (e.g. from coverage), run both
+                filter.$and = [
+                    { $or: filter.$or },
+                    districtCondition
+                ];
+                delete filter.$or;
+            } else {
+                filter.$or = districtCondition.$or;
+            }
+        }
+
+        if (riskLevel) {
+            filter['decision.riskLevel'] = riskLevel.toUpperCase();
+        }
+
+        if (status) {
+            filter['status'] = status;
+        }
+
+        if (assignedHospitalId) {
+            filter['assignedHospitalId'] = assignedHospitalId;
+        }
+
+        let query = TriageSession.find(filter)
             .populate('patientId')
             .populate('followUpDateSetBy', 'name');
 
         // Apply filterMode: 'all' or 'latest-patient'
         if (filterMode === 'latest-patient') {
-            // Get latest triage for each patient
+            // Get latest triage for each patient under the current filters
+            const matchStage = { patientId: { $ne: null } };
+            // Copy top-level filter keys (like status, riskLevel, assignedHospitalId) to aggregation
+            Object.keys(filter).forEach(key => {
+                if (key !== '$or' && key !== '$and') {
+                    matchStage[key] = filter[key];
+                }
+            });
+
             const latestPerPatient = await TriageSession.aggregate([
-                { $match: { patientId: { $ne: null } } },
+                { $match: matchStage },
                 { $sort: { createdAt: -1 } },
                 { $group: { _id: '$patientId', sessionId: { $first: '$_id' } } },
                 { $limit: pageLimit },
@@ -33,11 +104,8 @@ exports.getCases = async (req, res) => {
 
         // Apply sorting
         if (sortBy === 'risk') {
-            // Sort by risk level (HIGH > MEDIUM > LOW), then by date descending
             query = query.sort({ 'decision.riskLevel': 1, createdAt: -1 });
-            // Note: MongoDB sorts strings alphabetically, so need custom sort in application
         } else {
-            // Sort by date descending (newest first)
             query = query.sort({ createdAt: -1 });
         }
 
@@ -57,14 +125,20 @@ exports.getCases = async (req, res) => {
         // Get total count
         let totalCount;
         if (filterMode === 'latest-patient') {
+            const matchStage = { patientId: { $ne: null } };
+            Object.keys(filter).forEach(key => {
+                if (key !== '$or' && key !== '$and') {
+                    matchStage[key] = filter[key];
+                }
+            });
             totalCount = await TriageSession.aggregate([
-                { $match: { patientId: { $ne: null } } },
+                { $match: matchStage },
                 { $group: { _id: '$patientId' } },
                 { $count: 'total' }
             ]);
             totalCount = totalCount[0]?.total || 0;
         } else {
-            totalCount = await TriageSession.countDocuments();
+            totalCount = await TriageSession.countDocuments(filter);
         }
 
         res.json({
@@ -79,6 +153,76 @@ exports.getCases = async (req, res) => {
         });
     } catch (err) {
         console.error('[WorkerController] getCases error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.assignHospital = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const { hospitalId, reason } = req.body;
+        const workerId = req.user?._id;
+
+        const session = await TriageSession.findById(sessionId);
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+
+        const Hospital = require('../models/Hospital');
+        const hospital = await Hospital.findById(hospitalId);
+        if (!hospital) {
+            return res.status(404).json({ success: false, error: 'Hospital not found' });
+        }
+
+        const actionType = session.assignedHospitalId ? 'REASSIGNED' : 'ASSIGNED';
+        const previousHospitalName = session.assignedHospitalSnapshot?.name || 'None';
+
+        // Update session details
+        session.assignedHospitalId = hospital._id;
+        session.assignedHospitalSnapshot = {
+            name: hospital.name,
+            type: hospital.type,
+            division: hospital.division,
+            district: hospital.district,
+            upazilaOrThana: hospital.upazilaOrThana,
+            address: hospital.address,
+            latitude: hospital.latitude,
+            longitude: hospital.longitude,
+            phone: hospital.phone,
+            services: hospital.services
+        };
+        session.assignedByWorkerId = workerId;
+        session.assignedAt = new Date();
+
+        // Add to history
+        session.hospitalAssignmentHistory.push({
+            hospitalId: hospital._id,
+            hospitalName: hospital.name,
+            assignedBy: workerId,
+            assignedAt: new Date(),
+            reason: reason || 'Not specified',
+            action: actionType
+        });
+
+        await session.save();
+
+        // Audit logging
+        await logAction(
+            sessionId,
+            actionType === 'ASSIGNED' ? 'Hospital assigned' : 'Hospital reassigned',
+            'WORKER',
+            {
+                hospitalId,
+                hospitalName: hospital.name,
+                previousHospitalName,
+                reason: reason || 'Not specified',
+                workerId
+            }
+        );
+
+        res.json({ success: true, session });
+    } catch (err) {
+        console.error('[WorkerController] assignHospital error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 };

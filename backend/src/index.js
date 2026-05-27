@@ -43,6 +43,8 @@ const triageRoutes = require('./routes/triage.routes');
 const speechRoutes = require('./routes/speech.routes');
 const patientRoutes = require('./routes/patient.routes');
 
+const hospitalRoutes = require('./routes/hospital.routes');
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -63,6 +65,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/triage', triageRoutes);
 app.use('/api/speech', speechRoutes);
 app.use('/api/patients', patientRoutes);
+app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/worker', require('./routes/worker.routes'));
 app.use('/api/referral-notes', require('./routes/referral.routes'));
 app.use('/api/dev', require('./routes/dev.routes'));

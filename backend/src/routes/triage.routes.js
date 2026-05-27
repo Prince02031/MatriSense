@@ -60,9 +60,65 @@ router.post('/start', async (req, res) => {
     // Merge riskFactors from patient profile (knownRiskFactors field)
     const riskFactors = patient?.knownRiskFactors || patient?.riskFactors || {};
 
+    // --- Build profileSnapshot from patient + payload ---
+    // Payload location fields take priority over saved profile (session-level override)
+    const {
+      division: payloadDivision,
+      district: payloadDistrict,
+      upazilaOrThana: payloadUpazila,
+      addressOrVillage: payloadAddress,
+      latitude: payloadLat,
+      longitude: payloadLng,
+      locationSource: payloadLocSrc,
+      age: payloadAge,
+      emergencyContactName: payloadEcName,
+      emergencyContactPhone: payloadEcPhone,
+      lastCheckupDate: payloadLastCheckup,
+      knownRiskFactors: payloadRiskFactors
+    } = req.body;
+
+    const profileSnapshot = {};
+    // Seed from patient profile if available
+    if (patient) {
+      profileSnapshot.name = patient.name;
+      profileSnapshot.age = patient.age;
+      profileSnapshot.phone = patient.phone;
+      profileSnapshot.trimester = resolvedTrimester;
+      profileSnapshot.gestationalWeek = resolvedGestationalWeek;
+      profileSnapshot.expectedDeliveryDate = patient.expectedDeliveryDate || null;
+      profileSnapshot.lastCheckupDate = patient.lastCheckupDate || null;
+      profileSnapshot.knownRiskFactors = patient.knownRiskFactors || null;
+      profileSnapshot.emergencyContactName = patient.emergencyContactName || null;
+      profileSnapshot.emergencyContactPhone = patient.emergencyContactPhone || null;
+      profileSnapshot.division = patient.division || null;
+      profileSnapshot.district = patient.district || null;
+      profileSnapshot.upazilaOrThana = patient.upazilaOrThana || null;
+      profileSnapshot.addressOrVillage = patient.addressOrVillage || null;
+      profileSnapshot.latitude = patient.latitude || null;
+      profileSnapshot.longitude = patient.longitude || null;
+      profileSnapshot.locationSource = patient.locationSource || null;
+    }
+    // Override with payload fields if provided
+    if (payloadDivision) profileSnapshot.division = payloadDivision;
+    if (payloadDistrict) profileSnapshot.district = payloadDistrict;
+    if (payloadUpazila) profileSnapshot.upazilaOrThana = payloadUpazila;
+    if (payloadAddress) profileSnapshot.addressOrVillage = payloadAddress;
+    if (payloadLat !== undefined && payloadLat !== null) profileSnapshot.latitude = payloadLat;
+    if (payloadLng !== undefined && payloadLng !== null) profileSnapshot.longitude = payloadLng;
+    if (payloadLocSrc) profileSnapshot.locationSource = payloadLocSrc;
+    if (payloadAge !== undefined) profileSnapshot.age = payloadAge;
+    if (payloadEcName) profileSnapshot.emergencyContactName = payloadEcName;
+    if (payloadEcPhone) profileSnapshot.emergencyContactPhone = payloadEcPhone;
+    if (payloadLastCheckup) profileSnapshot.lastCheckupDate = payloadLastCheckup;
+    if (payloadRiskFactors !== undefined) profileSnapshot.knownRiskFactors = payloadRiskFactors;
+    if (trimester) profileSnapshot.trimester = resolvedTrimester;
+    if (gestationalWeek) profileSnapshot.gestationalWeek = resolvedGestationalWeek;
+
     const session = new TriageSession({
       patientId: patient?._id || null,
       status: 'active',
+      // Store snapshot only if we have any data; old sessions without it still load fine
+      profileSnapshot: Object.keys(profileSnapshot).length > 0 ? profileSnapshot : undefined,
       caseState: {
         symptoms: [],
         dangerSignsChecked: [],

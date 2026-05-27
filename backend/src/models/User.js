@@ -35,6 +35,11 @@ const UserSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+
+        // Health worker regional coverage (optional, all default to empty/false)
+        coverageDistricts: { type: [String], default: [] },
+        coverageUpazilas: { type: [String], default: [] },
+        canViewAllDistricts: { type: Boolean, default: false },
     },
     {
         timestamps: true,

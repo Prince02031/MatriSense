@@ -13,6 +13,19 @@ const PatientSchema = new mongoose.Schema({
   emergencyContactName: { type: String, required: false },
   emergencyContactPhone: { type: String, required: false },
   addressOrVillage: { type: String, required: false },
+
+  // Regional location fields (all optional)
+  division: { type: String, required: false },
+  district: { type: String, required: false },
+  upazilaOrThana: { type: String, required: false },
+  latitude: { type: Number, required: false },
+  longitude: { type: Number, required: false },
+  locationSource: {
+    type: String,
+    enum: ['PROFILE', 'GPS', 'TRIAGE_INPUT'],
+    required: false
+  },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

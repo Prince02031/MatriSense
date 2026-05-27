@@ -37,12 +37,15 @@ const handleResponse = async (res) => {
 };
 
 // 1. Get all cases for the worker dashboard with pagination and filtering
-export async function getWorkerCases(limit = 20, skip = 0, filterMode = 'all', sortBy = 'risk') {
+export async function getWorkerCases(limit = 20, skip = 0, filterMode = 'all', sortBy = 'risk', district = '') {
     const url = new URL(`${apiBase}/api/worker/cases`);
     url.searchParams.append('limit', limit);
     url.searchParams.append('skip', skip);
     url.searchParams.append('filterMode', filterMode);
     url.searchParams.append('sortBy', sortBy);
+    if (district) {
+        url.searchParams.append('district', district);
+    }
 
     const res = await fetch(url.toString(), {
         method: 'GET',
@@ -100,6 +103,18 @@ export async function getAuditLog(sessionId) {
         method: 'GET',
         headers: getAuthHeaders(),
         cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+// 6. Assign or reassign a hospital to a case
+export async function assignHospitalToCase(sessionId, hospitalId, reason) {
+    if (!sessionId) throw new Error("Local Error: Cannot assign hospital without Session ID.");
+
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/hospital`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ hospitalId, reason })
     });
     return handleResponse(res);
 }

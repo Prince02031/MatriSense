@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { getMyProfile } from '../../api/patientApi';
 import VoiceRecorderButton from '../../../src/components/voice/VoiceRecorderButton';
 import ReadAloudButton from '../../../src/components/voice/ReadAloudButton';
 
@@ -22,7 +23,76 @@ export default function TriageStartPage() {
   const [error, setError] = useState(null);
   const [voiceError, setVoiceError] = useState(null);
 
-  const commonDangerSigns = [
+  // Profile + location state
+  const [patientProfile, setPatientProfile] = useState(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [locationData, setLocationData] = useState({
+    division: '',
+    district: '',
+    upazilaOrThana: '',
+    addressOrVillage: '',
+    latitude: null,
+    longitude: null,
+    locationSource: 'PROFILE'
+  });
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsMessage, setGpsMessage] = useState(null);
+
+  // Load patient profile on mount
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const loadProfile = async () => {
+      try {
+        const data = await getMyProfile();
+        if (data.success && data.patient) {
+          const p = data.patient;
+          setPatientProfile(p);
+          // Pre-fill trimester / gestational week
+          if (p.trimester && p.trimester !== 'unknown') setTrimester(p.trimester);
+          if (p.gestationalWeek) setGestationalWeek(String(p.gestationalWeek));
+          // Pre-fill location
+          setLocationData({
+            division: p.division || '',
+            district: p.district || '',
+            upazilaOrThana: p.upazilaOrThana || '',
+            addressOrVillage: p.addressOrVillage || '',
+            latitude: p.latitude || null,
+            longitude: p.longitude || null,
+            locationSource: p.locationSource || 'PROFILE'
+          });
+        }
+      } catch (_) {
+        // No profile – triage still works
+      } finally {
+        setProfileLoaded(true);
+      }
+    };
+    loadProfile();
+  }, [isAuthenticated]);
+
+  const handleGetGPS = () => {
+    if (!navigator.geolocation) {
+      setGpsMessage({ type: 'error', text: 'GPS not supported by your browser.' });
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocationData(prev => ({
+          ...prev,
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          locationSource: 'GPS'
+        }));
+        setGpsLoading(false);
+        setGpsMessage({ type: 'ok', text: `📡 GPS: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
+      },
+      (err) => {
+        setGpsLoading(false);
+        setGpsMessage({ type: 'warn', text: 'GPS access denied. Continuing without GPS is fine.' });
+      }
+    );
+  };  const commonDangerSigns = [
     { id: 'vaginal_bleeding', labelBn: 'যোনি থেকে রক্তপাত' },
     { id: 'severe_headache', labelBn: 'তীব্র মাথাব্যথা' },
     { id: 'blurred_vision', labelBn: 'ঝাপসা দৃষ্টি' },
@@ -63,7 +133,7 @@ export default function TriageStartPage() {
       setLoading(true);
       setError(null);
 
-      // Step 1: Create session
+      // Step 1: Create session with location payload
       const sessionResponse = await fetch('/api/triage/start', {
         method: 'POST',
         credentials: 'include',
@@ -72,7 +142,14 @@ export default function TriageStartPage() {
           userId: user?._id || user?.id,
           patientId: user?.patientId,
           trimester: trimester === 'unknown' ? undefined : trimester,
-          gestationalWeek: gestationalWeek ? parseInt(gestationalWeek) : undefined
+          gestationalWeek: gestationalWeek ? parseInt(gestationalWeek) : undefined,
+          division: locationData.division || undefined,
+          district: locationData.district || undefined,
+          upazilaOrThana: locationData.upazilaOrThana || undefined,
+          addressOrVillage: locationData.addressOrVillage || undefined,
+          latitude: locationData.latitude || undefined,
+          longitude: locationData.longitude || undefined,
+          locationSource: locationData.locationSource
         })
       });
 
@@ -170,6 +247,78 @@ export default function TriageStartPage() {
                 className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-matri-teal focus:outline-none"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Location Info Card */}
+        <div className="rounded-2xl bg-white p-8 shadow-soft mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-slate-900">অবস্থান এবং ঠিকানা (ঐচ্ছিক)</h2>
+            <button
+              type="button"
+              onClick={handleGetGPS}
+              disabled={gpsLoading}
+              className="flex items-center gap-2 rounded-lg bg-matri-teal/10 px-3 py-1.5 text-sm font-semibold text-matri-teal hover:bg-matri-teal/20 transition duration-200"
+            >
+              {gpsLoading ? 'অনুসন্ধান করা হচ্ছে...' : '📡 বর্তমান জিপিএস অবস্থান'}
+            </button>
+          </div>
+
+          {gpsMessage && (
+            <div className={`mb-4 rounded-lg p-3 text-sm ${
+              gpsMessage.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+            }`}>
+              {gpsMessage.text}
+            </div>
+          )}
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Division */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">বিভাগ</label>
+              <input
+                type="text"
+                value={locationData.division}
+                onChange={(e) => setLocationData(prev => ({ ...prev, division: e.target.value }))}
+                placeholder="যেমন: ঢাকা"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:border-matri-teal focus:outline-none"
+              />
+            </div>
+
+            {/* District */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">জেলা</label>
+              <input
+                type="text"
+                value={locationData.district}
+                onChange={(e) => setLocationData(prev => ({ ...prev, district: e.target.value }))}
+                placeholder="যেমন: ঢাকা"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:border-matri-teal focus:outline-none"
+              />
+            </div>
+
+            {/* Upazila / Thana */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">উপজেলা / থানা</label>
+              <input
+                type="text"
+                value={locationData.upazilaOrThana}
+                onChange={(e) => setLocationData(prev => ({ ...prev, upazilaOrThana: e.target.value }))}
+                placeholder="যেমন: মিরপুর"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:border-matri-teal focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-slate-700">গ্রাম বা এলাকার ঠিকানা</label>
+            <input
+              type="text"
+              value={locationData.addressOrVillage}
+              onChange={(e) => setLocationData(prev => ({ ...prev, addressOrVillage: e.target.value }))}
+              placeholder="যেমন: গ্রাম: রূপনগর, রোড: ৪"
+              className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 focus:border-matri-teal focus:outline-none"
+            />
           </div>
         </div>
 

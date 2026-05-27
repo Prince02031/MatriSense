@@ -18,7 +18,14 @@ const buildPatientData = (body, userId) => {
     knownRiskFactors,
     emergencyContactName,
     emergencyContactPhone,
-    addressOrVillage
+    addressOrVillage,
+    // New location fields
+    division,
+    district,
+    upazilaOrThana,
+    latitude,
+    longitude,
+    locationSource
   } = body;
 
   const data = {
@@ -37,6 +44,14 @@ const buildPatientData = (body, userId) => {
   if (emergencyContactPhone) data.emergencyContactPhone = emergencyContactPhone;
   if (addressOrVillage) data.addressOrVillage = addressOrVillage;
   if (userId) data.userId = userId;
+
+  // Location fields
+  if (division) data.division = division;
+  if (district) data.district = district;
+  if (upazilaOrThana) data.upazilaOrThana = upazilaOrThana;
+  if (latitude !== undefined && latitude !== null) data.latitude = latitude;
+  if (longitude !== undefined && longitude !== null) data.longitude = longitude;
+  if (locationSource) data.locationSource = locationSource;
 
   return data;
 };
