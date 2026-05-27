@@ -76,18 +76,39 @@ export default function LeafletMap({ patientLat, patientLng, patientName, hospit
         // Add Hospital Markers
         const hospitalIcon = L.divIcon({
             className: 'custom-hospital-marker',
-            html: `<div style="background-color: #0d9488; color: white; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer;">🏥</div>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 15]
+            html: `<div style="background-color: #0d9488; color: white; width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.4); cursor: pointer;">🏥</div>`,
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
+            popupAnchor: [0, -20]
         });
 
         hospitals.forEach(h => {
             if (h.latitude && h.longitude) {
                 const marker = L.marker([h.latitude, h.longitude], { icon: hospitalIcon })
-                    .addTo(map)
-                    .bindPopup(`<b>🏥 ${h.name}</b><br/>${h.type?.replace(/_/g, ' ')}<br/>${h.distance !== null && h.distance !== undefined ? `${h.distance} km away` : ''}<br/><small style="color: #0d9488; font-weight: bold;">Click marker to select</small>`);
+                    .addTo(map);
                 
-                // Make marker clickable to select hospital
+                // Create popup with clickable button
+                const popupContent = `
+                    <div style="min-width: 200px; font-size: 12px;">
+                        <div style="font-weight: bold; color: #0d9488; margin-bottom: 4px;">🏥 ${h.name}</div>
+                        <div style="color: #333; margin-bottom: 4px;">${h.type?.replace(/_/g, ' ')}</div>
+                        ${h.distance !== null && h.distance !== undefined ? `<div style="color: #666; margin-bottom: 8px;">📍 ${h.distance.toFixed(1)} km away</div>` : ''}
+                        <button onclick="window.hospitalSelectCallback && window.hospitalSelectCallback('${h._id}', '${h.name.replace(/'/g, "\\'")}', '${h.type}')" style="
+                            background: #0d9488;
+                            color: white;
+                            border: none;
+                            padding: 6px 12px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-weight: bold;
+                            width: 100%;
+                        ">Select Hospital</button>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                
+                // Also add click listener to marker itself
                 marker.on('click', () => {
                     if (onHospitalSelect) {
                         onHospitalSelect(h);
@@ -95,6 +116,14 @@ export default function LeafletMap({ patientLat, patientLng, patientName, hospit
                 });
             }
         });
+
+        // Setup global callback for popup button clicks
+        window.hospitalSelectCallback = (hospitalId, hospitalName, hospitalType) => {
+            const selected = hospitals.find(h => h._id === hospitalId);
+            if (selected && onHospitalSelect) {
+                onHospitalSelect(selected);
+            }
+        };
 
         // Adjust bounds
         const coordinates = [[patientLat, patientLng]];

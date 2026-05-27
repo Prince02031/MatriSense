@@ -98,6 +98,13 @@ export default function WorkerCaseDetailPage({ params }) {
         }, 100);
     };
 
+    const requestPatientGPS = () => {
+        // In a real implementation, this would send a notification to the patient's app
+        // requesting GPS permission. For now, show a message
+        alert('GPS request sent to patient. They will be prompted on their device to enable location sharing.');
+        console.log('Requesting GPS from patient for session:', sessionId);
+    };
+
     const fetchDetail = async () => {
         try {
             const data = await getWorkerCase(sessionId);
@@ -244,7 +251,26 @@ export default function WorkerCaseDetailPage({ params }) {
                             
                             <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>
-                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Patient Location Snapshot</h4>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>Patient Location Snapshot</h4>
+                                        {!caseDetail.profileSnapshot?.latitude && (
+                                            <button
+                                                onClick={requestPatientGPS}
+                                                style={{
+                                                    padding: '4px 10px',
+                                                    fontSize: '0.75rem',
+                                                    background: '#0ea5a8',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '500'
+                                                }}
+                                            >
+                                                📡 Request GPS
+                                            </button>
+                                        )}
+                                    </div>
                                     <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
                                         <strong>Division:</strong> {caseDetail.profileSnapshot?.division || 'N/A'}<br />
                                         <strong>District:</strong> {caseDetail.profileSnapshot?.district || 'N/A'}<br />
