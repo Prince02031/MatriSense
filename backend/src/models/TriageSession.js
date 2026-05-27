@@ -44,6 +44,52 @@ const TriageSessionSchema = new mongoose.Schema({
   nextCheckupDate: { type: Date, required: false },
   followUpDateSetBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
 
+  // Profile/location snapshot captured at triage start (safe fallback for worker screens)
+  profileSnapshot: {
+    name: { type: String },
+    age: { type: Number },
+    phone: { type: String },
+    trimester: { type: String },
+    gestationalWeek: { type: Number },
+    expectedDeliveryDate: { type: Date },
+    lastCheckupDate: { type: Date },
+    knownRiskFactors: { type: mongoose.Schema.Types.Mixed },
+    emergencyContactName: { type: String },
+    emergencyContactPhone: { type: String },
+    division: { type: String },
+    district: { type: String },
+    upazilaOrThana: { type: String },
+    addressOrVillage: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    locationSource: { type: String }
+  },
+
+  // Hospital assignment (set manually by health worker)
+  assignedHospitalId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', required: false },
+  assignedHospitalSnapshot: {
+    name: { type: String },
+    type: { type: String },
+    division: { type: String },
+    district: { type: String },
+    upazilaOrThana: { type: String },
+    address: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    phone: { type: String },
+    services: { type: [String] }
+  },
+  assignedByWorkerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+  assignedAt: { type: Date },
+  hospitalAssignmentHistory: [{
+    hospitalId: { type: mongoose.Schema.Types.ObjectId },
+    hospitalName: { type: String },
+    assignedBy: { type: mongoose.Schema.Types.ObjectId },
+    assignedAt: { type: Date },
+    reason: { type: String },
+    action: { type: String, enum: ['ASSIGNED', 'REASSIGNED'] }
+  }],
+
   // Session Status Lifecycle
   status: {
     type: String,

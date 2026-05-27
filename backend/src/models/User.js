@@ -46,6 +46,7 @@ const UserSchema = new mongoose.Schema(
         yearsOfExperience: { type: Number },
         coverageDistricts: { type: [String], default: undefined },
         coverageUpazilas: { type: [String], default: undefined },
+        canViewAllDistricts: { type: Boolean, default: false },
 
         // --- Certification / verification lifecycle ---
         certificationStatus: {
