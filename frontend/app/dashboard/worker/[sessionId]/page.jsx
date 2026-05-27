@@ -220,12 +220,17 @@ export default function WorkerCaseDetailPage({ params }) {
                             caseState={caseDetail.caseState}
                             nextCheckupDate={caseDetail.nextCheckupDate}
                             followUpDateSetBy={caseDetail.followUpDateSetBy}
+                            onLocationDataChange={(locationData) => {
+                                // Handle GPS location data if needed for other features
+                                console.log('Location data updated:', locationData);
+                            }}
                         />
 
                         <PatientDocumentsPanel sessionId={sessionId} />
 
                         <HealthWorkerSummaryCard
                             safeOutput={caseDetail.safeOutput}
+                            profileSnapshot={caseDetail.profileSnapshot}
                         />
 
                         <FollowUpAnswersPanel
