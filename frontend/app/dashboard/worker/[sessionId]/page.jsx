@@ -88,6 +88,16 @@ export default function WorkerCaseDetailPage({ params }) {
         }
     };
 
+    const handleHospitalSelect = (hospital) => {
+        // Auto-fill hospital name in reason field for easy identification
+        const suggestedReason = `Referral to ${hospital.name} (${hospital.type?.replace(/_/g, ' ')})`;
+        setAssignReason(suggestedReason);
+        // Scroll to hospital list so user can confirm
+        setTimeout(() => {
+            document.getElementById('hospital-selection').scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    };
+
     const fetchDetail = async () => {
         try {
             const data = await getWorkerCase(sessionId);
@@ -268,18 +278,19 @@ export default function WorkerCaseDetailPage({ params }) {
                             {/* Leaflet Map Integration */}
                             {caseDetail.profileSnapshot?.latitude && caseDetail.profileSnapshot?.longitude && (
                                 <div style={{ marginTop: '20px' }}>
-                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>🗺️ Nearby Referrals Map</h4>
+                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>🗺️ Nearby Referrals Map (click hospital marker to select)</h4>
                                     <LeafletMap 
                                         patientLat={caseDetail.profileSnapshot.latitude}
                                         patientLng={caseDetail.profileSnapshot.longitude}
                                         patientName={caseDetail.profileSnapshot.name}
                                         hospitals={hospitals}
+                                        onHospitalSelect={handleHospitalSelect}
                                     />
                                 </div>
                             )}
 
                             {/* Nearby / Recommended Hospitals */}
-                            <div style={{ marginTop: '24px' }}>
+                            <div style={{ marginTop: '24px' }} id="hospital-selection">
                                 <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>🏥 Select Referral Hospital</h4>
                                 
                                 {/* Assignment Reason */}
