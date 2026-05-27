@@ -37,12 +37,13 @@ const handleResponse = async (res) => {
 };
 
 // 1. Get all cases for the worker dashboard with pagination and filtering
-export async function getWorkerCases(limit = 20, skip = 0, filterMode = 'all', sortBy = 'risk') {
+export async function getWorkerCases(limit = 20, skip = 0, filterMode = 'all', sortBy = 'risk', district = '') {
     const url = new URL(`${apiBase}/api/worker/cases`);
     url.searchParams.append('limit', limit);
     url.searchParams.append('skip', skip);
     url.searchParams.append('filterMode', filterMode);
     url.searchParams.append('sortBy', sortBy);
+    if (district) url.searchParams.append('district', district);
 
     const res = await fetch(url.toString(), {
         method: 'GET',
@@ -156,6 +157,22 @@ export async function getMyWorkerCertification() {
     const res = await fetch(`${apiBase}/api/worker/profile/certification`, {
         method: 'GET',
         headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+/**
+ * Assign or reassign a hospital to a triage case
+ * @param {string} sessionId - Triage session ID
+ * @param {string} hospitalId - Hospital ID to assign
+ * @param {string} reason - Reason for the assignment
+ */
+export async function assignHospitalToCase(sessionId, hospitalId, reason) {
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/hospital`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ hospitalId, reason }),
         cache: 'no-store'
     });
     return handleResponse(res);

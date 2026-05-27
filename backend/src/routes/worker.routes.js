@@ -76,4 +76,7 @@ router.get('/cases/:sessionId/audit', workerController.getAuditLogs);
 // GET /api/worker/cases/:sessionId/documents — get patient documents for case
 router.get('/cases/:sessionId/documents', workerController.getCaseDocuments);
 
+// PUT /api/worker/cases/:sessionId/hospital — assign or reassign hospital
+router.put('/cases/:sessionId/hospital', workerController.assignHospital);
+
 module.exports = router;

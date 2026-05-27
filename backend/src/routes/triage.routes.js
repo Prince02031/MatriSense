@@ -60,8 +60,30 @@ router.post('/start', async (req, res) => {
     // Merge riskFactors from patient profile (knownRiskFactors field)
     const riskFactors = patient?.knownRiskFactors || patient?.riskFactors || {};
 
+    // Capture patient profile/location snapshot at triage start for worker screens fallback
+    const profileSnapshot = {
+      name: patient?.name,
+      age: patient?.age,
+      phone: patient?.phone,
+      trimester: resolvedTrimester,
+      gestationalWeek: resolvedGestationalWeek,
+      expectedDeliveryDate: patient?.expectedDeliveryDate,
+      lastCheckupDate: patient?.lastCheckupDate,
+      knownRiskFactors: patient?.knownRiskFactors,
+      emergencyContactName: patient?.emergencyContactName,
+      emergencyContactPhone: patient?.emergencyContactPhone,
+      division: patient?.division,
+      district: patient?.district,
+      upazilaOrThana: patient?.upazilaOrThana,
+      addressOrVillage: patient?.addressOrVillage,
+      latitude: patient?.latitude,
+      longitude: patient?.longitude,
+      locationSource: patient?.locationSource
+    };
+
     const session = new TriageSession({
       patientId: patient?._id || null,
+      profileSnapshot,
       status: 'active',
       caseState: {
         symptoms: [],
