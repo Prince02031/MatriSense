@@ -47,6 +47,7 @@ export default function WorkerCaseDetailPage({ params }) {
     const [hospitalsLoading, setHospitalsLoading] = useState(false);
     const [assigningHospitalId, setAssigningHospitalId] = useState(null);
     const [assignReason, setAssignReason] = useState('');
+    const [deliveringReferral, setDeliveringReferral] = useState(false);
 
     const loadNearbyHospitals = async (snapshot) => {
         if (!snapshot) return;
@@ -103,6 +104,43 @@ export default function WorkerCaseDetailPage({ params }) {
         // requesting GPS permission. For now, show a message
         alert('GPS request sent to patient. They will be prompted on their device to enable location sharing.');
         console.log('Requesting GPS from patient for session:', sessionId);
+    };
+
+    const handleDeliverReferralToPatient = async () => {
+        if (!caseDetail.assignedHospitalId) {
+            alert('Please assign a hospital first before delivering the referral.');
+            return;
+        }
+
+        if (!window.confirm('Are you sure you want to send this referral to the patient? They will receive a notification.')) {
+            return;
+        }
+
+        try {
+            setDeliveringReferral(true);
+            const data = await fetch(`/api/worker/cases/${sessionId}/deliver-referral`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    hospitalId: caseDetail.assignedHospitalId,
+                    reason: caseDetail.hospitalAssignmentHistory?.[0]?.reason || 'Hospital referral'
+                })
+            });
+
+            if (!data.ok) {
+                throw new Error('Failed to deliver referral');
+            }
+
+            const result = await data.json();
+            alert('✓ Referral delivered to patient! They will receive a notification.');
+            await fetchDetail();
+        } catch (err) {
+            console.error('Failed to deliver referral:', err);
+            alert('Failed to deliver referral to patient');
+        } finally {
+            setDeliveringReferral(false);
+        }
     };
 
     const fetchDetail = async () => {
@@ -387,6 +425,29 @@ export default function WorkerCaseDetailPage({ params }) {
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Deliver to Patient Button */}
+                                    {caseDetail.assignedHospitalId && (
+                                        <button
+                                            onClick={handleDeliverReferralToPatient}
+                                            disabled={deliveringReferral}
+                                            style={{
+                                                marginTop: '16px',
+                                                padding: '10px 20px',
+                                                background: '#10b981',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: deliveringReferral ? 'not-allowed' : 'pointer',
+                                                fontWeight: '600',
+                                                fontSize: '0.9rem',
+                                                opacity: deliveringReferral ? 0.6 : 1,
+                                                width: '100%'
+                                            }}
+                                        >
+                                            {deliveringReferral ? '📤 Delivering...' : '📤 Deliver Referral to Patient'}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
