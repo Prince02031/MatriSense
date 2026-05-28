@@ -51,6 +51,8 @@ export default function PatientProfilePage() {
         district: '',
         upazilaOrThana: '',
         addressOrVillage: '',
+        latitude: null,
+        longitude: null,
         nationalIdNumber: '',
         birthCertificateNumber: '',
         consentToShareWithHealthWorker: false,
@@ -79,10 +81,47 @@ export default function PatientProfilePage() {
         { value: 'OTHER_MEDICAL_DOCUMENT', label: 'Other Document' }
     ];
 
+    // --- GPS State ---
+    const [gpsEnabled, setGpsEnabled] = useState(false);
+    const [gpsError, setGpsError] = useState(null);
+
     useEffect(() => {
         if (!user) return;
+        // Request GPS on component mount for persistent tracking
+        requestGPS();
         fetchData();
     }, [user]);
+
+    // GPS Functions
+    const requestGPS = () => {
+        if (!navigator.geolocation) {
+            setGpsError('GPS not supported on your device');
+            return;
+        }
+
+        setGpsError(null);
+        navigator.geolocation.watchPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setFormData(prev => ({
+                    ...prev,
+                    latitude: parseFloat(latitude.toFixed(6)),
+                    longitude: parseFloat(longitude.toFixed(6))
+                }));
+                setGpsEnabled(true);
+                setGpsError(null);
+            },
+            (error) => {
+                setGpsError(`GPS Error: ${error.message}`);
+                setGpsEnabled(false);
+            },
+            { 
+                enableHighAccuracy: false,
+                timeout: 10000,
+                maximumAge: 30000 // Cache location for 30 seconds
+            }
+        );
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -109,6 +148,8 @@ export default function PatientProfilePage() {
                     district: p.district || '',
                     upazilaOrThana: p.upazilaOrThana || '',
                     addressOrVillage: p.addressOrVillage || '',
+                    latitude: p.latitude || null,
+                    longitude: p.longitude || null,
                     nationalIdNumber: p.nationalIdNumber || '',
                     birthCertificateNumber: p.birthCertificateNumber || '',
                     consentToShareWithHealthWorker: !!p.consentToShareWithHealthWorker,
@@ -349,8 +390,25 @@ export default function PatientProfilePage() {
 
                 {/* 3. Location */}
                 <div className="card">
-                    <h2>{pt.locationRegion}</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <h2>{pt.locationRegion}</h2>
+                        {gpsEnabled && (
+                            <span style={{ fontSize: '0.85rem', background: '#d1fae5', color: '#065f46', padding: '4px 10px', borderRadius: '4px', fontWeight: '500' }}>
+                                ✓ GPS Active
+                            </span>
+                        )}
+                    </div>
+                    {gpsError && (
+                        <div style={{ padding: '10px', background: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '12px', fontSize: '0.85rem' }}>
+                            ⚠️ {gpsError}
+                        </div>
+                    )}
                     <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '16px' }}>{pt.locationHelper}</p>
+                    {formData.latitude && formData.longitude && (
+                        <div style={{ padding: '10px', background: '#eff6ff', color: '#0c4a6e', borderRadius: '6px', marginBottom: '12px', fontSize: '0.85rem' }}>
+                            📌 Current GPS: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                        </div>
+                    )}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div><label>{pt.division}</label><input name="division" value={formData.division} onChange={handleProfileChange} className="input-field" /></div>
                         <div><label>{pt.district}</label><input name="district" value={formData.district} onChange={handleProfileChange} className="input-field" /></div>

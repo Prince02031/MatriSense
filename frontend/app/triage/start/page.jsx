@@ -23,6 +23,15 @@ export default function TriageStartPage() {
   const [error, setError] = useState(null);
   const [voiceError, setVoiceError] = useState(null);
 
+  // GPS Location states
+  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const [gpsData, setGpsData] = useState(null);
+  const [gpsError, setGpsError] = useState(null);
+  const [division, setDivision] = useState('');
+  const [district, setDistrict] = useState('');
+  const [upazila, setUpazila] = useState('');
+  const [address, setAddress] = useState('');
+
   // Auto-populate gestational week and trimester from saved patient profile
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -56,6 +65,43 @@ export default function TriageStartPage() {
     };
     loadPatientDefaults();
   }, [isAuthenticated]);
+
+  // GPS Location functions
+  const requestGPS = () => {
+    if (!navigator.geolocation) {
+      setGpsError('আপনার ডিভাইসে GPS সমর্থিত নয়');
+      return;
+    }
+
+    setGpsEnabled(true);
+    setGpsError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setGpsData({
+          latitude,
+          longitude,
+          addressOrVillage: `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+        });
+        setAddress(`GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      },
+      (error) => {
+        setGpsEnabled(false);
+        setGpsError(`GPS ত্রুটি: ${error.message}`);
+      },
+      { timeout: 10000 }
+    );
+  };
+
+  const disableGPS = () => {
+    setGpsEnabled(false);
+    setGpsData(null);
+    setGpsError(null);
+    if (!address || address.startsWith('GPS:')) {
+      setAddress('');
+    }
+  };
 
   const commonDangerSigns = [
     { id: 'vaginal_bleeding', labelBn: 'যোনি থেকে রক্তপাত' },
@@ -98,7 +144,7 @@ export default function TriageStartPage() {
       setLoading(true);
       setError(null);
 
-      // Step 1: Create session
+      // Step 1: Create session with location data
       const sessionResponse = await fetch('/api/triage/start', {
         method: 'POST',
         credentials: 'include',
@@ -107,7 +153,15 @@ export default function TriageStartPage() {
           userId: user?._id || user?.id,
           patientId: user?.patientId,
           trimester: trimester === 'unknown' ? undefined : trimester,
-          gestationalWeek: gestationalWeek ? parseInt(gestationalWeek) : undefined
+          gestationalWeek: gestationalWeek ? parseInt(gestationalWeek) : undefined,
+          // Location data from patient input or GPS
+          division: division || undefined,
+          district: district || undefined,
+          upazilaOrThana: upazila || undefined,
+          addressOrVillage: address || undefined,
+          latitude: gpsData?.latitude,
+          longitude: gpsData?.longitude,
+          locationSource: gpsEnabled && gpsData ? 'gps' : 'manual'
         })
       });
 
@@ -202,6 +256,114 @@ export default function TriageStartPage() {
                 value={gestationalWeek}
                 onChange={(e) => setGestationalWeek(e.target.value)}
                 placeholder="সপ্তাহ সংখ্যা"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-matri-teal focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Location Information Card */}
+        <div className="rounded-2xl bg-white p-8 shadow-soft mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold text-slate-900">📍 আপনার অবস্থান</h2>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {!gpsEnabled ? (
+                <button
+                  onClick={requestGPS}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.85rem',
+                    background: '#0ea5a8',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  📡 GPS চালু করুন
+                </button>
+              ) : (
+                <button
+                  onClick={disableGPS}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.85rem',
+                    background: '#dc2626',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '500'
+                  }}
+                >
+                  ✕ GPS বন্ধ করুন
+                </button>
+              )}
+            </div>
+          </div>
+
+          {gpsError && (
+            <div style={{ padding: '10px', background: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '12px', fontSize: '0.85rem', marginTop: '12px' }}>
+              ⚠️ {gpsError}
+            </div>
+          )}
+
+          {gpsEnabled && gpsData && (
+            <div style={{ padding: '10px', background: '#d1fae5', color: '#065f46', borderRadius: '6px', marginBottom: '12px', fontSize: '0.85rem', marginTop: '12px' }}>
+              ✓ GPS সক্রিয়: {gpsData.latitude?.toFixed(4)}, {gpsData.longitude?.toFixed(4)}
+            </div>
+          )}
+
+          <p className="mt-2 text-sm text-slate-600">
+            আপনার অবস্থান তথ্য আমাদের কাছাকাছি স্বাস্থ্যসেবা খুঁজে পেতে সাহায্য করে।
+          </p>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {/* Division */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">বিভাগ</label>
+              <input
+                type="text"
+                value={division}
+                onChange={(e) => setDivision(e.target.value)}
+                placeholder="যেমন: ঢাকা, চট্টগ্রাম"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-matri-teal focus:outline-none"
+              />
+            </div>
+
+            {/* District */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">জেলা</label>
+              <input
+                type="text"
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                placeholder="যেমন: ঢাকা, গাজীপুর"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-matri-teal focus:outline-none"
+              />
+            </div>
+
+            {/* Upazila */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">উপজেলা/থানা</label>
+              <input
+                type="text"
+                value={upazila}
+                onChange={(e) => setUpazila(e.target.value)}
+                placeholder="যেমন: সদর, ধানমন্ডি"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-matri-teal focus:outline-none"
+              />
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">ঠিকানা/গ্রাম</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="আপনার গ্রাম বা ঠিকানা"
                 className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 placeholder-slate-400 focus:border-matri-teal focus:outline-none"
               />
             </div>

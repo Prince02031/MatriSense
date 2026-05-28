@@ -23,16 +23,17 @@ export default function WorkerDashboard() {
     // Filter and sort states
     const [filterMode, setFilterMode] = useState('all'); // 'all' or 'latest-patient'
     const [sortBy, setSortBy] = useState('risk'); // 'risk' or 'date'
+    const [districtFilter, setDistrictFilter] = useState('');
 
     useEffect(() => {
         fetchCases(1);
-    }, [filterMode, sortBy]);
+    }, [filterMode, sortBy, districtFilter]);
 
     const fetchCases = async (page) => {
         try {
             setLoading(true);
             const skip = (page - 1) * CASES_PER_PAGE;
-            const data = await getWorkerCases(CASES_PER_PAGE, skip, filterMode, sortBy);
+            const data = await getWorkerCases(CASES_PER_PAGE, skip, filterMode, sortBy, districtFilter);
 
             if (data.success) {
                 setCases(data.cases);
@@ -118,7 +119,22 @@ export default function WorkerDashboard() {
             {/* Filters and Controls */}
             <div className="dash-card" style={{ marginBottom: '24px' }}>
                 <h3 style={{ marginBottom: '16px' }}>🔍 Filter & Sort Options</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                    <div>
+                        <label style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', display: 'block' }}>
+                            District Filter
+                        </label>
+                        <input
+                            type="text"
+                            value={districtFilter}
+                            onChange={(e) => {
+                                setDistrictFilter(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            placeholder="e.g. Dhaka"
+                            className="form-input"
+                        />
+                    </div>
                     <div>
                         <label style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', display: 'block' }}>
                             View Mode
