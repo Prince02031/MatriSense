@@ -73,16 +73,23 @@ async function updateDocsConfig(token, config) {
     return handleResponse(res);
 }
 
-/**
- * Get dynamic Markdown sections content from backend
- */
 async function getDocsContent() {
-    const res = await fetch(`${apiBase}/api/docs/content`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store'
-    });
-    return handleResponse(res);
+    try {
+        const res = await fetch('/api/local-docs/content', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+        });
+        return await handleResponse(res);
+    } catch (error) {
+        console.warn('Local Next.js docs endpoint failed, falling back to Express backend:', error);
+        const res = await fetch(`${apiBase}/api/docs/content`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+        });
+        return handleResponse(res);
+    }
 }
 
 /**
