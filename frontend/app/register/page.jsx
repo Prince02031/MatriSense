@@ -143,6 +143,9 @@ export default function RegisterPage() {
 
                         <div className="form-group">
                             <label className="form-label">Select Your Role</label>
+                            <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '12px' }}>
+                                💡 Admin accounts are created by system administrators only.
+                            </p>
                             <div className="role-selector">
                                 <div className="role-option">
                                     <input
@@ -174,21 +177,7 @@ export default function RegisterPage() {
                                         <span className="role-desc">Health Worker</span>
                                     </label>
                                 </div>
-                                <div className="role-option">
-                                    <input
-                                        type="radio"
-                                        id="role-admin"
-                                        name="role"
-                                        value="admin"
-                                        checked={formData.role === 'admin'}
-                                        onChange={handleChange}
-                                    />
-                                    <label htmlFor="role-admin">
-                                        <span className="role-icon">🛡️</span>
-                                        <span className="role-name">Admin</span>
-                                        <span className="role-desc">System Admin</span>
-                                    </label>
-                                </div>
+
                             </div>
                         </div>
 

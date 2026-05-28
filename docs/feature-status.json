@@ -1,0 +1,61 @@
+[
+  {
+    "category": "Patient Input",
+    "items": [
+      { "name": "Patient Profile", "status": "implemented" },
+      { "name": "Bangla Symptom Input", "status": "implemented" },
+      { "name": "GPS Location Capture", "status": "implemented" }
+    ]
+  },
+  {
+    "category": "AI Processing",
+    "items": [
+      { "name": "AI Symptom Extraction", "status": "implemented" },
+      { "name": "Follow-up Questions", "status": "implemented" },
+      { "name": "LLM Explanation", "status": "implemented" }
+    ]
+  },
+  {
+    "category": "Clinical Triage",
+    "items": [
+      { "name": "Rule-Based Triage", "status": "implemented" },
+      { "name": "Rule-Aware RAG Guidance", "status": "implemented" },
+      { "name": "Safety Validator", "status": "implemented" }
+    ]
+  },
+  {
+    "category": "Patient Output",
+    "items": [
+      { "name": "Triage Result Display", "status": "implemented" },
+      { "name": "Patient History", "status": "implemented" },
+      { "name": "Referral Notifications", "status": "implemented" }
+    ]
+  },
+  {
+    "category": "Health Worker Tools",
+    "items": [
+      { "name": "Case Dashboard", "status": "implemented" },
+      { "name": "Case Detail View", "status": "implemented" },
+      { "name": "Status Updates", "status": "implemented" },
+      { "name": "Hospital Assignment", "status": "implemented" },
+      { "name": "Health Worker Verification", "status": "implemented" }
+    ]
+  },
+  {
+    "category": "Data Management",
+    "items": [
+      { "name": "Patient Document Upload", "status": "implemented" },
+      { "name": "Profile Verification", "status": "implemented" },
+      { "name": "Regional Referral Tracking", "status": "implemented" },
+      { "name": "Hospital Database", "status": "implemented" }
+    ]
+  },
+  {
+    "category": "Data Science Roadmap",
+    "items": [
+      { "name": "Vector RAG", "status": "in_progress" },
+      { "name": "GraphRAG", "status": "planned" },
+      { "name": "Analytics Dashboard", "status": "planned" }
+    ]
+  }
+]
