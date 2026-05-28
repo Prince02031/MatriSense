@@ -58,7 +58,7 @@ const parseMarkdownToCards = (text) => {
 };
 
 // Inline Markdown formatter supporting headings, warnings, lists, bold text, links, code blocks, and images
-const renderMarkdown = (text) => {
+const renderMarkdown = (text, onImageClick) => {
   if (!text) return null;
   
   const blocks = text.split(/\n\n+/);
@@ -76,7 +76,10 @@ const renderMarkdown = (text) => {
         const srcUrl = srcMatch[1];
         return (
           <div key={idx} className="my-6 flex flex-col items-center justify-center w-full">
-            <div className="relative group overflow-hidden rounded-3xl border border-teal-100 shadow-md hover:shadow-xl transition-all duration-300 bg-white p-3 max-w-full">
+            <div 
+              onClick={() => onImageClick && onImageClick({ src: srcUrl, alt: altText })}
+              className="relative group overflow-hidden rounded-3xl border border-teal-100 shadow-md hover:shadow-xl transition-all duration-300 bg-white p-3 max-w-full cursor-zoom-in"
+            >
               <img 
                 src={srcUrl} 
                 alt={altText} 
@@ -204,6 +207,7 @@ export default function DocsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [markdownSections, setMarkdownSections] = useState({});
   const [evidence, setEvidence] = useState([]);
+  const [zoomedImage, setZoomedImage] = useState(null);
 
   useEffect(() => {
     const loadDocsData = async () => {
@@ -378,29 +382,46 @@ export default function DocsPage() {
         return (
           <div className="bg-white rounded-3xl border border-teal-100/50 shadow-sm p-8 hover:shadow-md hover:border-teal-200 transition duration-300">
             <div className="text-xs text-gray-600 leading-relaxed">
-              {renderMarkdown(cards[0].content)}
+              {renderMarkdown(cards[0].content, setZoomedImage)}
             </div>
           </div>
         );
       }
 
+      // Check if the first card serves as an introduction (has no heading)
+      const hasIntroCard = !cards[0].heading;
+      const introCard = hasIntroCard ? cards[0] : null;
+      const gridCards = hasIntroCard ? cards.slice(1) : cards;
+
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {cards.map((card, idx) => (
-            <div key={idx} className="bg-white rounded-2xl border border-teal-100/50 shadow-sm p-6 hover:shadow-md hover:border-teal-200 transition duration-300 flex flex-col justify-between">
-              <div className="space-y-4">
-                {card.heading && (
-                  <div className="flex items-center gap-2 border-b border-teal-50/50 pb-3">
-                    <span className="text-teal-600 text-sm select-none">{sectionIcons[activeSection] || '●'}</span>
-                    <h3 className="text-sm font-bold text-teal-900 tracking-tight leading-snug">{card.heading}</h3>
-                  </div>
-                )}
-                <div className="text-xs text-gray-600 leading-relaxed">
-                  {renderMarkdown(card.content)}
-                </div>
+        <div className="space-y-6">
+          {introCard && (
+            <div className="bg-white rounded-3xl border border-teal-100/50 shadow-sm p-8 hover:shadow-md hover:border-teal-200 transition duration-300">
+              <div className="text-xs text-gray-600 leading-relaxed">
+                {renderMarkdown(introCard.content, setZoomedImage)}
               </div>
             </div>
-          ))}
+          )}
+
+          {gridCards.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {gridCards.map((card, idx) => (
+                <div key={idx} className="bg-white rounded-2xl border border-teal-100/50 shadow-sm p-6 hover:shadow-md hover:border-teal-200 transition duration-300 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    {card.heading && (
+                      <div className="flex items-center gap-2 border-b border-teal-50/50 pb-3">
+                        <span className="text-teal-600 text-sm select-none">{sectionIcons[activeSection] || '●'}</span>
+                        <h3 className="text-sm font-bold text-teal-900 tracking-tight leading-snug">{card.heading}</h3>
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-600 leading-relaxed">
+                      {renderMarkdown(card.content, setZoomedImage)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     };
@@ -810,6 +831,53 @@ export default function DocsPage() {
           </div>
         </footer>
       </div>
+
+      {/* Zoom Modal Overlay */}
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-teal-950/90 backdrop-blur-md p-4 transition-all duration-300 animate-fadeIn cursor-zoom-out"
+          onClick={() => setZoomedImage(null)}
+        >
+          {/* Close button */}
+          <button 
+            className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xl transition-all duration-200 border border-white/10 active:scale-95 shadow-lg"
+            onClick={() => setZoomedImage(null)}
+          >
+            ✕
+          </button>
+          
+          <div className="max-w-5xl max-h-[85vh] w-full flex items-center justify-center p-2" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={zoomedImage.src} 
+              alt={zoomedImage.alt}
+              className="max-w-full max-h-[80vh] rounded-3xl object-contain shadow-2xl border border-white/15 animate-scaleUp cursor-default"
+            />
+          </div>
+          {zoomedImage.alt && (
+            <p className="mt-4 text-xs font-black text-teal-300 uppercase tracking-widest bg-teal-900/50 px-4 py-2 rounded-full border border-teal-800/40">
+              {zoomedImage.alt}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Embedded Animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleUp {
+          from { transform: scale(0.96); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.15s ease-out forwards;
+        }
+        .animate-scaleUp {
+          animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
     </div>
   );
 }
