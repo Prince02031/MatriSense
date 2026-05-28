@@ -1,0 +1,200 @@
+[
+  {
+    "id": "who-anc-digital-adaptation-kit",
+    "title": "WHO Antenatal Care Digital Adaptation Kit",
+    "publisher": "World Health Organization (WHO)",
+    "type": "Clinical guidelines & adaptation toolkit",
+    "category": "Antenatal Care",
+    "fileName": "who-anc-digital-adaptation-kit.pdf",
+    "externalUrl": "https://www.who.int/publications/i/item/9789240020306",
+    "usedFor": [
+      "digital decision support rules",
+      "symptom classifications",
+      "antenatal visit scheduling"
+    ],
+    "relatedSymptoms": [
+      "severe headache",
+      "vision changes",
+      "vaginal bleeding",
+      "swelling of hands/face"
+    ],
+    "tags": ["clinical guidelines", "digital health", "WHO", "maternal health"]
+  },
+  {
+    "id": "who-maternal-danger-signs",
+    "title": "WHO Maternal Danger Signs and Care Guidance",
+    "publisher": "World Health Organization (WHO)",
+    "type": "Public health handbook",
+    "category": "Maternal danger signs",
+    "fileName": "who-maternal-danger-signs.pdf",
+    "externalUrl": "https://www.who.int/publications/i/item/WHO-RHR-15.02",
+    "usedFor": [
+      "danger sign rule mapping",
+      "risk level logic selection",
+      "standardized home-care advice templates"
+    ],
+    "relatedSymptoms": [
+      "severe headache",
+      "blurred vision",
+      "severe abdominal pain",
+      "high fever",
+      "convulsions"
+    ],
+    "tags": ["WHO", "danger signs", "clinical rules"]
+  },
+  {
+    "id": "cdc-hear-her-warning-signs",
+    "title": "CDC HEAR HER Urgent Maternal Warning Signs",
+    "publisher": "Centers for Disease Control and Prevention (CDC)",
+    "type": "Public health guidance",
+    "category": "Maternal warning signs",
+    "fileName": "cdc-hear-her-warning-signs.pdf",
+    "externalUrl": "https://www.cdc.gov/hearher/maternal-warning-signs/index.html",
+    "usedFor": [
+      "maternal warning signs",
+      "urgent escalation",
+      "safety education"
+    ],
+    "relatedSymptoms": [
+      "severe headache",
+      "vision changes",
+      "trouble breathing",
+      "vaginal bleeding",
+      "reduced fetal movement"
+    ],
+    "tags": ["warning signs", "maternal safety", "triage"]
+  },
+  {
+    "id": "ncbi-high-risk-pregnancy",
+    "title": "NCBI Bookshelf High-Risk Pregnancy Reference Guide",
+    "publisher": "National Center for Biotechnology Information (NCBI)",
+    "type": "Scientific reference book",
+    "category": "High-risk pregnancy factors",
+    "fileName": "ncbi-high-risk-pregnancy.pdf",
+    "externalUrl": "https://www.ncbi.nlm.nih.gov/books/NBK560647/",
+    "usedFor": [
+      "gestational hypertension symptoms identification",
+      "preeclampsia symptom clustering logic",
+      "fetal movement count thresholds"
+    ],
+    "relatedSymptoms": [
+      "elevated blood pressure",
+      "reduced fetal movement",
+      "rapid weight gain",
+      "facial swelling"
+    ],
+    "tags": ["scientific reference", "preeclampsia", "hypertension"]
+  },
+  {
+    "id": "dghs-bangladesh-mnch-etoolkit",
+    "title": "DGHS Bangladesh MNCH eToolkit Guidelines",
+    "publisher": "Directorate General of Health Services (DGHS), Bangladesh",
+    "type": "National clinical protocols",
+    "category": "National maternal health toolkit",
+    "fileName": "dghs-bangladesh-mnch-etoolkit.pdf",
+    "externalUrl": "http://www.dghs.gov.bd/",
+    "usedFor": [
+      "local clinic workflow compliance",
+      "Bangla terminology matching for maternal health terms",
+      "regional referral rules"
+    ],
+    "relatedSymptoms": [
+      "vison problems",
+      "severe convulsions",
+      "severe postpartum hemorrhage",
+      "prolonged labor"
+    ],
+    "tags": ["national guidelines", "Bangladesh DGHS", "maternal health"]
+  },
+  {
+    "id": "bangladesh-maternal-clinical-protocols",
+    "title": "Bangladesh Maternal & Newborn Health Clinical Protocol",
+    "publisher": "Ministry of Health and Family Welfare (MOHFW), Bangladesh",
+    "type": "National health policy and clinical protocols",
+    "category": "National maternal health policy",
+    "fileName": "bangladesh-maternal-clinical-protocols.pdf",
+    "externalUrl": "http://www.mohfw.gov.bd/",
+    "usedFor": [
+      "upazila clinic reference setup",
+      "referral center capabilities classification",
+      "obstetric emergency triggers"
+    ],
+    "relatedSymptoms": [
+      "severe headache",
+      "vaginal bleeding",
+      "swelling of legs/face",
+      "seizure or fits"
+    ],
+    "tags": ["Bangladesh MOHFW", "clinical protocols", "regional referrals"]
+  },
+  {
+    "id": "matrisense-internal-knowledge-cards",
+    "title": "MatriSense Internal KnowledgeCards Summary",
+    "publisher": "MatriSense Dev Team",
+    "type": "Technical design specification",
+    "category": "Triage & Guidance Knowledge Cards",
+    "fileName": "matrisense-internal-knowledge-cards.pdf",
+    "externalUrl": "",
+    "usedFor": [
+      "JSON structure of knowledge cards",
+      "deterministic matching algorithm details",
+      "RAG lookup mapping schemas"
+    ],
+    "relatedSymptoms": [
+      "all symptom codes supported by rule engine"
+    ],
+    "tags": ["internal spec", "knowledge cards", "system architecture"]
+  },
+  {
+    "id": "matrisense-safety-guardrail-spec",
+    "title": "MatriSense Safety Guardrail and Validator Design Summary",
+    "publisher": "MatriSense AI & Safety Team",
+    "type": "Technical design specification",
+    "category": "AI Safety & Guardrails",
+    "fileName": "matrisense-safety-guardrail-spec.pdf",
+    "externalUrl": "",
+    "usedFor": [
+      "safety validator regex definitions",
+      "LLM parsing checks",
+      "fallback template content definition"
+    ],
+    "relatedSymptoms": [
+      "all clinical risk parameters"
+    ],
+    "tags": ["internal spec", "safety validator", "guardrails"]
+  },
+  {
+    "id": "matrisense-regional-referral-spec",
+    "title": "MatriSense Regional Referral System Feature Spec",
+    "publisher": "MatriSense Product Team",
+    "type": "Technical design specification",
+    "category": "Regional Referrals",
+    "fileName": "matrisense-regional-referral-spec.pdf",
+    "externalUrl": "",
+    "usedFor": [
+      "Haversine formula implementation details",
+      "referral note states definition",
+      "health worker mapping parameters"
+    ],
+    "relatedSymptoms": [
+      "high risk conditions"
+    ],
+    "tags": ["internal spec", "referral system", "distance-based sorting"]
+  },
+  {
+    "id": "matrisense-profile-verification-spec",
+    "title": "MatriSense User Profiles & Worker Verification Spec",
+    "publisher": "MatriSense Security Team",
+    "type": "Technical design specification",
+    "category": "Security & User Verification",
+    "fileName": "matrisense-profile-verification-spec.pdf",
+    "externalUrl": "",
+    "usedFor": [
+      "worker license upload constraints",
+      "RBAC query boundary checks",
+      "audit logs record mappings"
+    ],
+    "relatedSymptoms": [],
+    "tags": ["internal spec", "security", "role-based access", "verification"]
+  }
+]

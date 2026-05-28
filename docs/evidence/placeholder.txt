@@ -1,0 +1,12 @@
+This directory holds evidence PDFs and Markdown source documents for MatriSense.
+Add your PDFs here, such as:
+- who-anc-digital-adaptation-kit.pdf
+- who-maternal-danger-signs.pdf
+- cdc-hear-her-warning-signs.pdf
+- ncbi-high-risk-pregnancy.pdf
+- dghs-bangladesh-mnch-etoolkit.pdf
+- bangladesh-maternal-clinical-protocols.pdf
+- matrisense-internal-knowledge-cards.pdf
+- matrisense-safety-guardrail-spec.pdf
+- matrisense-regional-referral-spec.pdf
+- matrisense-profile-verification-spec.pdf

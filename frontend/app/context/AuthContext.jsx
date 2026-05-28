@@ -42,6 +42,7 @@ export function AuthProvider({ children }) {
                 const data = await res.json();
                 setUser(data.user);
                 localStorage.setItem('matrisense_user', JSON.stringify(data.user));
+                localStorage.setItem('userRole', data.user.role);
             } catch (error) {
                 clearSession();
             } finally {
@@ -79,6 +80,7 @@ export function AuthProvider({ children }) {
 
         localStorage.setItem('matrisense_token', data.token);
         localStorage.setItem('matrisense_user', JSON.stringify(data.user));
+        localStorage.setItem('userRole', data.user.role);
         setToken(data.token);
         setUser(data.user);
         return data.user;
@@ -96,6 +98,7 @@ export function AuthProvider({ children }) {
 
         localStorage.setItem('matrisense_token', data.token);
         localStorage.setItem('matrisense_user', JSON.stringify(data.user));
+        localStorage.setItem('userRole', data.user.role);
         setToken(data.token);
         setUser(data.user);
         return data.user;

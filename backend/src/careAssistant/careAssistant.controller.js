@@ -13,7 +13,7 @@ const { getFallbackByIntent } = require('./careAssistantIntentFallbacks');
  */
 const ensureSafetyDisclaimer = (llmOutput, riskLevel) => {
   const REQUIRED_PHRASE = 'রেজিস্টার্ড চিকিৎসকের';
-  
+
   if (!llmOutput) {
     return llmOutput;
   }
@@ -39,7 +39,7 @@ const ensureSafetyDisclaimer = (llmOutput, riskLevel) => {
 
   llmOutput.safetyDisclaimer = builtDisclaimer;
   console.log('[EnsureSafetyDisclaimer] Repaired missing/invalid disclaimer. New:', builtDisclaimer);
-  
+
   return llmOutput;
 };
 
@@ -192,11 +192,11 @@ exports.handleAssistantMessage = async (req, res) => {
           console.warn('[CareAssistantController] Issues:', JSON.stringify(safetyValidation.issues, null, 2));
           console.warn('[CareAssistantController] Intent was:', getIntentName(detectedIntent));
           console.warn('[CareAssistantController] LLM Output was:', JSON.stringify(assistantOutput, null, 2));
-          
+
           safetyValidationErrors = safetyValidation.issues;
           safetyPassed = false;
           fallbackUsed = true;
-          
+
           // Use intent-based fallback instead of generic one
           const intentFallback = getFallbackByIntent(detectedIntent, context.riskLevel);
           assistantOutput = {
@@ -216,7 +216,7 @@ exports.handleAssistantMessage = async (req, res) => {
       } catch (llmError) {
         console.error('[CareAssistantController] LLM Execution Failed:', llmError);
         console.error('[CareAssistantController] Detected intent was:', getIntentName(detectedIntent));
-        
+
         // Use intent-based fallback on LLM error too
         const intentFallback = getFallbackByIntent(detectedIntent, context.riskLevel);
         assistantOutput = {

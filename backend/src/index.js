@@ -42,6 +42,8 @@ const adminRoutes = require('./routes/admin.routes');
 const triageRoutes = require('./routes/triage.routes');
 const speechRoutes = require('./routes/speech.routes');
 const patientRoutes = require('./routes/patient.routes');
+const docsRoutes = require('./routes/docs.routes');
+const DocsConfig = require('./models/DocsConfig');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -49,6 +51,26 @@ const port = process.env.PORT || 5000;
 // Connect to MongoDB
 connectDB();
 logRagConfig();
+
+// Initialize default DocsConfig on startup
+const initializeDocsConfig = async () => {
+  try {
+    const existingConfig = await DocsConfig.findOne();
+    if (!existingConfig) {
+      const defaultConfig = new DocsConfig({
+        isPublic: true,
+        availableFrom: new Date('2026-06-10T00:00:00Z'),
+        availableUntil: new Date('2026-06-14T23:59:59Z'),
+        version: 1
+      });
+      await defaultConfig.save();
+      console.log('✓ Initialized default DocsConfig');
+    }
+  } catch (error) {
+    console.error('Error initializing DocsConfig:', error);
+  }
+};
+initializeDocsConfig();
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
@@ -67,6 +89,7 @@ app.use('/api/worker', require('./routes/worker.routes'));
 app.use('/api/referral-notes', require('./routes/referral.routes'));
 app.use('/api/documents', require('./routes/document.routes'));
 app.use('/api/hospitals', require('./routes/hospital.routes'));
+app.use('/api/docs', docsRoutes);
 app.use('/api/dev', require('./routes/dev.routes'));
 
 app.get('/api/message', (_req, res) => {

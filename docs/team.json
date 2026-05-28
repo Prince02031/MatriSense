@@ -1,0 +1,29 @@
+{
+  "teamName": "MatriSense Team",
+  "members": [
+    {
+      "id": 1,
+      "name": "Team Lead",
+      "role": "Project Lead & Integration",
+      "email": "lead@matrisense.org",
+      "image": "",
+      "contribution": "Vision, strategy, system architecture, and overall integration."
+    },
+    {
+      "id": 2,
+      "name": "Backend Developer",
+      "role": "Full-Stack & AI Engineer",
+      "email": "backend@matrisense.org",
+      "image": "",
+      "contribution": "Built AI symptom extraction, rule engine, RAG pipeline, and safety validator."
+    },
+    {
+      "id": 3,
+      "name": "Frontend Developer",
+      "role": "UI/UX Engineer",
+      "email": "frontend@matrisense.org",
+      "image": "",
+      "contribution": "Designed Patient UI, Health Worker Dashboard, hospital locator maps, and administration module."
+    }
+  ]
+}
