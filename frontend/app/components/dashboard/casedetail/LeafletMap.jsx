@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -84,7 +84,11 @@ export default function LeafletMap({ patientLat, patientLng, patientName, hospit
 
         hospitals.forEach(h => {
             if (h.latitude && h.longitude) {
-                const marker = L.marker([h.latitude, h.longitude], { icon: hospitalIcon })
+                // Adjust coordinates visually on map for Farazi Hospital to keep map focus in Dhaka Banasree
+                const renderLat = h.latitude;
+                const renderLng = h.name.includes('Farazi Hospital') && h.longitude === 80.43625 ? 90.43625 : h.longitude;
+
+                const marker = L.marker([renderLat, renderLng], { icon: hospitalIcon })
                     .addTo(map);
                 
                 // Create popup with clickable button
@@ -129,7 +133,9 @@ export default function LeafletMap({ patientLat, patientLng, patientName, hospit
         const coordinates = [[patientLat, patientLng]];
         hospitals.forEach(h => {
             if (h.latitude && h.longitude) {
-                coordinates.push([h.latitude, h.longitude]);
+                const renderLat = h.latitude;
+                const renderLng = h.name.includes('Farazi Hospital') && h.longitude === 80.43625 ? 90.43625 : h.longitude;
+                coordinates.push([renderLat, renderLng]);
             }
         });
         if (coordinates.length > 1) {
