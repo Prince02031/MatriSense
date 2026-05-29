@@ -3,10 +3,29 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import ProtectedRoute from '../../../components/ProtectedRoute';
+
+const translateHospitalType = (type, lang) => {
+    if (!type) return lang === 'bn' ? 'প্রযোজ্য নয়' : 'N/A';
+    if (lang !== 'bn') return type.replace(/_/g, ' ');
+    
+    const types = {
+        'COMMUNITY_CLINIC': 'কমিউনিটি ক্লিনিক',
+        'UPAZILA_HEALTH_COMPLEX': 'উপজেলা স্বাস্থ্য কমপ্লেক্স',
+        'DISTRICT_HOSPITAL': 'জেলা হাসপাতাল',
+        'GENERAL_HOSPITAL': 'জেনারেল হাসপাতাল',
+        'MEDICAL_COLLEGE_HOSPITAL': 'মেডিকেল কলেজ হাসপাতাল',
+        'MATERNAL_AND_CHILD_HEALTH_TRAINING_INSTITUTE': 'মা ও শিশু স্বাস্থ্য প্রশিক্ষণ ইনস্টিটিউট',
+        'PRIVATE_CLINIC': 'বেসরকারি ক্লিনিক/হাসপাতাল',
+        'PRIVATE_HOSPITAL': 'বেসরকারি হাসপাতাল'
+    };
+    return types[type] || type.replace(/_/g, ' ');
+};
 
 export default function PatientReferralsPage() {
     const { user, authFetch } = useAuth();
+    const { t, language } = useLanguage();
     const router = useRouter();
 
     const [referrals, setReferrals] = useState([]);
@@ -76,18 +95,18 @@ export default function PatientReferralsPage() {
                 setReferrals(prev =>
                     prev.map(r => r._id === referralId ? { ...r, acknowledgedAt: new Date() } : r)
                 );
-                alert('Referral acknowledged! Please visit the assigned hospital.');
+                alert(t.referralAcknowledgedAlert || 'Referral acknowledged! Please visit the assigned hospital.');
             }
         } catch (err) {
             console.error('Failed to acknowledge referral:', err);
-            alert('Failed to acknowledge referral');
+            alert(t.referralAcknowledgeFailedAlert || 'Failed to acknowledge referral');
         }
     };
 
     if (loading) {
         return (
             <ProtectedRoute allowedRoles={['patient']}>
-                <div style={{ padding: '48px', textAlign: 'center' }}>Loading referrals...</div>
+                <div style={{ padding: '48px', textAlign: 'center' }}>{t.loadingReferrals}</div>
             </ProtectedRoute>
         );
     }
@@ -97,14 +116,14 @@ export default function PatientReferralsPage() {
             <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <div>
-                        <h1 style={{ fontSize: '1.8rem', fontWeight: '700', margin: '0 0 8px 0' }}>🏥 Health Worker Referrals</h1>
-                        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Referrals from your assigned health worker</p>
+                        <h1 style={{ fontSize: '1.8rem', fontWeight: '700', margin: '0 0 8px 0' }}>🏥 {t.healthWorkerReferrals}</h1>
+                        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>{t.referralsFromWorker}</p>
                     </div>
                     <button
                         onClick={() => router.back()}
                         className="btn btn-secondary"
                     >
-                        ← Back
+                        {t.back}
                     </button>
                 </div>
 
@@ -118,7 +137,10 @@ export default function PatientReferralsPage() {
                         marginBottom: '20px',
                         fontWeight: '500'
                     }}>
-                        🔔 You have {notificationCount} new referral{notificationCount !== 1 ? 's' : ''}
+                        {language === 'bn'
+                            ? `🔔 আপনার ${notificationCount}টি নতুন রেফারেল রয়েছে`
+                            : `🔔 You have ${notificationCount} new referral${notificationCount !== 1 ? 's' : ''}`
+                        }
                     </div>
                 )}
 
@@ -130,8 +152,8 @@ export default function PatientReferralsPage() {
                         borderRadius: '12px',
                         color: 'var(--text-muted)'
                     }}>
-                        <p style={{ fontSize: '1.1rem', marginBottom: '8px' }}>No referrals yet</p>
-                        <p style={{ fontSize: '0.9rem' }}>Your referrals will appear here once your health worker sends them</p>
+                        <p style={{ fontSize: '1.1rem', marginBottom: '8px' }}>{t.noReferralsYet}</p>
+                        <p style={{ fontSize: '0.9rem' }}>{t.noReferralsYetHelp}</p>
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -152,7 +174,7 @@ export default function PatientReferralsPage() {
                                         {/* Header */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                                             <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>
-                                                🏥 {referral.hospitalName || 'Hospital Assignment'}
+                                                🏥 {referral.hospitalName || t.hospitalAssignment}
                                             </h3>
                                             {!referral.acknowledgedAt && (
                                                 <span style={{
@@ -163,7 +185,7 @@ export default function PatientReferralsPage() {
                                                     fontSize: '0.75rem',
                                                     fontWeight: '600'
                                                 }}>
-                                                    PENDING
+                                                    {t.pending}
                                                 </span>
                                             )}
                                             {referral.acknowledgedAt && (
@@ -175,7 +197,7 @@ export default function PatientReferralsPage() {
                                                     fontSize: '0.75rem',
                                                     fontWeight: '600'
                                                 }}>
-                                                    ACKNOWLEDGED
+                                                    {t.acknowledged}
                                                 </span>
                                             )}
                                         </div>
@@ -183,19 +205,19 @@ export default function PatientReferralsPage() {
                                         {/* Hospital Details */}
                                         <div style={{ background: 'var(--surface-hover)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
                                             <p style={{ margin: '8px 0', fontSize: '0.9rem' }}>
-                                                <strong>Type:</strong> {referral.hospitalType?.replace(/_/g, ' ') || 'N/A'}
+                                                <strong>{t.type}:</strong> {translateHospitalType(referral.hospitalType, language)}
                                             </p>
                                             <p style={{ margin: '8px 0', fontSize: '0.9rem' }}>
-                                                <strong>Address:</strong> {referral.hospitalAddress || 'N/A'}
+                                                <strong>{t.address}:</strong> {referral.hospitalAddress || (language === 'bn' ? 'প্রযোজ্য নয়' : 'N/A')}
                                             </p>
                                             {referral.hospitalPhone && (
                                                 <p style={{ margin: '8px 0', fontSize: '0.9rem' }}>
-                                                    <strong>Phone:</strong> <a href={`tel:${referral.hospitalPhone}`} style={{ color: '#0ea5a8', textDecoration: 'none' }}>{referral.hospitalPhone}</a>
+                                                    <strong>{t.phone}:</strong> <a href={`tel:${referral.hospitalPhone}`} style={{ color: '#0ea5a8', textDecoration: 'none' }}>{referral.hospitalPhone}</a>
                                                 </p>
                                             )}
                                             {referral.hospitalServices && referral.hospitalServices.length > 0 && (
                                                 <p style={{ margin: '8px 0', fontSize: '0.9rem' }}>
-                                                    <strong>Services:</strong> {referral.hospitalServices.join(', ')}
+                                                    <strong>{t.services}:</strong> {referral.hospitalServices.join(', ')}
                                                 </p>
                                             )}
                                         </div>
@@ -203,14 +225,14 @@ export default function PatientReferralsPage() {
                                         {/* Referral Reason */}
                                         {referral.reason && (
                                             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px', borderRadius: '8px', marginBottom: '12px' }}>
-                                                <p style={{ margin: '0 0 6px 0', fontSize: '0.85rem', color: '#166534', fontWeight: '600' }}>Reason for Referral:</p>
+                                                <p style={{ margin: '0 0 6px 0', fontSize: '0.85rem', color: '#166534', fontWeight: '600' }}>{t.reasonForReferral}</p>
                                                 <p style={{ margin: 0, fontSize: '0.9rem', color: '#166534' }}>{referral.reason}</p>
                                             </div>
                                         )}
 
                                         {/* Timestamp */}
                                         <p style={{ margin: '12px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                            Sent: {new Date(referral.deliveredAt).toLocaleString()}
+                                            {t.sent} {new Date(referral.deliveredAt).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}
                                         </p>
                                     </div>
 
@@ -230,7 +252,7 @@ export default function PatientReferralsPage() {
                                                     fontWeight: '500'
                                                 }}
                                             >
-                                                ✓ Mark as Read
+                                                {t.markAsRead}
                                             </button>
                                         )}
                                         {!referral.acknowledgedAt && (
@@ -247,7 +269,7 @@ export default function PatientReferralsPage() {
                                                     fontWeight: '600'
                                                 }}
                                             >
-                                                ✓ Acknowledge
+                                                {t.acknowledge}
                                             </button>
                                         )}
                                         {referral.hospitalPhone && (
@@ -266,7 +288,7 @@ export default function PatientReferralsPage() {
                                                     textDecoration: 'none'
                                                 }}
                                             >
-                                                📞 Call Hospital
+                                                {t.callHospital}
                                             </a>
                                         )}
                                     </div>
@@ -286,7 +308,7 @@ export default function PatientReferralsPage() {
                     fontSize: '0.8rem',
                     color: 'var(--text-muted)'
                 }}>
-                    🔄 Auto-refreshing every 10 seconds
+                    {t.autoRefreshing}
                 </div>
             </div>
         </ProtectedRoute>
