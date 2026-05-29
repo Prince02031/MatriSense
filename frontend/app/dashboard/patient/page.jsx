@@ -82,8 +82,8 @@ export default function PatientDashboard() {
                 <Link href="/dashboard/patient/referrals" className="action-card">
                     <div className="action-icon icon-green">🏥</div>
                     <div className="action-text">
-                        <h3>Health Worker Referrals</h3>
-                        <p>View hospital referrals from your health worker</p>
+                        <h3>{t.healthWorkerReferrals}</h3>
+                        <p>{t.healthWorkerReferralsHelp}</p>
                     </div>
                 </Link>
                 <Link href="/dashboard/patient/history" className="action-card">
