@@ -3,16 +3,17 @@
 /**
  * Hybrid Fallback Test
  * Tests fallback behavior when embedding provider fails (quota, rate-limit, network errors)
+ * Fixed: correct module paths, correct API signatures (single-config-object), correct dotenv depth
  */
 
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../../../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 const mongoose = require('mongoose');
 
 // RAG components
-const ruleAwareVectorRetriever = require('../retrieval/ruleAwareVectorRetriever');
-const buildRuleAwareQuery = require('../domain/buildRuleAwareQuery');
+const { retrieveRuleAware } = require('../retrieval/ruleAwareVectorRetriever');
 const EmbeddingClient = require('../core/embeddingClient');
+const VectorKnowledgeChunk = require('../models/VectorKnowledgeChunk');
 
 class HybridFallbackTest {
   constructor() {
@@ -32,8 +33,7 @@ class HybridFallbackTest {
     try {
       // Connect to MongoDB
       await mongoose.connect(process.env.MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 8000,
       });
 
       // Run test scenarios
@@ -53,6 +53,20 @@ class HybridFallbackTest {
   }
 
   /**
+   * Helper: call retrieveRuleAware with a mocked embeddingClient
+   */
+  async doRetrieveWithClient({ decision, caseState, audience, embeddingClient }) {
+    return retrieveRuleAware({
+      decision,
+      caseState,
+      audience,
+      topK: 5,
+      embeddingClient,
+      VectorKnowledgeChunk,
+    });
+  }
+
+  /**
    * Test Case 1: QUOTA_EXHAUSTED error
    * Expected: fallbackRecommended=true, ok=false, no throw
    */
@@ -62,10 +76,10 @@ class HybridFallbackTest {
       // Mock the embedding client to fail with quota error
       const originalEmbed = EmbeddingClient.prototype.embed;
       EmbeddingClient.prototype.embed = async () => {
-        const error = new Error('Quota exhausted');
-        error.code = 'QUOTA_EXHAUSTED';
-        throw error;
+        return { ok: false, error: 'QUOTA_EXHAUSTED', message: 'Quota exhausted' };
       };
+
+      const mockClient = new EmbeddingClient();
 
       const decision = {
         riskLevel: 'HIGH',
@@ -75,36 +89,16 @@ class HybridFallbackTest {
       };
 
       const caseState = {
+        symptoms: ['severe_headache'],
         patientAge: 28,
         gestationalAge: 30,
       };
-
-      const symptoms = {
-        severe_headache: true,
-      };
-
-      const queryBuilding = buildRuleAwareQuery(decision, caseState, symptoms);
-      if (!queryBuilding.ok) {
-        this.failTest(testName, `Query build failed: ${queryBuilding.error}`);
-        EmbeddingClient.prototype.embed = originalEmbed;
-        return;
-      }
 
       let retrieval;
       let errorThrown = false;
 
       try {
-        retrieval = await ruleAwareVectorRetriever.retrieve(
-          {
-            queryText: queryBuilding.queryText,
-            riskLevel: queryBuilding.riskLevel,
-            evidenceTags: queryBuilding.evidenceTags,
-          },
-          {
-            audience: 'PATIENT',
-            decisionContext: decision,
-          }
-        );
+        retrieval = await this.doRetrieveWithClient({ decision, caseState, audience: 'PATIENT', embeddingClient: mockClient });
       } catch (error) {
         errorThrown = true;
         console.log(`  - Error thrown: ${error.message}`);
@@ -120,9 +114,9 @@ class HybridFallbackTest {
         console.log(`  - Mode: ${retrieval.mode}`);
         console.log(`  - Error: ${retrieval.error}`);
       } else if (retrieval && !retrieval.ok) {
-        this.failTest(testName, 'Failed but fallbackRecommended not set');
+        this.failTest(testName, `Failed but fallbackRecommended not set. Error: ${retrieval.error}`);
       } else {
-        this.failTest(testName, 'Unexpected retrieval result');
+        this.failTest(testName, `Unexpected retrieval result: ok=${retrieval?.ok}`);
       }
     } catch (error) {
       this.failTest(testName, error.message);
@@ -136,13 +130,12 @@ class HybridFallbackTest {
   async testRateLimited() {
     const testName = 'Provider Failure: RATE_LIMITED';
     try {
-      // Mock the embedding client to fail with rate limit error
       const originalEmbed = EmbeddingClient.prototype.embed;
       EmbeddingClient.prototype.embed = async () => {
-        const error = new Error('Rate limit exceeded');
-        error.code = 'RATE_LIMITED';
-        throw error;
+        return { ok: false, error: 'RATE_LIMITED', message: 'Rate limit exceeded' };
       };
+
+      const mockClient = new EmbeddingClient();
 
       const decision = {
         riskLevel: 'HIGH',
@@ -152,42 +145,21 @@ class HybridFallbackTest {
       };
 
       const caseState = {
+        symptoms: ['vaginal_bleeding'],
         patientAge: 26,
         gestationalAge: 28,
       };
-
-      const symptoms = {
-        vaginal_bleeding: true,
-      };
-
-      const queryBuilding = buildRuleAwareQuery(decision, caseState, symptoms);
-      if (!queryBuilding.ok) {
-        this.failTest(testName, `Query build failed: ${queryBuilding.error}`);
-        EmbeddingClient.prototype.embed = originalEmbed;
-        return;
-      }
 
       let retrieval;
       let errorThrown = false;
 
       try {
-        retrieval = await ruleAwareVectorRetriever.retrieve(
-          {
-            queryText: queryBuilding.queryText,
-            riskLevel: queryBuilding.riskLevel,
-            evidenceTags: queryBuilding.evidenceTags,
-          },
-          {
-            audience: 'PATIENT',
-            decisionContext: decision,
-          }
-        );
+        retrieval = await this.doRetrieveWithClient({ decision, caseState, audience: 'PATIENT', embeddingClient: mockClient });
       } catch (error) {
         errorThrown = true;
         console.log(`  - Error thrown: ${error.message}`);
       }
 
-      // Restore original
       EmbeddingClient.prototype.embed = originalEmbed;
 
       if (errorThrown) {
@@ -197,9 +169,9 @@ class HybridFallbackTest {
         console.log(`  - Mode: ${retrieval.mode}`);
         console.log(`  - Error: ${retrieval.error}`);
       } else if (retrieval && !retrieval.ok) {
-        this.failTest(testName, 'Failed but fallbackRecommended not set');
+        this.failTest(testName, `Failed but fallbackRecommended not set. Error: ${retrieval.error}`);
       } else {
-        this.failTest(testName, 'Unexpected retrieval result');
+        this.failTest(testName, `Unexpected retrieval result: ok=${retrieval?.ok}`);
       }
     } catch (error) {
       this.failTest(testName, error.message);
@@ -213,13 +185,14 @@ class HybridFallbackTest {
   async testNetworkError() {
     const testName = 'Provider Failure: NETWORK_ERROR';
     try {
-      // Mock the embedding client to fail with network error
       const originalEmbed = EmbeddingClient.prototype.embed;
       EmbeddingClient.prototype.embed = async () => {
         const error = new Error('Failed to connect to embedding provider');
         error.code = 'NETWORK_ERROR';
         throw error;
       };
+
+      const mockClient = new EmbeddingClient();
 
       const decision = {
         riskLevel: 'MEDIUM',
@@ -229,42 +202,21 @@ class HybridFallbackTest {
       };
 
       const caseState = {
+        symptoms: ['fever'],
         patientAge: 24,
         gestationalAge: 20,
       };
-
-      const symptoms = {
-        fever: true,
-      };
-
-      const queryBuilding = buildRuleAwareQuery(decision, caseState, symptoms);
-      if (!queryBuilding.ok) {
-        this.failTest(testName, `Query build failed: ${queryBuilding.error}`);
-        EmbeddingClient.prototype.embed = originalEmbed;
-        return;
-      }
 
       let retrieval;
       let errorThrown = false;
 
       try {
-        retrieval = await ruleAwareVectorRetriever.retrieve(
-          {
-            queryText: queryBuilding.queryText,
-            riskLevel: queryBuilding.riskLevel,
-            evidenceTags: queryBuilding.evidenceTags,
-          },
-          {
-            audience: 'PATIENT',
-            decisionContext: decision,
-          }
-        );
+        retrieval = await this.doRetrieveWithClient({ decision, caseState, audience: 'PATIENT', embeddingClient: mockClient });
       } catch (error) {
         errorThrown = true;
         console.log(`  - Error thrown: ${error.message}`);
       }
 
-      // Restore original
       EmbeddingClient.prototype.embed = originalEmbed;
 
       if (errorThrown) {
@@ -274,9 +226,9 @@ class HybridFallbackTest {
         console.log(`  - Mode: ${retrieval.mode}`);
         console.log(`  - Error: ${retrieval.error}`);
       } else if (retrieval && !retrieval.ok) {
-        this.failTest(testName, 'Failed but fallbackRecommended not set');
+        this.failTest(testName, `Failed but fallbackRecommended not set. Error: ${retrieval.error}`);
       } else {
-        this.failTest(testName, 'Unexpected retrieval result');
+        this.failTest(testName, `Unexpected retrieval result: ok=${retrieval?.ok}`);
       }
     } catch (error) {
       this.failTest(testName, error.message);
@@ -290,7 +242,6 @@ class HybridFallbackTest {
   async testGracefulDegradation() {
     const testName = 'Graceful Degradation (Multiple Failures)';
     try {
-      // Mock the embedding client to always fail
       const originalEmbed = EmbeddingClient.prototype.embed;
       EmbeddingClient.prototype.embed = async () => {
         const error = new Error('Persistent provider failure');
@@ -298,6 +249,7 @@ class HybridFallbackTest {
         throw error;
       };
 
+      const mockClient = new EmbeddingClient();
       const failureStates = [];
 
       // Run 3 sequential failures
@@ -310,31 +262,16 @@ class HybridFallbackTest {
         };
 
         const caseState = {
+          symptoms: ['severe_abdominal_pain'],
           patientAge: 28 + i,
           gestationalAge: 30 - i,
         };
 
-        const symptoms = {
-          severe_abdominal_pain: true,
-        };
-
-        const queryBuilding = buildRuleAwareQuery(decision, caseState, symptoms);
-
         let retrieval;
         try {
-          retrieval = await ruleAwareVectorRetriever.retrieve(
-            {
-              queryText: queryBuilding.queryText,
-              riskLevel: queryBuilding.riskLevel,
-              evidenceTags: queryBuilding.evidenceTags,
-            },
-            {
-              audience: 'PATIENT',
-              decisionContext: decision,
-            }
-          );
+          retrieval = await this.doRetrieveWithClient({ decision, caseState, audience: 'PATIENT', embeddingClient: mockClient });
         } catch (error) {
-          retrieval = { ok: false, error: error.message };
+          retrieval = { ok: false, fallbackRecommended: false, error: error.message };
         }
 
         failureStates.push({
@@ -354,14 +291,11 @@ class HybridFallbackTest {
       );
 
       if (allFailedCorrectly) {
-        this.passTest(
-          testName,
-          `All ${failureStates.length} failures handled consistently (fallback=true)`
-        );
+        this.passTest(testName, `All ${failureStates.length} failures handled consistently (fallback=true)`);
         console.log(`  - Failure pattern maintained across retries`);
       } else {
         this.failTest(testName, 'Inconsistent failure handling');
-        console.log(`  - States:`, failureStates);
+        console.log(`  - States:`, JSON.stringify(failureStates, null, 2));
       }
     } catch (error) {
       this.failTest(testName, error.message);

@@ -63,11 +63,13 @@ function chunkText(text, options = {}) {
     }
 
     // Move to next chunk with overlap
-    startIdx = endIdx - overlap;
+    const nextStartIdx = endIdx - overlap;
 
-    // Prevent infinite loop if overlap is too large
-    if (startIdx <= chunks[chunks.length - 1]?.startIdx) {
+    // Prevent infinite loop by forcing forward progress
+    if (nextStartIdx <= startIdx) {
       startIdx = endIdx;
+    } else {
+      startIdx = nextStartIdx;
     }
 
     // Avoid tiny final chunk

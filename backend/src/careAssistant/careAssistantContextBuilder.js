@@ -37,7 +37,7 @@ const buildAssistantContext = async (sessionId) => {
   // Load RAG guidance card sources
   const careGuidanceContext = session.careGuidanceContext || {};
   const retrievedCards = careGuidanceContext.retrievedCards || careGuidanceContext.cards || [];
-  const retrievedChunks = careGuidanceContext.retrievedChunks || careGuidanceContext.chunks || [];
+  const retrievedChunks = careGuidanceContext.vectorChunks || careGuidanceContext.retrievedChunks || careGuidanceContext.chunks || [];
 
   // Parse dynamic or recommended assigned hospital if available
   let assignedHospital = null;
