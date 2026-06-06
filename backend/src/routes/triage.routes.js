@@ -14,9 +14,9 @@ const { reverseGeocode } = require('../utils/reverseGeocode');
 router.post('/start', async (req, res) => {
   try {
     const { patientId, userId, trimester, gestationalWeek,
-            division: bodyDivision, district: bodyDistrict,
-            upazilaOrThana: bodyUpazila, addressOrVillage: bodyAddress,
-            latitude: bodyLat, longitude: bodyLng, locationSource } = req.body;
+      division: bodyDivision, district: bodyDistrict,
+      upazilaOrThana: bodyUpazila, addressOrVillage: bodyAddress,
+      latitude: bodyLat, longitude: bodyLng, locationSource } = req.body;
 
     // Load patient profile
     // Try patientId first, then userId (lookup Patient by userId)
@@ -360,6 +360,24 @@ router.post('/:sessionId/run', async (req, res) => {
 
     if (!session) return res.status(404).json({ error: 'Session not found' });
     if (!session.caseState) return res.status(400).json({ error: 'Case state is empty' });
+
+    // Enriched Profile Context (MCP Service Integration)
+    const { getTriageProfileContext } = require('../mcp/caseContext/services/caseContextService');
+    try {
+      const profileContext = await getTriageProfileContext({
+        patientId: session.patientId,
+        sessionId: session._id,
+        requester: { role: 'INTERNAL' }
+      });
+      if (profileContext) {
+        session.caseState.profileContext = profileContext;
+        console.log('[TriageRoutes] case context enrichment: success');
+      } else {
+        console.log('[TriageRoutes] case context enrichment: failure (null returned)');
+      }
+    } catch (enrichErr) {
+      console.warn('[TriageRoutes] case context enrichment: failure', enrichErr.message);
+    }
 
     console.log('[TriageRoutes] Running rules...');
     // 1. Run Rule Engine
