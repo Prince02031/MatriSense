@@ -31,9 +31,30 @@ export default function CaseStatusBadge({ status }) {
             break;
         case 'RESOLVED':
         case 'completed':
+        case 'COMPLETED':
             bg = '#dcfce7'; // green
             color = '#166534';
-            label = 'RESOLVED';
+            label = 'COMPLETED';
+            break;
+        case 'HOSPITAL_ASSIGNED':
+            bg = '#e0e7ff'; // indigo
+            color = '#3730a3';
+            label = 'HOSPITAL ASSIGNED';
+            break;
+        case 'IN_TRANSIT':
+            bg = '#fef08a'; // yellow
+            color = '#854d0e';
+            label = 'IN TRANSIT';
+            break;
+        case 'ADMITTED':
+            bg = '#dbeafe'; // light blue
+            color = '#1e40af';
+            label = 'ADMITTED';
+            break;
+        case 'CANCELLED':
+            bg = '#fee2e2'; // red
+            color = '#991b1b';
+            label = 'CANCELLED';
             break;
         default:
             break;

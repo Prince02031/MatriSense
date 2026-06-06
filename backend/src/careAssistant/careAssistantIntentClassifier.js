@@ -27,15 +27,17 @@ const INTENT_TYPES = {
   ASK_REFERRAL_STATUS: 'ASK_REFERRAL_STATUS',
   // Patient explicitly selecting/confirming a preferred hospital
   CREATE_PATIENT_REFERRAL_PREFERENCE: 'CREATE_PATIENT_REFERRAL_PREFERENCE',
+  // Patient explicitly cancelling a preference
+  CANCEL_PATIENT_REFERRAL_PREFERENCE: 'CANCEL_PATIENT_REFERRAL_PREFERENCE',
 
   // Conversational/General intents
   CASUAL_CHAT: 'CASUAL_CHAT',
   SIMPLE_NON_MEDICAL_HELP: 'SIMPLE_NON_MEDICAL_HELP',
   OUT_OF_SCOPE_BUT_SAFE: 'OUT_OF_SCOPE_BUT_SAFE',
-  
+
   // Safety/Policy intents
   POLICY_UNSAFE_OR_MEDICAL_RISK: 'POLICY_UNSAFE_OR_MEDICAL_RISK',
-  
+
   // Default
   GENERAL_OTHER: 'GENERAL_OTHER'
 };
@@ -233,7 +235,7 @@ const INTENT_KEYWORDS = {
     ],
     weight: 0.7
   },
-  
+
   // New conversational intents
   [INTENT_TYPES.EMOTIONAL_COMPANION]: {
     patterns: [
@@ -255,7 +257,7 @@ const INTENT_KEYWORDS = {
     ],
     weight: 1.0
   },
-  
+
   [INTENT_TYPES.CASUAL_CHAT]: {
     patterns: [
       'তুমি কে',
@@ -285,7 +287,7 @@ const INTENT_KEYWORDS = {
     ],
     weight: 0.9
   },
-  
+
   [INTENT_TYPES.SIMPLE_NON_MEDICAL_HELP]: {
     patterns: [
       'মেসেজ লিখে',
@@ -311,7 +313,7 @@ const INTENT_KEYWORDS = {
     ],
     weight: 0.8
   },
-  
+
   [INTENT_TYPES.OUT_OF_SCOPE_BUT_SAFE]: {
     patterns: [
       'আবহাওয়া',
@@ -333,7 +335,7 @@ const INTENT_KEYWORDS = {
     ],
     weight: 0.6
   },
-  
+
   [INTENT_TYPES.POLICY_UNSAFE_OR_MEDICAL_RISK]: {
     patterns: [
       'নিজেকে',
@@ -440,6 +442,17 @@ const INTENT_KEYWORDS = {
       'prefer'
     ],
     weight: 2.0
+  },
+
+  [INTENT_TYPES.CANCEL_PATIENT_REFERRAL_PREFERENCE]: {
+    patterns: [
+      'পছন্দ বাতিল করো',
+      'বাতিল করবো',
+      'cancel করো',
+      'যেতে চাই না',
+      'বাদ দাও'
+    ],
+    weight: 2.0
   }
 };
 
@@ -476,7 +489,7 @@ const classifyIntent = (userMessage) => {
 
   const topIntent = Object.entries(scores).reduce((best, [intent, score]) =>
     score > (best.score || 0) ? { intent, score } : best
-  , {}).intent;
+    , {}).intent;
 
   return topIntent || INTENT_TYPES.GENERAL_OTHER;
 };
@@ -505,15 +518,16 @@ const getIntentName = (intent) => {
     [INTENT_TYPES.ASK_ASSIGNED_HOSPITAL]: 'Ask Assigned Hospital',
     [INTENT_TYPES.ASK_REFERRAL_STATUS]: 'Ask Referral Status',
     [INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE]: 'Create Patient Referral Preference',
+    [INTENT_TYPES.CANCEL_PATIENT_REFERRAL_PREFERENCE]: 'Cancel Patient Referral Preference',
 
     // Conversational intents
     [INTENT_TYPES.CASUAL_CHAT]: 'Casual Chat',
     [INTENT_TYPES.SIMPLE_NON_MEDICAL_HELP]: 'Simple Non-Medical Help',
     [INTENT_TYPES.OUT_OF_SCOPE_BUT_SAFE]: 'Out of Scope But Safe',
-    
+
     // Safety intents
     [INTENT_TYPES.POLICY_UNSAFE_OR_MEDICAL_RISK]: 'Policy Unsafe or Medical Risk',
-    
+
     // Default
     [INTENT_TYPES.GENERAL_OTHER]: 'General Other'
   };
