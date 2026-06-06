@@ -93,6 +93,13 @@ app.use('/api/hospitals', require('./routes/hospital.routes'));
 app.use('/api/docs', docsRoutes);
 app.use('/api/dev', require('./routes/dev.routes'));
 
+// Mount MCP HTTP Endpoint conditionally based on environment variables
+if (process.env.ENABLE_CASE_CONTEXT_MCP === 'true' && process.env.CASE_MCP_ENABLE_HTTP === 'true') {
+  const { mcpServer } = require('./mcp/caseContext/server.js');
+  const { createMcpRouter } = require('./mcp/caseContext/transports/http');
+  app.use('/mcp/case', createMcpRouter(mcpServer));
+}
+
 app.get('/api/message', (_req, res) => {
   res.json({ message: 'Backend is running successfully.' });
 });

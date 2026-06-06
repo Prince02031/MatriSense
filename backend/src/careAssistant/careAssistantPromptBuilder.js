@@ -14,7 +14,7 @@ const { INTENT_TYPES, classifyIntent } = require('./careAssistantIntentClassifie
  * @returns {string} Guidance text for the system instruction
  */
 const buildIntentSpecificGuidance = (intent, riskLevel, hasRecentFullWarning) => {
-  const urgencyReminder = riskLevel === 'HIGH' 
+  const urgencyReminder = riskLevel === 'HIGH'
     ? ' Keep urgent contact clear but as a SHORT reminder, not the whole answer.'
     : '';
 
@@ -229,7 +229,10 @@ const buildAssistantPrompt = ({
     assignedHospital = null,
     patientProfile = null,
     workerStatus = 'active',
-    previousHistory = []
+    previousHistory = [],
+    safetyBoundaries = null,
+    recommendedAssistantTone = null,
+    documentUploadSummary = null
   } = officialTriageContext;
 
   // 0. Detect user intent
@@ -240,18 +243,18 @@ const buildAssistantPrompt = ({
     ? sanitizedChatHistory.filter(turn => turn.role === 'assistant').slice(-1)[0]?.content || ''
     : '';
 
-  const hasRecentFullWarning = lastAssistantMessage.includes('স্বাস্থ্যকর্মী') || 
-                               lastAssistantMessage.includes('হাসপাতালে');
+  const hasRecentFullWarning = lastAssistantMessage.includes('স্বাস্থ্যকর্মী') ||
+    lastAssistantMessage.includes('হাসপাতালে');
 
   // 1. Resolve Risk Level Specific Policy
   const normalizedRisk = riskLevel.toUpperCase();
   const riskPolicy = RISK_POLICIES[normalizedRisk] || RISK_POLICIES.LOW;
 
   // 2. Build the System Instruction (Safety policies & clinical limits)
-  
+
   // Build intent-specific guidance
   const intentSpecificGuidance = buildIntentSpecificGuidance(detectedIntent, normalizedRisk, hasRecentFullWarning);
-  
+
   const systemInstruction = `
 You are the ${ASSISTANT_IDENTITY.name}.
 Your Role: ${ASSISTANT_IDENTITY.role}.
@@ -329,8 +332,8 @@ You MUST respond with a valid JSON object matching the following structure:
   // 3b. Format Previous Triage History Summaries (background only, no PHI beyond symptoms/risk)
   const formattedPreviousHistory = Array.isArray(previousHistory) && previousHistory.length > 0
     ? previousHistory.map((s, idx) =>
-        `Session ${idx + 1} (${s.date}): Risk=${s.riskLevel}, Symptoms=[${(s.symptoms || []).join(', ') || 'None'}], Status=${s.status}, Hospital=${s.assignedHospital || 'None'}`
-      ).join('\n')
+      `Session ${idx + 1} (${s.date}): Risk=${s.riskLevel}, Symptoms=[${(s.symptoms || []).join(', ') || 'None'}], Status=${s.status}, Hospital=${s.assignedHospital || 'None'}`
+    ).join('\n')
     : 'No previous triage history found for this patient.';
 
   // 4. Format Chat History Memory
@@ -338,16 +341,29 @@ You MUST respond with a valid JSON object matching the following structure:
     ? sanitizedChatHistory.map(turn => `${turn.role.toUpperCase()}: ${turn.content}`).join('\n')
     : 'No active chat history.';
 
+  const formattedDocSummary = documentUploadSummary && documentUploadSummary.documentsUploaded
+    ? `Yes, ${documentUploadSummary.documentCount} provided. Types: ${(documentUploadSummary.documentTypes || []).join(', ')}. (Do NOT summarize contents, only affirm uploading).`
+    : 'None uploaded';
+
+  const formattedSafetyBoundaries = safetyBoundaries
+    ? Object.entries(safetyBoundaries).map(([k, v]) => `${k}: ${v}`).join(', ')
+    : 'Strict default diagnostic exclusions apply.';
+
   // 5. Construct User Prompt
   const userPrompt = `
 === OFFICIAL PATIENT CLINICAL CONTEXT ===
 Patient Profile: ${formattedPatientProfile}
 Assigned Risk Level: ${normalizedRisk}
 Extracted Symptoms: ${formattedSymptoms}
+Document Uploads Confirmed: ${formattedDocSummary}
 Follow-up Questionnaire Responses:
 ${formattedFollowUps}
 Assigned Hospital/Referral info: ${assignedHospital || 'Not explicitly designated'}
 Worker Case Status: ${workerStatus}
+
+=== SAFETY BOUNDARIES AND TONE ===
+Tone Direction: ${recommendedAssistantTone || 'informative_and_reassuring'}
+Strict API Boundaries: ${formattedSafetyBoundaries}
 
 === PREVIOUS TRIAGE HISTORY (Background Context Only) ===
 IMPORTANT: These are summary records only. Do NOT diagnose trends. If new or worsening symptoms are reported, advise the mother to contact a health worker or rerun the triage.
