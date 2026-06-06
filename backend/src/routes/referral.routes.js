@@ -3,13 +3,19 @@ const router = express.Router();
 const referralController = require('../controllers/referral.controller');
 const { protect } = require('../middleware/authMiddleware');
 
-// POST /api/referral-notes - Create a new note
-router.post('/', referralController.createNote);
+// POST /api/referrals (notes)
+router.post('/', protect, referralController.createNote);
 
-// GET /api/referral-notes/:sessionId - Get notes for a session
-router.get('/:sessionId', referralController.getNotesForSession);
+// GET /api/referrals/:sessionId (notes)
+router.get('/:sessionId', protect, referralController.getNotesForSession);
 
-// Patient Referral Preference endpoints (mounted on /api/referrals)
+// Session Assignment and History endpoints
+router.post('/session/:sessionId/assign', protect, referralController.assignHospital);
+router.post('/session/:sessionId/reassign', protect, referralController.reassignHospital);
+router.post('/session/:sessionId/status', protect, referralController.updateReferralStatus);
+router.get('/session/:sessionId/history', protect, referralController.getAssignmentHistory);
+
+// Patient Referral Preference endpoints
 router.post('/patient-preference', protect, referralController.createPatientPreference);
 router.get('/status/:sessionId', protect, referralController.getReferralStatus);
 router.get('/preferences/:sessionId', protect, referralController.getPreferences);

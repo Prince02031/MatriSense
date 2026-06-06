@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"error\":\"Failed to find hospital options safely.\",\"type\":\"Error\"}"
+    }
+  ],
+  "isError": true
+}

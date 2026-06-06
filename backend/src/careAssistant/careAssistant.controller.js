@@ -6,11 +6,12 @@ const { validateLLMOutput } = require('../safety');
 const { classifyIntent, getIntentName, INTENT_TYPES } = require('./careAssistantIntentClassifier');
 const { getFallbackByIntent } = require('./careAssistantIntentFallbacks');
 const {
-  referral_find_hospital_options,
-  referral_get_referral_status,
-  referral_get_assigned_hospital,
-  referral_create_patient_preference
-} = require('../services/referralAssistantService');
+  referralFindHospitalOptions,
+  referralGetReferralStatus,
+  referralGetAssignedHospital,
+  referralCreatePatientPreference,
+  referralCancelPatientPreference
+} = require('../mcp/referral/services/referralMcpService');
 
 // ============================================================================
 // Safety Disclaimer Repair
@@ -52,7 +53,7 @@ const GET_CONSERVATIVE_FALLBACK = (riskLevel) => {
   switch (normalized) {
     case 'HIGH':
       return {
-        reply: "আপনার লক্ষণগুলো উচ্চ ঝুঁকির হতে পারে। দয়া করে দ্রুত স্বাস্থ্যকর্মী বা নিকটস্থ স্বাস্থ্যকেন্দ্রে যোগাযোগ করুন। আমি ডাক্তার নই, তাই নির্দিষ্ট রোগ নির্ণয় বা ওষুধের পরামর্শ দিতে পারি না।",
+        reply: "আপনার লক্ষণগুলো উচ্চ ঝুঁকির হতে পারে। দয়া করে দ্রুত স্বাস্থ্যকর্মী বা নিকটস্থ স্বাস্থ্যকেন্দ্রে যোগাযোগ করুন। আমি ডাক্তার নই, তাই নির্দিষ্ট রোগ নির্ণয় বা ওষুধের পরামর্শ দিতে পারি সমাধা না।",
         suggestedQuickReplies: ["নিকটস্থ স্বাস্থ্যকেন্দ্র কোথায়?", "হাসপাতালে যাওয়ার জন্য কী প্রস্তুতি নেব?"],
         safetyDisclaimer: "এটি একটি জরুরি অবস্থা। দয়া করে বাসায় অপেক্ষা করবেন না।"
       };
@@ -89,32 +90,28 @@ const REFERRAL_DISCLAIMER = {
 // ============================================================================
 
 /**
- * Processes referral intents deterministically.
- * Called before the LLM to short-circuit for status/assigned-hospital queries
- * and to enrich the context for ASK_HOSPITAL_OPTIONS before passing to LLM.
+ * Processes referral intents deterministically using MCP Adapter Services
  */
 const processReferralIntent = async (intent, context, req) => {
   const { sessionId } = req.params;
-  const { hospitalId, reason } = req.body;
+  const { hospitalId, reason, preferenceId } = req.body;
   const riskLevel = (context.riskLevel || 'MEDIUM').toUpperCase();
   const patientId = context.patientId || null;
+  const requester = { role: 'PATIENT', patientId: patientId || undefined };
 
   const disclaimer = REFERRAL_DISCLAIMER[riskLevel] || REFERRAL_DISCLAIMER.MEDIUM;
 
-  // ------------------------------------------------------------------
-  // 1. ASK_REFERRAL_STATUS → deterministic short-circuit
-  // ------------------------------------------------------------------
+  // 1. ASK_REFERRAL_STATUS
   if (intent === INTENT_TYPES.ASK_REFERRAL_STATUS) {
     try {
-      const statusResult = await referral_get_referral_status({ sessionId, patientId });
+      const statusResult = await referralGetReferralStatus({ sessionId, patientId, requester });
 
       let replyBn;
-      if (statusResult.referralStatus === 'HOSPITAL_ASSIGNED') {
+      if (statusResult.referralStatus === 'HOSPITAL_ASSIGNED' || statusResult.assignedHospital) {
         const h = statusResult.assignedHospital;
-        replyBn = `আপনার জন্য একটি হাসপাতাল নির্ধারিত হয়েছে: ${h.name} (${h.district})। ফোন: ${h.phone || 'N/A'}। আপনার স্বাস্থ্যকর্মী এটি নিশ্চিত করেছেন।`;
-      } else if (statusResult.referralStatus === 'PREFERENCE_PENDING_REVIEW') {
-        const p = statusResult.patientPreference;
-        replyBn = `আপনি "${p.hospitalName || 'একটি হাসপাতাল'}" পছন্দ করেছেন এবং এটি আপনার স্বাস্থ্যকর্মীর পর্যালোচনার অপেক্ষায় আছে।`;
+        replyBn = `আপনার জন্য একটি হাসপাতাল নির্ধারিত হয়েছে: ${h.name}। আপনার স্বাস্থ্যকর্মী এটি নিশ্চিত করেছেন।`;
+      } else if (statusResult.workerReviewStatus) {
+        replyBn = `আপনি একটি হাসপাতাল পছন্দ করেছেন এবং এটি আপনার স্বাস্থ্যকর্মীর পর্যালোচনার অপেক্ষায় আছে।`;
       } else {
         replyBn = `এখন পর্যন্ত আপনার জন্য কোনো হাসপাতাল নির্ধারিত হয়নি। আপনি চাইলে একটি হাসপাতাল পছন্দ করতে পারেন, স্বাস্থ্যকর্মী তা পর্যালোচনা করবেন।`;
       }
@@ -126,37 +123,35 @@ const processReferralIntent = async (intent, context, req) => {
           quickReplies: ['হাসপাতালের বিকল্পগুলো দেখাও', 'স্বাস্থ্যকর্মীকে জানাতে চাই', 'আমার নির্ধারিত হাসপাতাল কোনটা?'],
           safetyDisclaimer: `কোনো জটিলতার জন্য দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`,
           ui: {
-            type: 'REFERRAL_STATUS',
+            type: 'REFERRAL_STATUS_CARD',
             riskLevel,
+            patientLocation: context.patientProfile?.district || null,
             referralStatus: statusResult.referralStatus,
-            assignedHospital: statusResult.assignedHospital,
-            patientPreference: statusResult.patientPreference,
-            workerReviewStatus: statusResult.workerReviewStatus,
+            assignedHospital: statusResult.assignedHospital || null,
+            preferenceStatus: statusResult.workerReviewStatus,
+            canCreatePreference: !statusResult.workerReviewStatus && !statusResult.assignedHospital,
             disclaimer
-          }
+          },
+          mcpDebug: { toolsCalled: ['referral_get_referral_status'] }
         }
       };
     } catch (err) {
       console.error('[ReferralIntent] ASK_REFERRAL_STATUS error:', err.message);
-      return { handled: false }; // Fall through to LLM
+      return { handled: false };
     }
   }
 
-  // ------------------------------------------------------------------
-  // 2. ASK_ASSIGNED_HOSPITAL → deterministic short-circuit
-  // ------------------------------------------------------------------
+  // 2. ASK_ASSIGNED_HOSPITAL
   if (intent === INTENT_TYPES.ASK_ASSIGNED_HOSPITAL) {
     try {
-      const result = await referral_get_assigned_hospital({ sessionId, patientId });
+      const result = await referralGetAssignedHospital({ sessionId, patientId, requester });
 
       let replyBn;
-      if (result.status === 'ASSIGNED') {
-        const h = result.assignedHospital;
-        replyBn = `আপনার জন্য নির্ধারিত হাসপাতাল হলো: ${h.name} (${h.district}${h.upazila ? ', ' + h.upazila : ''})। ফোন: ${h.phone || 'N/A'}।`;
-      } else if (result.status === 'NOT_YET_ASSIGNED') {
-        replyBn = `এখন পর্যন্ত আপনার জন্য কোনো হাসপাতাল চূড়ান্তভাবে নির্ধারিত হয়নি। আপনি চাইলে নিচ থেকে একটি পছন্দ করতে পারেন।`;
+      if (result.assigned) {
+        const h = result.hospital;
+        replyBn = `আপনার জন্য নির্ধারিত হাসপাতাল হলো: ${h.name} (${h.district}${h.upazila ? ', ' + h.upazila : ''})। ফোন: ${h.publicPhone || 'N/A'}।`;
       } else {
-        replyBn = `আপনার রেফারেল তথ্য এই মুহূর্তে পাওয়া যাচ্ছে না।`;
+        replyBn = `এখন পর্যন্ত আপনার জন্য কোনো হাসপাতাল চূড়ান্তভাবে নির্ধারিত হয়নি। আপনি চাইলে নিচ থেকে একটি পছন্দ করতে পারেন।`;
       }
 
       return {
@@ -166,12 +161,14 @@ const processReferralIntent = async (intent, context, req) => {
           quickReplies: ['হাসপাতালের দিকনির্দেশনা', 'হাসপাতালে কী নিয়ে যাবো?', 'হাসপাতালের বিকল্পগুলো দেখাও'],
           safetyDisclaimer: `কোনো জটিলতার জন্য দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`,
           ui: {
-            type: 'ASSIGNED_HOSPITAL',
+            type: 'REFERRAL_STATUS_CARD',
             riskLevel,
-            assignedHospital: result.assignedHospital,
-            status: result.status,
+            assignedHospital: result.hospital || null,
+            preferenceStatus: null,
+            canCreatePreference: !result.assigned,
             disclaimer
-          }
+          },
+          mcpDebug: { toolsCalled: ['referral_get_assigned_hospital'] }
         }
       };
     } catch (err) {
@@ -180,69 +177,92 @@ const processReferralIntent = async (intent, context, req) => {
     }
   }
 
-  // ------------------------------------------------------------------
-  // 3. CREATE_PATIENT_REFERRAL_PREFERENCE → save preference, confirm
-  // ------------------------------------------------------------------
+  // 3. CREATE_PATIENT_REFERRAL_PREFERENCE
   if (intent === INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE) {
-    if (!hospitalId || !patientId) {
-      // No hospitalId provided in the message body → don't save, let LLM ask
-      return { handled: false };
-    }
-
+    if (!hospitalId || !patientId) return { handled: false };
     try {
-      const prefResult = await referral_create_patient_preference({
+      const prefResult = await referralCreatePatientPreference({
         sessionId,
         patientId,
         hospitalId,
         reason: reason || 'Patient-selected via Guided Care Assistant',
-        source: 'guided_care_assistant'
+        requester
       });
 
       return {
         handled: true,
         payload: {
-          reply: prefResult.message,
+          reply: "আপনার পছন্দ সংরক্ষিত হয়েছে। আপনার স্বাস্থ্যকর্মী এটি পর্যালোচনা করে নিশ্চিত করবেন।",
           quickReplies: ['আমার referral status কী?', 'হাসপাতালে কীভাবে যাবো?', 'স্বাস্থ্যকর্মীকে জানাতে চাই'],
           safetyDisclaimer: `কোনো জটিলতার জন্য দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`,
           ui: {
-            type: 'PREFERENCE_SAVED',
+            type: 'REFERRAL_STATUS_CARD',
             riskLevel,
-            preference: prefResult.preference,
+            preferenceStatus: prefResult.status,
+            canCreatePreference: false,
             disclaimer
-          }
+          },
+          mcpDebug: { toolsCalled: ['referral_create_patient_preference'] }
         }
       };
     } catch (err) {
-      console.error('[ReferralIntent] CREATE_PATIENT_REFERRAL_PREFERENCE error:', err.message);
+      console.error('[ReferralIntent] CREATE error:', err.message);
       return {
         handled: true,
         payload: {
           reply: `দুঃখিত, আপনার পছন্দ সংরক্ষণ করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।`,
           quickReplies: ['আবার চেষ্টা করুন', 'হাসপাতালের বিকল্পগুলো দেখাও'],
           safetyDisclaimer: `কোনো জটিলতার জন্য দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`,
-          ui: { type: 'PREFERENCE_ERROR', riskLevel, error: err.message, disclaimer }
+          ui: { type: 'REFERRAL_STATUS_CARD', riskLevel, error: err.message, disclaimer },
+          mcpDebug: { toolsCalled: ['referral_create_patient_preference'] }
         }
-      };
+      }
     }
   }
 
-  // ------------------------------------------------------------------
-  // 4. ASK_HOSPITAL_OPTIONS → fetch options, enrich context, let LLM speak
-  // Returns { handled: false, referralData } to pass to LLM
-  // ------------------------------------------------------------------
+  // 4. CANCEL_PATIENT_REFERRAL_PREFERENCE
+  if (intent === INTENT_TYPES.CANCEL_PATIENT_REFERRAL_PREFERENCE) {
+    if (!preferenceId || !patientId) return { handled: false };
+    try {
+      await referralCancelPatientPreference({ sessionId, patientId, preferenceId, requester });
+      return {
+        handled: true,
+        payload: {
+          reply: "আপনার আগের হাসপাতালের পছন্দ বাতিল করা হয়েছে। আপনি চাইলে নতুন একটি পছন্দ করতে পারেন।",
+          quickReplies: ['হাসপাতালের বিকল্পগুলো দেখাও', 'স্বাস্থ্যকর্মীকে জানাতে চাই'],
+          safetyDisclaimer: `কোনো জটিলতার জন্য দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`,
+          ui: {
+            type: 'REFERRAL_STATUS_CARD',
+            riskLevel,
+            preferenceStatus: null,
+            canCreatePreference: true,
+            disclaimer
+          },
+          mcpDebug: { toolsCalled: ['referral_cancel_patient_preference'] }
+        }
+      };
+    } catch (err) {
+      console.error('[ReferralIntent] CANCEL error:', err.message);
+      return { handled: false };
+    }
+  }
+
+  // 5. ASK_HOSPITAL_OPTIONS
   if (intent === INTENT_TYPES.ASK_HOSPITAL_OPTIONS) {
     try {
-      const referralData = await referral_find_hospital_options({
+      const referralData = await referralFindHospitalOptions({
         sessionId,
         patientId,
         riskLevel: context.riskLevel,
         district: context.patientProfile?.district || null,
-        upazila: context.patientProfile?.upazilaOrThana || null
+        upazila: context.patientProfile?.upazilaOrThana || null,
+        requester
       });
 
       return {
         handled: false,
-        referralData // Caller will inject into prompt context and attach as ui payload
+        referralData,
+        mcpDebug: { toolsCalled: ['referral_find_hospital_options'] }
       };
     } catch (err) {
       console.error('[ReferralIntent] ASK_HOSPITAL_OPTIONS fetch error:', err.message);
@@ -288,7 +308,8 @@ exports.handleAssistantMessage = async (req, res) => {
       INTENT_TYPES.ASK_HOSPITAL_OPTIONS,
       INTENT_TYPES.ASK_ASSIGNED_HOSPITAL,
       INTENT_TYPES.ASK_REFERRAL_STATUS,
-      INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE
+      INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE,
+      INTENT_TYPES.CANCEL_PATIENT_REFERRAL_PREFERENCE
     ].includes(detectedIntent);
 
     // -----------------------------------------------------------------------
@@ -297,19 +318,21 @@ exports.handleAssistantMessage = async (req, res) => {
 
     let referralData = null;
     let uiPayload = null;
+    let mcpDebugOutput = null;
 
     if (isReferralIntent) {
       const referralResult = await processReferralIntent(detectedIntent, context, req);
 
       if (referralResult.handled) {
-        // Short-circuit: return the referral response directly without LLM
         const riskLevel = (context.riskLevel || 'MEDIUM').toUpperCase();
         return res.json({
           success: true,
           answer: referralResult.payload.reply,
+          replyText: referralResult.payload.reply,
           quickReplies: referralResult.payload.quickReplies,
           safetyDisclaimer: referralResult.payload.safetyDisclaimer,
           ui: referralResult.payload.ui || null,
+          mcpDebug: referralResult.payload.mcpDebug,
           safety: { passed: true, fallbackUsed: false, warnings: [] },
           debug: {
             riskLevel,
@@ -324,15 +347,14 @@ exports.handleAssistantMessage = async (req, res) => {
         });
       }
 
-      // Not fully handled — but may have fetched hospital data (ASK_HOSPITAL_OPTIONS)
       if (referralResult.referralData) {
         referralData = referralResult.referralData;
-        // Build the ui payload now — it will be attached to the LLM response
+        mcpDebugOutput = referralResult.mcpDebug;
         const riskLevel = (context.riskLevel || 'MEDIUM').toUpperCase();
         uiPayload = {
           type: 'REFERRAL_OPTIONS_MAP',
           riskLevel,
-          patientLocation: referralData.patientLocation,
+          patientLocation: referralData.patientLocationSummary,
           locationSource: referralData.locationSource,
           options: referralData.options,
           canCreatePreference: true,
@@ -342,16 +364,12 @@ exports.handleAssistantMessage = async (req, res) => {
     }
 
     // -----------------------------------------------------------------------
-    // 5. Assemble LLM Prompt (inject referral data into context if available)
+    // 5. Assemble LLM Prompt
     // -----------------------------------------------------------------------
 
-    // Inject hospital options summary into context for the prompt builder to reference
     const enrichedContext = { ...context };
     if (referralData && referralData.options && referralData.options.length > 0) {
-      const topHospitalsSummary = referralData.options.slice(0, 3)
-        .map(h => `- ${h.name} (${h.district}${h.upazila ? ', ' + h.upazila : ''}): ${h.services.slice(0, 3).join(', ')}${h.distanceKm != null ? ` — ${h.distanceKm} km` : ''}`)
-        .join('\n');
-      enrichedContext.injectedHospitalOptions = topHospitalsSummary;
+      enrichedContext.injectedHospitalOptions = referralData.llmSummary; // Use sanitized LLM Summary directly
     }
 
     const { systemInstruction, userPrompt } = buildAssistantPrompt({
@@ -398,10 +416,8 @@ exports.handleAssistantMessage = async (req, res) => {
           throw new Error('Malformed or empty JSON response from LLM');
         }
 
-        // Post-processing: ensure disclaimer
         assistantOutput = ensureSafetyDisclaimer(assistantOutput, context.riskLevel);
 
-        // Safety validation
         const safetyCheckInput = {
           ...assistantOutput,
           safetyDisclaimerBn: assistantOutput.safetyDisclaimer || 'রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।',
@@ -424,16 +440,13 @@ exports.handleAssistantMessage = async (req, res) => {
             suggestedQuickReplies: ["আর কোনো প্রশ্ন আছে কি?", "আমি এটা বুঝতে পারছি না"],
             safetyDisclaimer: intentFallback.disclaimerBn
           };
-        } else {
-          console.log('[CareAssistantController] Safety Validation PASSED. Intent:', getIntentName(detectedIntent));
         }
-
       } catch (llmError) {
         console.error('[CareAssistantController] LLM Execution Failed:', llmError.message);
         const intentFallback = getFallbackByIntent(detectedIntent, context.riskLevel);
         assistantOutput = {
           reply: intentFallback.replyBn,
-          suggestedQuickReplies: ["আরকোনো প্রশ্ন আছে কি?", "আমি এটা বুঝতে পারছি না"],
+          suggestedQuickReplies: ["আর কোন প্রশ্ন আছে কি?", "আমি এটা বুঝতে পারছি না"],
           safetyDisclaimer: intentFallback.disclaimerBn
         };
         fallbackUsed = true;
@@ -449,10 +462,11 @@ exports.handleAssistantMessage = async (req, res) => {
     return res.json({
       success: true,
       answer: assistantOutput.reply,
+      replyText: assistantOutput.reply,
       quickReplies: assistantOutput.suggestedQuickReplies,
       safetyDisclaimer: assistantOutput.safetyDisclaimer,
-      // Attach referral UI payload if this was a hospital options request
       ...(uiPayload ? { ui: uiPayload } : {}),
+      ...(mcpDebugOutput ? { mcpDebug: mcpDebugOutput } : {}),
       safety: {
         passed: safetyPassed,
         fallbackUsed,

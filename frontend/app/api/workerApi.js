@@ -169,11 +169,69 @@ export async function getMyWorkerCertification() {
  * @param {string} reason - Reason for the assignment
  */
 export async function assignHospitalToCase(sessionId, hospitalId, reason) {
-    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/hospital`, {
-        method: 'PUT',
+    const res = await fetch(`${apiBase}/api/referrals/session/${sessionId}/assign`, {
+        method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ hospitalId, reason }),
         cache: 'no-store'
     });
     return handleResponse(res);
 }
+
+// ============================================================================
+// REFERRAL MCP & PATIENT PREFERENCE ENDPOINTS
+// ============================================================================
+
+export async function getReferralPreferences(sessionId) {
+    const res = await fetch(`${apiBase}/api/referrals/preferences/${sessionId}`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+export async function acceptReferralPreference(preferenceId) {
+    const res = await fetch(`${apiBase}/api/referrals/preferences/${preferenceId}/accept`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+    });
+    return handleResponse(res);
+}
+
+export async function rejectReferralPreference(preferenceId, note = '') {
+    const res = await fetch(`${apiBase}/api/referrals/preferences/${preferenceId}/reject`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ note })
+    });
+    return handleResponse(res);
+}
+
+export async function getAssignmentHistory(sessionId) {
+    const res = await fetch(`${apiBase}/api/referrals/session/${sessionId}/history`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+export async function addReferralNote(sessionId, note, actionTaken, statusAfterNote) {
+    const res = await fetch(`${apiBase}/api/referrals`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ triageSessionId: sessionId, note, actionTaken, statusAfterNote })
+    });
+    return handleResponse(res);
+}
+
+export async function updateReferralStatusFromWorker(sessionId, status, note = '') {
+    const res = await fetch(`${apiBase}/api/referrals/session/${sessionId}/status`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status, note })
+    });
+    return handleResponse(res);
+}
+
