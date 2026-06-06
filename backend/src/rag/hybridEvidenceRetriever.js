@@ -238,7 +238,7 @@ function convertVectorChunksToCards(chunks, decision) {
     symptoms: chunk.symptoms || [],
     priority: Math.round((chunk.score || 0) * 100),
     messageRole: 'SUPPORTIVE_ACTION', // Vector chunks are supplementary
-    stepsBn: chunk.text ? [chunk.text.substring(0, 240)] : [],
+    stepsBn: [], // Do not populate stepsBn with raw chunk text to avoid polluting structured action steps
     monitorBn: [],
     escalationTriggersBn: [],
     sourceName: chunk.sourceTitle || chunk.sourceId || 'Vector RAG',

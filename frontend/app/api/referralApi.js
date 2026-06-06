@@ -42,3 +42,49 @@ export async function getReferralNote(sessionId) {
     });
     return handleResponse(res);
 }
+
+// ---------------------------------------------------------------------------
+// Referral Preferences API (newly added)
+// ---------------------------------------------------------------------------
+
+export async function getReferralStatus(sessionId) {
+    const res = await fetch(`${apiBase}/api/referrals/status/${sessionId}`, {
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+export async function getPreferences(sessionId) {
+    const res = await fetch(`${apiBase}/api/referrals/preferences/${sessionId}`, {
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+export async function cancelPreference(preferenceId) {
+    const res = await fetch(`${apiBase}/api/referrals/preferences/${preferenceId}/cancel`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+    });
+    return handleResponse(res);
+}
+
+export async function acceptPreference(preferenceId, note) {
+    const res = await fetch(`${apiBase}/api/referrals/preferences/${preferenceId}/accept`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ note })
+    });
+    return handleResponse(res);
+}
+
+export async function rejectPreference(preferenceId, note) {
+    const res = await fetch(`${apiBase}/api/referrals/preferences/${preferenceId}/reject`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ note })
+    });
+    return handleResponse(res);
+}

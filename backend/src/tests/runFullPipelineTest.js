@@ -37,7 +37,7 @@ const runPipeline = async () => {
     const decision = buildDecision(events, caseState);
     
     // 4. Care Guidance Assembler (which internally calls Evidence Retriever)
-    const careGuidanceContext = assembleCareGuidanceContext({ decision, caseState, knowledgeCards });
+    const careGuidanceContext = await assembleCareGuidanceContext({ decision, caseState, knowledgeCards });
     
     // 5. Validate Pre-Generation
     const preGenerationSafety = validatePreGeneration(decision, careGuidanceContext);

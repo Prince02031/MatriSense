@@ -17,7 +17,17 @@ const INTENT_TYPES = {
   WAIT_OR_DELAY: 'WAIT_OR_DELAY',
   MEDICINE_REQUEST: 'MEDICINE_REQUEST',
   NEW_OR_WORSENING_SYMPTOM: 'NEW_OR_WORSENING_SYMPTOM',
-  
+
+  // --- Referral intents (deterministic, high-priority) ---
+  // Patient asking which hospital to go to / what options are nearby
+  ASK_HOSPITAL_OPTIONS: 'ASK_HOSPITAL_OPTIONS',
+  // Patient asking about their already-assigned hospital
+  ASK_ASSIGNED_HOSPITAL: 'ASK_ASSIGNED_HOSPITAL',
+  // Patient asking about referral status
+  ASK_REFERRAL_STATUS: 'ASK_REFERRAL_STATUS',
+  // Patient explicitly selecting/confirming a preferred hospital
+  CREATE_PATIENT_REFERRAL_PREFERENCE: 'CREATE_PATIENT_REFERRAL_PREFERENCE',
+
   // Conversational/General intents
   CASUAL_CHAT: 'CASUAL_CHAT',
   SIMPLE_NON_MEDICAL_HELP: 'SIMPLE_NON_MEDICAL_HELP',
@@ -342,6 +352,94 @@ const INTENT_KEYWORDS = {
       'ঘরে থাকা যায়'
     ],
     weight: 1.0
+  },
+
+  // -------------------------------------------------------------------------
+  // Referral intents — weight 2.0 so they outrank generic HOSPITAL_PREPARATION
+  // -------------------------------------------------------------------------
+
+  [INTENT_TYPES.ASK_HOSPITAL_OPTIONS]: {
+    // Patient asking which hospital to go to, or what is nearby
+    patterns: [
+      'কোন হাসপাতালে যাবো',
+      'কোন হাসপাতালে যেতে পারি',
+      'কাছাকাছি কোন হাসপাতাল',
+      'নিকটস্থ হাসপাতাল',
+      'কোন স্বাস্থ্যকেন্দ্র ভালো হবে',
+      'কোন হাসপাতাল ভালো',
+      'কোথায় যাবো',
+      'কোন হাসপাতাল বেছে নেব',
+      'হাসপাতালের তালিকা',
+      'হাসপাতাল দেখান',
+      'হাসপাতাল খুঁজে দিন',
+      'কোন হাসপাতাল সুপারিশ',
+      // Romanized
+      'kon hospital',
+      'hospital ache',
+      'kache hospital',
+      'hospital list',
+      'hospital options',
+      'nearby hospital',
+      'kothay jabo',
+      'hospital suggest'
+    ],
+    weight: 2.0
+  },
+
+  [INTENT_TYPES.ASK_ASSIGNED_HOSPITAL]: {
+    // Patient asking about their already-assigned/referred hospital
+    patterns: [
+      'আমার হাসপাতাল কোনটা',
+      'আমাকে কোন হাসপাতালে পাঠানো হয়েছে',
+      'রেফার করা হাসপাতাল',
+      'assigned hospital',
+      'আমার রেফারেল হাসপাতাল',
+      'কোথায় রেফার হয়েছি',
+      'আমার জন্য কোন হাসপাতাল ঠিক করা হয়েছে',
+      'আমার নির্ধারিত হাসপাতাল'
+    ],
+    weight: 2.0
+  },
+
+  [INTENT_TYPES.ASK_REFERRAL_STATUS]: {
+    // Patient asking about general referral or status
+    patterns: [
+      'referral status',
+      'রেফারেল কী হয়েছে',
+      'রেফারেল হয়েছে',
+      'রেফারেল status',
+      'আমার রেফারেল',
+      'রেফারেল এর অবস্থা',
+      'referral er obostha',
+      'রেফারেল কি হলো',
+      'স্বাস্থ্যকর্মী কি দেখেছেন',
+      'কি অবস্থা আমার রেফারেলের'
+    ],
+    weight: 2.0
+  },
+
+  [INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE]: {
+    // Patient explicitly selecting or confirming a hospital preference
+    patterns: [
+      'এই হাসপাতালটা পছন্দ করি',
+      'এটা পছন্দ হিসেবে পাঠাও',
+      'এই হাসপাতাল বেছে নিতে পারি',
+      'এটাই যেতে চাই',
+      'এই হাসপাতালে যেতে চাই',
+      'এটা select করো',
+      'এটা confirm করো',
+      'পছন্দ করলাম',
+      'এখানে যাবো',
+      'এই হাসপাতাল ঠিক করো',
+      'prefer করি',
+      // Romanized
+      'ei hospital pochondo',
+      'select koro',
+      'confirm koro',
+      'ekhane jabo',
+      'prefer'
+    ],
+    weight: 2.0
   }
 };
 
@@ -401,7 +499,13 @@ const getIntentName = (intent) => {
     [INTENT_TYPES.WAIT_OR_DELAY]: 'Wait or Delay',
     [INTENT_TYPES.MEDICINE_REQUEST]: 'Medicine Request',
     [INTENT_TYPES.NEW_OR_WORSENING_SYMPTOM]: 'New or Worsening Symptom',
-    
+
+    // Referral intents
+    [INTENT_TYPES.ASK_HOSPITAL_OPTIONS]: 'Ask Hospital Options',
+    [INTENT_TYPES.ASK_ASSIGNED_HOSPITAL]: 'Ask Assigned Hospital',
+    [INTENT_TYPES.ASK_REFERRAL_STATUS]: 'Ask Referral Status',
+    [INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE]: 'Create Patient Referral Preference',
+
     // Conversational intents
     [INTENT_TYPES.CASUAL_CHAT]: 'Casual Chat',
     [INTENT_TYPES.SIMPLE_NON_MEDICAL_HELP]: 'Simple Non-Medical Help',

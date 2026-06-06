@@ -89,13 +89,6 @@ const buildIntentSpecificGuidance = (intent, riskLevel, hasRecentFullWarning) =>
 - EXAMPLE FOR HIGH: "এটি একটি নতুন এবং গুরুত্বপূর্ণ লক্ষণ। অবিলম্বে স্বাস্থ্যকর্মী/হাসপাতালে যোগাযোগ করুন বা আবার MatriSense ট্রায়াজ করুন।"
 - DO NOT: downgrade risk based on new symptom. Escalate.`;
 
-    case INTENT_TYPES.GENERAL_OTHER:
-    default:
-      return `Mother is asking a general or unclear question.
-- RESPOND: With warm, helpful, safe information based on triage context and RAG.
-- USE: Available care guidance if relevant.
-- KEEP: Tone conversational, not robotic.${urgencyReminder}
-- REMEMBER: Always include the safety footer about being an assistant, not a doctor.`;
 
     // New conversational intents
     case INTENT_TYPES.CASUAL_CHAT:
@@ -141,6 +134,67 @@ const buildIntentSpecificGuidance = (intent, riskLevel, hasRecentFullWarning) =>
 - EXAMPLE FOR MEDICINE: "আমি ওষুধের পরামর্শ দিতে পারি না কারণ এটি আপনার নিরাপত্তার জন্য গুরুত্বপূর্ণ। ডাক্তার পরীক্ষা করে সঠিক ওষুধ বেছে নেবেন।"
 - EXAMPLE FOR DELAY: "না, দেরি করা এই ক্ষেত্রে নিরাপদ নয়। দ্রুত যাওয়া আপনার এবং আপনার শিশুর সেরা সুরক্ষা।"
 - HARD BOUNDARIES: No diagnosis, no medicine/dosage, no risk downgrade, no unsafe delay advice.`;
+
+    // -----------------------------------------------------------------------
+    // Referral intents
+    // -----------------------------------------------------------------------
+
+    case INTENT_TYPES.ASK_HOSPITAL_OPTIONS:
+      if (riskLevel === 'HIGH') {
+        return `Mother is asking which hospital or health center she should go to. Risk is HIGH.
+- FIRST LINE must be urgent: জরুরি স্বাস্থ্যসেবার প্রয়োজন। দয়া করে এখনই হাসপাতালে যান।
+- THEN: In 1-2 sentences describe the hospital options from INJECTED_HOSPITAL_OPTIONS in the context. Mention names and locations ONLY from the injected list.
+- NEVER invent hospital names or claim real-time availability or bed counts.
+- REMIND: Selecting a preferred hospital is not a final assignment — a health worker must confirm.
+- quickReplies: transport help, what documents to bring, or urgency guidance.`;
+      } else if (riskLevel === 'MEDIUM') {
+        return `Mother is asking which hospital or health center she can go to. Risk is MEDIUM.
+- Warmly describe the hospital options from INJECTED_HOSPITAL_OPTIONS in Bangla. Mention names and locations only from the injected list.
+- NEVER invent hospital names or claim real-time bed availability.
+- SAY: "আপনি নিচের তালিকা থেকে একটি হাসপাতাল পছন্দ করতে পারেন। আপনার স্বাস্থ্যকর্মী চূড়ান্ত রেফারেল নিশ্চিত করবেন।"
+- REMIND that health-worker contact is recommended.
+- quickReplies: calling a health worker, how to select a preference.`;
+      } else {
+        return `Mother is asking about nearby hospitals or health centers. Risk is LOW.
+- Warmly mention hospital options from INJECTED_HOSPITAL_OPTIONS in context. Names and locations only.
+- NEVER invent hospitals.
+- SAY: "এগুলো আপনার কাছাকাছি কিছু স্বাস্থ্যসেবা বিকল্প। নিয়মিত চেক-আপের জন্য যে কোনো সময় যেতে পারেন।"
+- Keep tone supportive and informational.
+- quickReplies: routine checkup, how to select a preference.`;
+      }
+
+    case INTENT_TYPES.ASK_ASSIGNED_HOSPITAL:
+      return `Mother is asking about the hospital that has been assigned or confirmed for her.
+- If INJECTED_ASSIGNED_HOSPITAL is in the context: Describe it warmly in Bangla (name, location, phone if available).
+- If NOT assigned yet: Gently say no hospital has been confirmed yet by her health worker, and she can express a preference from the options.
+- NEVER make up a hospital name.
+- TONE: Reassuring, clear.
+- quickReplies: how to get there, what to bring, how to express preference.`;
+
+    case INTENT_TYPES.ASK_REFERRAL_STATUS:
+      return `Mother is asking about the status of her referral.
+- Summarize using INJECTED_REFERRAL_STATUS in context:
+  - If HOSPITAL_ASSIGNED: A hospital has been confirmed by her health worker. Describe it warmly.
+  - If PREFERENCE_PENDING_REVIEW: Her preference has been noted. The health worker is reviewing it.
+  - If NO_REFERRAL: No referral has been assigned yet. She can express a preferred hospital.
+- NEVER invent status information.
+- TONE: Clear, reassuring.
+- quickReplies: View hospital options, express preference, contact health worker.`;
+
+    case INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE:
+      return `Mother wants to select or confirm a hospital as her preference.
+- NOTE: The API has already handled saving the preference before reaching the LLM. Your job is to confirm it warmly.
+- RESPOND: "আপনার পছন্দের হাসপাতাল আমরা নথিভুক্ত করেছি। আপনার স্বাস্থ্যকর্মী এটি পর্যালোচনা করে চূড়ান্ত রেফারেল নিশ্চিত করবেন।"
+- NEVER confirm it as a final assignment.
+- quickReplies: referral status, transport help, next checkup.`;
+
+    case INTENT_TYPES.GENERAL_OTHER:
+    default:
+      return `Mother is asking a general or unclear question.
+- RESPOND: With warm, helpful, safe information based on triage context and RAG.
+- USE: Available care guidance if relevant.
+- KEEP: Tone conversational, not robotic.${urgencyReminder}
+- REMEMBER: Always include the safety footer about being an assistant, not a doctor.`;
   }
 };
 

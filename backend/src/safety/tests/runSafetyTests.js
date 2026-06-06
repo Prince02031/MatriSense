@@ -176,6 +176,68 @@ runTest(
   )
 );
 
+// 11. Lenient rephrased step for LOW risk = PASS
+runTest(
+  '11. Lenient rephrased step for LOW risk (normalization/overlap)',
+  true,
+  validateLLMOutput(
+    {
+      riskLevel: 'LOW',
+      stepsNowBn: ['পর্যাপ্ত পরিমাণে বিশ্রাম নেওয়ার চেষ্টা করুন।'], // Rephrased from "পর্যাপ্ত বিশ্রাম নিন।"
+      urgentWarningBn: ['তীব্র পেট ব্যথা হলে দ্রুত যোগাযোগ করুন'],
+      safetyDisclaimerBn: REQUIRED_DISCLAIMER_BN
+    },
+    validDecisionLow,
+    validContextLow
+  )
+);
+
+// 12. Unauthorized step for LOW risk = FAIL
+runTest(
+  '12. Unauthorized step for LOW risk (unrelated guidance)',
+  false,
+  validateLLMOutput(
+    {
+      riskLevel: 'LOW',
+      stepsNowBn: ['মেডিসিন কিনে খাওয়া শুরু করুন'], // Non-existing step
+      urgentWarningBn: ['তীব্র পেট ব্যথা হলে দ্রুত যোগাযোগ করুন'],
+      safetyDisclaimerBn: REQUIRED_DISCLAIMER_BN
+    },
+    validDecisionLow,
+    validContextLow
+  )
+);
+
+// 13. Punctuation/numbering changes for HIGH risk = PASS
+runTest(
+  '13. Punctuation/numbering changes for HIGH risk (passes via normalization)',
+  true,
+  validateLLMOutput(
+    {
+      riskLevel: 'HIGH',
+      stepsNowBn: ['১. অবিলম্বে হাসপাতালে যান!'], // Modified with numbering and exclamation
+      safetyDisclaimerBn: REQUIRED_DISCLAIMER_BN
+    },
+    validDecisionHigh,
+    validContextHigh
+  )
+);
+
+// 14. Unauthorized step for HIGH risk = FAIL
+runTest(
+  '14. Unauthorized step for HIGH risk (rejected due to insufficient overlap)',
+  false,
+  validateLLMOutput(
+    {
+      riskLevel: 'HIGH',
+      stepsNowBn: ['গাড়ী ডেকে বাড়িতেই অপেক্ষা করুন'], // Modified to stay at home (unsafe!)
+      safetyDisclaimerBn: REQUIRED_DISCLAIMER_BN
+    },
+    validDecisionHigh,
+    validContextHigh
+  )
+);
+
 console.log(`\nTotal Passed: ${passed}`);
 console.log(`Total Failed: ${failed}`);
 

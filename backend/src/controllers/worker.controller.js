@@ -252,61 +252,16 @@ exports.assignHospital = async (req, res) => {
             return res.status(400).json({ success: false, error: 'hospitalId and reason are required' });
         }
 
-        // Load Hospital
-        const Hospital = require('../models/Hospital');
-        const hospital = await Hospital.findById(hospitalId);
-        if (!hospital) {
-            return res.status(404).json({ success: false, error: 'Hospital not found' });
-        }
+        const { referral_assign_hospital } = require('../services/referralAssistantService');
 
-        // Load TriageSession
-        const session = await TriageSession.findById(sessionId);
-        if (!session) {
-            return res.status(404).json({ success: false, error: 'TriageSession not found' });
-        }
-
-        // Determine if ASSIGNED or REASSIGNED
-        const action = session.assignedHospitalId ? 'REASSIGNED' : 'ASSIGNED';
-
-        // Create hospital snapshot
-        const hospitalSnapshot = {
-            name: hospital.name,
-            type: hospital.type,
-            division: hospital.division,
-            district: hospital.district,
-            upazilaOrThana: hospital.upazilaOrThana,
-            address: hospital.address,
-            latitude: hospital.latitude,
-            longitude: hospital.longitude,
-            phone: hospital.phone,
-            services: hospital.services
-        };
-
-        // Append to assignment history
-        if (!session.hospitalAssignmentHistory) {
-            session.hospitalAssignmentHistory = [];
-        }
-        session.hospitalAssignmentHistory.push({
-            hospitalId: hospital._id,
-            hospitalName: hospital.name,
-            assignedBy: workerId,
-            assignedAt: new Date(),
-            reason,
-            action
+        const result = await referral_assign_hospital({
+            sessionId,
+            hospitalId,
+            workerId: workerId ? workerId.toString() : null,
+            reason
         });
 
-        // Update assignment fields
-        session.assignedHospitalId = hospital._id;
-        session.assignedHospitalSnapshot = hospitalSnapshot;
-        session.assignedByWorkerId = workerId;
-        session.assignedAt = new Date();
-
-        await session.save();
-
-        // Log audit action
-        await logAction(sessionId, `Hospital ${action}: ${hospital.name}. Reason: ${reason}`, 'WORKER', workerId);
-
-        res.json({ success: true, message: `Hospital ${action} successfully`, session });
+        res.json(result);
     } catch (error) {
         console.error('[Worker Controller] Failed to assign hospital:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to assign hospital' });

@@ -82,12 +82,12 @@ async function runE2ETriage() {
 
   // --- STAGE 5: RAG Guidance ---
   console.log('STAGE 5: RAG Care Guidance Assembler');
-  const careGuidanceContext = assembleCareGuidanceContext({ 
+  const careGuidanceContext = await assembleCareGuidanceContext({ 
     decision, 
     caseState, 
     knowledgeCards 
   });
-  console.log(`- Guidance Cards: ${careGuidanceContext.relevantCards?.length || 0} found\n`);
+  console.log(`- Guidance Cards: ${careGuidanceContext.retrievedCards?.length || 0} found\n`);
 
   // --- STAGE 6: Safety & Explanation ---
   console.log('STAGE 6: Safety Check & Explanation');

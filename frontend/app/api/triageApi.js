@@ -112,3 +112,31 @@ export const sendCareAssistantMessage = async (sessionId, payload) => {
   return await response.json();
 };
 
+/**
+ * Submit a patient hospital preference from the Guided Care Assistant.
+ * POST /api/triage/:sessionId/preference
+ * Body: { hospitalId, reason, source }
+ */
+export const createPatientPreference = async (sessionId, { hospitalId, reason, source }) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('matrisense_token') : null;
+  const response = await fetch(`/api/triage/${sessionId}/preference`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify({
+      hospitalId,
+      reason: reason || '',
+      source: source || 'guided_care_assistant'
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `Server error ${response.status}`);
+  }
+
+  return await response.json();
+};

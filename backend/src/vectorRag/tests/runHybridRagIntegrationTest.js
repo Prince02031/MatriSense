@@ -247,7 +247,7 @@ class HybridRagIntegrationTest {
         dangerSignsChecked: [],
       };
 
-      const careContext = assembleCareGuidanceContext({
+      const careContext = await assembleCareGuidanceContext({
         decision,
         caseState,
         knowledgeCards,
