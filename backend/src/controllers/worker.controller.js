@@ -209,6 +209,18 @@ exports.getCaseDocuments = async (req, res) => {
             return res.json({ success: true, documents: [] });
         }
 
+        // Check patient consent for sharing with health workers
+        const Patient = require('../models/Patient');
+        const patient = await Patient.findById(session.patientId._id);
+        if (!patient || !patient.consentToShareWithHealthWorker) {
+            return res.json({
+                success: true,
+                documents: [],
+                consentDenied: true,
+                message: 'Patient has not granted consent to share documents with health workers.'
+            });
+        }
+
         // 2. Fetch active PATIENT documents for this patient
         const UploadedDocument = require('../models/UploadedDocument');
         const docs = await UploadedDocument.find({
@@ -265,5 +277,36 @@ exports.assignHospital = async (req, res) => {
     } catch (error) {
         console.error('[Worker Controller] Failed to assign hospital:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to assign hospital' });
+    }
+};
+/**
+ * POST /api/worker/cases/:sessionId/request-gps
+ * Health worker requests GPS location from patient.
+ * Sets gpsRequested flag on the triage session.
+ */
+exports.requestGPS = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+
+        const session = await TriageSession.findByIdAndUpdate(
+            sessionId,
+            {
+                gpsRequested: true,
+                gpsRequestedAt: new Date(),
+                updatedAt: Date.now()
+            },
+            { new: true }
+        );
+
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+
+        await logAction(sessionId, 'GPS location requested from patient', 'WORKER');
+
+        res.json({ success: true, message: 'GPS request sent to patient' });
+    } catch (err) {
+        console.error('[WorkerController] requestGPS error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 };

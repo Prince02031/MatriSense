@@ -16,6 +16,12 @@ export default function PatientDashboard() {
     });
     const [loading, setLoading] = useState(true);
 
+    // GPS request-response state
+    const [gpsRequestedSession, setGpsRequestedSession] = useState(null);
+    const [sharingGps, setSharingGps] = useState(false);
+    const [gpsShared, setGpsShared] = useState(false);
+    const [gpsShareError, setGpsShareError] = useState(null);
+
     useEffect(() => {
         // Skip on server-side rendering
         if (typeof window === 'undefined') return;
@@ -46,6 +52,21 @@ export default function PatientDashboard() {
                             ? new Date(data.latest.nextCheckupDate).toLocaleDateString()
                             : null
                     });
+
+                    // Check if latest session has a GPS request from health worker
+                    if (data.latest?.sessionId) {
+                        try {
+                            const statusResp = await fetch(`/api/triage/${data.latest.sessionId}/status`);
+                            if (statusResp.ok) {
+                                const statusData = await statusResp.json();
+                                if (statusData.gpsRequested) {
+                                    setGpsRequestedSession(data.latest.sessionId);
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('Failed to check GPS request status:', err.message);
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch history:', error);
@@ -56,6 +77,46 @@ export default function PatientDashboard() {
 
         fetchHistory();
     }, [user?._id, user?.id]);
+
+    const handleShareGPS = async () => {
+        if (!navigator.geolocation) {
+            setGpsShareError('আপনার ডিভাইসে GPS সমর্থিত নয়');
+            return;
+        }
+
+        setSharingGps(true);
+        setGpsShareError(null);
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                try {
+                    const resp = await fetch(`/api/triage/${gpsRequestedSession}/respond-gps`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ latitude, longitude })
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        setGpsShared(true);
+                        setGpsRequestedSession(null);
+                    } else {
+                        setGpsShareError(data.error || 'Failed to share location');
+                    }
+                } catch (err) {
+                    setGpsShareError('নেটওয়ার্ক ত্রুটি। আবার চেষ্টা করুন।');
+                } finally {
+                    setSharingGps(false);
+                }
+            },
+            (error) => {
+                setSharingGps(false);
+                setGpsShareError(`GPS ত্রুটি: ${error.message}`);
+            },
+            { timeout: 15000 }
+        );
+    };
 
     if (!user) return null;
 
@@ -68,6 +129,64 @@ export default function PatientDashboard() {
                     {t.patientLead}
                 </p>
             </div>
+
+            {/* GPS Request Banner */}
+            {gpsRequestedSession && !gpsShared && (
+                <div style={{
+                    margin: '0 0 24px 0',
+                    padding: '16px 20px',
+                    background: 'linear-gradient(135deg, rgba(14, 165, 168, 0.1), rgba(59, 130, 246, 0.1))',
+                    border: '2px solid rgba(14, 165, 168, 0.4)',
+                    borderRadius: '12px',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '1.5rem' }}>📍</span>
+                        <div>
+                            <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
+                                স্বাস্থ্যকর্মী আপনার অবস্থান জানতে চান
+                            </strong>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                আপনার স্বাস্থ্যকর্মী আপনার বর্তমান অবস্থান অনুরোধ করেছেন। এটি আপনার কাছাকাছি হাসপাতাল খুঁজে পেতে সাহায্য করবে।
+                            </p>
+                        </div>
+                    </div>
+                    {gpsShareError && (
+                        <div style={{ padding: '8px', background: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '8px', fontSize: '0.85rem' }}>
+                            ⚠️ {gpsShareError}
+                        </div>
+                    )}
+                    <button
+                        onClick={handleShareGPS}
+                        disabled={sharingGps}
+                        style={{
+                            padding: '10px 20px',
+                            background: sharingGps ? '#94a3b8' : '#0ea5a8',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: sharingGps ? 'not-allowed' : 'pointer',
+                            fontWeight: '600',
+                            fontSize: '0.95rem',
+                            width: '100%'
+                        }}
+                    >
+                        {sharingGps ? '📡 অবস্থান শেয়ার করা হচ্ছে...' : '📡 আমার অবস্থান শেয়ার করুন'}
+                    </button>
+                </div>
+            )}
+
+            {gpsShared && (
+                <div style={{
+                    margin: '0 0 24px 0',
+                    padding: '12px 16px',
+                    background: '#d1fae5',
+                    color: '#065f46',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem'
+                }}>
+                    ✓ আপনার অবস্থান সফলভাবে শেয়ার করা হয়েছে। আপনার স্বাস্থ্যকর্মী এখন এটি দেখতে পারবেন।
+                </div>
+            )}
 
             {/* Quick Actions */}
             <h2 className="section-title">⚡ {t.quickActions}</h2>

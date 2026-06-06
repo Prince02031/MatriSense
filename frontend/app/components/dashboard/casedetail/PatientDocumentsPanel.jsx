@@ -5,6 +5,7 @@ export default function PatientDocumentsPanel({ sessionId }) {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [consentDenied, setConsentDenied] = useState(false);
 
     useEffect(() => {
         if (!sessionId) return;
@@ -14,6 +15,9 @@ export default function PatientDocumentsPanel({ sessionId }) {
                 const res = await getCaseDocuments(sessionId);
                 if (res.success) {
                     setDocuments(res.documents || []);
+                    if (res.consentDenied) {
+                        setConsentDenied(true);
+                    }
                 } else {
                     setError(res.error || 'Failed to load documents');
                 }
@@ -54,6 +58,28 @@ export default function PatientDocumentsPanel({ sessionId }) {
             <div className="dash-card">
                 <h3>📁 Patient Documents</h3>
                 <p style={{ color: 'var(--danger)' }}>{error}</p>
+            </div>
+        );
+    }
+
+    if (consentDenied) {
+        return (
+            <div className="dash-card">
+                <h3>📁 Patient Documents</h3>
+                <div style={{
+                    padding: '12px',
+                    background: 'rgba(245, 158, 11, 0.08)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    borderRadius: '8px',
+                    marginTop: '12px'
+                }}>
+                    <p style={{ color: 'var(--accent-amber)', fontWeight: '600', fontSize: '0.9rem', margin: '0 0 4px 0' }}>
+                        ⚠️ Consent Not Granted
+                    </p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                        This patient has not enabled document sharing with health workers. They can enable this in their profile settings.
+                    </p>
+                </div>
             </div>
         );
     }

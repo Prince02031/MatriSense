@@ -22,10 +22,15 @@ exports.createNote = async (req, res) => {
         });
 
         // Automatically update the triage session status if a new note is added with a new status
-        await TriageSession.findByIdAndUpdate(triageSessionId, {
+        const sessionUpdate = {
             status: statusAfterNote,
             updatedAt: Date.now()
-        });
+        };
+        // Sync follow-up date to session's nextCheckupDate
+        if (followUpDate) {
+            sessionUpdate.nextCheckupDate = new Date(followUpDate);
+        }
+        await TriageSession.findByIdAndUpdate(triageSessionId, sessionUpdate);
 
         await logAction(triageSessionId, 'Referral note added', 'WORKER', { actionTaken, referredTo });
 

@@ -34,18 +34,42 @@ export default function PatientProfilePanel({ patient, decision, caseState, next
         setGpsError(null);
 
         navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
                 const { latitude: lat, longitude: lng } = position.coords;
-                // In a real app, you'd reverse geocode these coordinates to get division/district/upazila
-                // For now, we'll store the coordinates and let the backend handle geocoding if needed
-                setGpsData({
+                const newGpsData = {
                     latitude: lat,
                     longitude: lng,
                     addressOrVillage: `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`
-                });
+                };
+
+                // Reverse-geocode to fill admin fields
+                try {
+                    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=en`;
+                    const resp = await fetch(url, {
+                        headers: { 'User-Agent': 'MatriSense/1.0' }
+                    });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        const addr = data.address || {};
+                        const gDiv = (addr.state || '').replace(/\s*Division$/i, '').trim();
+                        const gDist = (addr.state_district || addr.county || '').replace(/\s*District$/i, '').trim();
+                        const gUpazila = addr.suburb || addr.town || addr.city_district || addr.city || '';
+                        const parts = [addr.village, addr.hamlet, addr.neighbourhood, addr.road].filter(Boolean);
+                        const gAddr = parts.length > 0 ? parts.join(', ') : '';
+
+                        if (gDiv) newGpsData.division = gDiv;
+                        if (gDist) newGpsData.district = gDist;
+                        if (gUpazila) newGpsData.upazilaOrThana = gUpazila;
+                        if (gAddr) newGpsData.addressOrVillage = gAddr;
+                    }
+                } catch (geoErr) {
+                    console.warn('Reverse geocoding failed:', geoErr.message);
+                }
+
+                setGpsData(newGpsData);
                 // Notify parent component about location data update
                 if (onLocationDataChange) {
-                    onLocationDataChange({ latitude: lat, longitude: lng });
+                    onLocationDataChange(newGpsData);
                 }
             },
             (error) => {

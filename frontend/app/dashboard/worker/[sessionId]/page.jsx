@@ -48,6 +48,7 @@ export default function WorkerCaseDetailPage({ params }) {
     const [assigningHospitalId, setAssigningHospitalId] = useState(null);
     const [assignReason, setAssignReason] = useState('');
     const [deliveringReferral, setDeliveringReferral] = useState(false);
+    const [hospitalSearchTerm, setHospitalSearchTerm] = useState('');
 
     // Preference states
     const [preferences, setPreferences] = useState([]);
@@ -104,11 +105,23 @@ export default function WorkerCaseDetailPage({ params }) {
         }, 100);
     };
 
-    const requestPatientGPS = () => {
-        // In a real implementation, this would send a notification to the patient's app
-        // requesting GPS permission. For now, show a message
-        alert('GPS request sent to patient. They will be prompted on their device to enable location sharing.');
-        console.log('Requesting GPS from patient for session:', sessionId);
+    const requestPatientGPS = async () => {
+        try {
+            const resp = await fetch(`/api/worker/cases/${sessionId}/request-gps`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await resp.json();
+            if (data.success) {
+                alert('✓ GPS request sent to patient. They will be prompted to share location on their dashboard.');
+            } else {
+                alert('Failed to send GPS request: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            console.error('Failed to request GPS:', err);
+            alert('Failed to send GPS request');
+        }
     };
 
     const handleDeliverReferralToPatient = async () => {
@@ -514,6 +527,18 @@ export default function WorkerCaseDetailPage({ params }) {
                             <div style={{ marginTop: '24px' }} id="hospital-selection">
                                 <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>🏥 Select Referral Hospital</h4>
                                 
+                                {/* Hospital Search Bar */}
+                                <div style={{ marginBottom: '12px' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="🔍 Search hospitals by name, type, or services..."
+                                        value={hospitalSearchTerm}
+                                        onChange={(e) => setHospitalSearchTerm(e.target.value)}
+                                        className="form-input"
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
+                                
                                 {/* Assignment Reason */}
                                 <div style={{ marginBottom: '16px' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '6px' }}>
@@ -533,9 +558,23 @@ export default function WorkerCaseDetailPage({ params }) {
                                     <p>Loading nearby hospitals...</p>
                                 ) : hospitals.length === 0 ? (
                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No hospitals found for this region.</p>
-                                ) : (
+                                ) : (() => {
+                                    const term = hospitalSearchTerm.toLowerCase().trim();
+                                    const filtered = term
+                                        ? hospitals.filter(h =>
+                                            (h.name || '').toLowerCase().includes(term) ||
+                                            (h.type || '').toLowerCase().replace(/_/g, ' ').includes(term) ||
+                                            (h.address || '').toLowerCase().includes(term) ||
+                                            (h.services || []).some(s => s.toLowerCase().includes(term))
+                                        )
+                                        : hospitals;
+                                    
+                                    if (filtered.length === 0) {
+                                        return <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No hospitals match &quot;{hospitalSearchTerm}&quot;. Try a different search term.</p>;
+                                    }
+                                    return (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
-                                        {hospitals.map(h => (
+                                        {filtered.map(h => (
                                             <div key={h._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
                                                 <div style={{ flex: 1, marginRight: '16px' }}>
                                                     <strong>{h.name}</strong> <small style={{ color: 'var(--text-muted)' }}>({h.type?.replace(/_/g, ' ')})</small>
@@ -557,7 +596,8 @@ export default function WorkerCaseDetailPage({ params }) {
                                             </div>
                                         ))}
                                     </div>
-                                )}
+                                    );
+                                })()}
                             </div>
 
                             {/* Assignment History */}
