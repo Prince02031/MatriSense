@@ -30,10 +30,14 @@ export default function CaseStatusBadge({ status }) {
             label = 'FOLLOW UP';
             break;
         case 'RESOLVED':
-        case 'completed':
             bg = '#dcfce7'; // green
             color = '#166534';
             label = 'RESOLVED';
+            break;
+        case 'completed':
+            bg = '#dbeafe'; // light blue — triage pipeline finished, case is NEW for worker
+            color = '#1e40af';
+            label = 'NEW';
             break;
         default:
             break;

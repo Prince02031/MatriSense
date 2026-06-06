@@ -140,13 +140,21 @@ async function checkDocumentAccess(user, doc) {
         }
 
         // 3b. Patient documents — worker must have a TriageSession for the patient
+        //     AND the patient must have consented to share with health workers.
         if (doc.ownerType === 'PATIENT') {
             const patientId = doc.ownerId;
 
             // Check if any triage session exists for this patient
-            // (mirrors existing worker case access — currently all workers can see all cases)
             const sessionExists = await TriageSession.exists({ patientId });
-            return !!sessionExists;
+            if (!sessionExists) return false;
+
+            // Check patient consent
+            const patient = await Patient.findById(patientId);
+            if (!patient || !patient.consentToShareWithHealthWorker) {
+                return false;
+            }
+
+            return true;
         }
 
         return false;

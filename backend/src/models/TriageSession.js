@@ -65,6 +65,10 @@ const TriageSessionSchema = new mongoose.Schema({
     locationSource: { type: String }
   },
 
+  // Health worker GPS request flag — set to true when worker requests patient location
+  gpsRequested: { type: Boolean, default: false },
+  gpsRequestedAt: { type: Date },
+
   // Hospital assignment (set manually by health worker)
   assignedHospitalId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', required: false },
   assignedHospitalSnapshot: {
@@ -107,9 +111,14 @@ const TriageSessionSchema = new mongoose.Schema({
   preferredHospitalAt: { type: Date },
 
   // Session Status Lifecycle
+  // Pipeline statuses: active → extracted → confirmed → answered → completed | error
+  // Worker-managed statuses: NEW, VIEWED, CONTACTED, REFERRED, FOLLOW_UP_NEEDED, RESOLVED
   status: {
     type: String,
-    enum: ['active', 'extracted', 'confirmed', 'answered', 'completed', 'error'],
+    enum: [
+      'active', 'extracted', 'confirmed', 'answered', 'completed', 'error',
+      'NEW', 'VIEWED', 'CONTACTED', 'REFERRED', 'FOLLOW_UP_NEEDED', 'RESOLVED'
+    ],
     default: 'active'
   },
 

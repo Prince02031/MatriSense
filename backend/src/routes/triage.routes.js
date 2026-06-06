@@ -8,11 +8,15 @@ const { extractSymptomsFromBangla, generateTriageExplanation } = require('../ai'
 const { selectFollowUpQuestions, normalizeFollowUpAnswers } = require('../triage/followup');
 const { buildCaseStateFromExtraction } = require('../services/caseStateBuilder');
 const { logAction } = require('../services/auditService');
+const { reverseGeocode } = require('../utils/reverseGeocode');
 
 // POST /api/triage/start - start triage session
 router.post('/start', async (req, res) => {
   try {
-    const { patientId, userId, trimester, gestationalWeek } = req.body;
+    const { patientId, userId, trimester, gestationalWeek,
+            division: bodyDivision, district: bodyDistrict,
+            upazilaOrThana: bodyUpazila, addressOrVillage: bodyAddress,
+            latitude: bodyLat, longitude: bodyLng, locationSource } = req.body;
 
     // Load patient profile
     // Try patientId first, then userId (lookup Patient by userId)
@@ -60,6 +64,44 @@ router.post('/start', async (req, res) => {
     // Merge riskFactors from patient profile (knownRiskFactors field)
     const riskFactors = patient?.knownRiskFactors || patient?.riskFactors || {};
 
+    // --- Resolve location: body params > reverse geocode > patient profile ---
+    let resolvedDivision = bodyDivision || patient?.division || null;
+    let resolvedDistrict = bodyDistrict || patient?.district || null;
+    let resolvedUpazila = bodyUpazila || patient?.upazilaOrThana || null;
+    let resolvedAddress = bodyAddress || patient?.addressOrVillage || null;
+    const resolvedLat = bodyLat != null ? bodyLat : patient?.latitude || null;
+    const resolvedLng = bodyLng != null ? bodyLng : patient?.longitude || null;
+    const resolvedLocSource = locationSource || patient?.locationSource || null;
+
+    // If we have GPS coords but missing admin fields, reverse-geocode
+    if (resolvedLat != null && resolvedLng != null && !resolvedDistrict) {
+      try {
+        const geo = await reverseGeocode(resolvedLat, resolvedLng);
+        resolvedDivision = resolvedDivision || geo.division;
+        resolvedDistrict = resolvedDistrict || geo.district;
+        resolvedUpazila = resolvedUpazila || geo.upazilaOrThana;
+        resolvedAddress = resolvedAddress || geo.addressOrVillage;
+        console.log('[TriageRoutes] Reverse-geocoded location:', geo);
+      } catch (geoErr) {
+        console.warn('[TriageRoutes] Reverse geocoding failed:', geoErr.message);
+      }
+    }
+
+    // Persist location back to patient master record if we have new data
+    if (patient && (resolvedLat != null || resolvedDistrict)) {
+      const locUpdate = {};
+      if (resolvedDivision) locUpdate.division = resolvedDivision;
+      if (resolvedDistrict) locUpdate.district = resolvedDistrict;
+      if (resolvedUpazila) locUpdate.upazilaOrThana = resolvedUpazila;
+      if (resolvedAddress) locUpdate.addressOrVillage = resolvedAddress;
+      if (resolvedLat != null) locUpdate.latitude = resolvedLat;
+      if (resolvedLng != null) locUpdate.longitude = resolvedLng;
+      if (resolvedLocSource) locUpdate.locationSource = resolvedLocSource;
+      locUpdate.updatedAt = new Date();
+
+      await Patient.findByIdAndUpdate(patient._id, { $set: locUpdate });
+    }
+
     // Capture patient profile/location snapshot at triage start for worker screens fallback
     const profileSnapshot = {
       name: patient?.name,
@@ -72,13 +114,13 @@ router.post('/start', async (req, res) => {
       knownRiskFactors: patient?.knownRiskFactors,
       emergencyContactName: patient?.emergencyContactName,
       emergencyContactPhone: patient?.emergencyContactPhone,
-      division: patient?.division,
-      district: patient?.district,
-      upazilaOrThana: patient?.upazilaOrThana,
-      addressOrVillage: patient?.addressOrVillage,
-      latitude: patient?.latitude,
-      longitude: patient?.longitude,
-      locationSource: patient?.locationSource
+      division: resolvedDivision,
+      district: resolvedDistrict,
+      upazilaOrThana: resolvedUpazila,
+      addressOrVillage: resolvedAddress,
+      latitude: resolvedLat,
+      longitude: resolvedLng,
+      locationSource: resolvedLocSource
     };
 
     const session = new TriageSession({
@@ -128,6 +170,8 @@ router.get('/:sessionId/status', async (req, res) => {
       extractionResult: session.extractionResult,
       confirmedSymptoms: session.confirmedSymptoms,
       editedByUser: session.editedByUser,
+      gpsRequested: session.gpsRequested || false,
+      gpsRequestedAt: session.gpsRequestedAt || null,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt
     });
@@ -582,6 +626,79 @@ router.post('/:sessionId/preference', async (req, res) => {
   } catch (error) {
     console.error('[TriageRoutes] Preference Error:', error);
     return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// POST /api/triage/:sessionId/respond-gps
+// Patient responds to a health-worker GPS request by submitting their coordinates.
+// Updates session profileSnapshot, Patient record, and clears gpsRequested.
+router.post('/:sessionId/respond-gps', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { latitude, longitude } = req.body;
+
+    if (latitude == null || longitude == null) {
+      return res.status(400).json({ success: false, error: 'latitude and longitude are required' });
+    }
+
+    const session = await TriageSession.findById(sessionId);
+    if (!session) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    // Reverse-geocode to get admin fields
+    let division = null, district = null, upazilaOrThana = null, addressOrVillage = null;
+    try {
+      const geo = await reverseGeocode(latitude, longitude);
+      division = geo.division;
+      district = geo.district;
+      upazilaOrThana = geo.upazilaOrThana;
+      addressOrVillage = geo.addressOrVillage;
+    } catch (geoErr) {
+      console.warn('[TriageRoutes] respond-gps reverse geocode failed:', geoErr.message);
+    }
+
+    // Update session profileSnapshot
+    const snapshotUpdate = {
+      'profileSnapshot.latitude': latitude,
+      'profileSnapshot.longitude': longitude,
+      'profileSnapshot.locationSource': 'gps_response',
+    };
+    if (division) snapshotUpdate['profileSnapshot.division'] = division;
+    if (district) snapshotUpdate['profileSnapshot.district'] = district;
+    if (upazilaOrThana) snapshotUpdate['profileSnapshot.upazilaOrThana'] = upazilaOrThana;
+    if (addressOrVillage) snapshotUpdate['profileSnapshot.addressOrVillage'] = addressOrVillage;
+
+    await TriageSession.findByIdAndUpdate(sessionId, {
+      $set: {
+        ...snapshotUpdate,
+        gpsRequested: false,
+        updatedAt: new Date()
+      }
+    });
+
+    // Update Patient master record
+    if (session.patientId) {
+      const patientUpdate = {
+        latitude, longitude, locationSource: 'gps_response', updatedAt: new Date()
+      };
+      if (division) patientUpdate.division = division;
+      if (district) patientUpdate.district = district;
+      if (upazilaOrThana) patientUpdate.upazilaOrThana = upazilaOrThana;
+      if (addressOrVillage) patientUpdate.addressOrVillage = addressOrVillage;
+
+      await Patient.findByIdAndUpdate(session.patientId, { $set: patientUpdate });
+    }
+
+    await logAction(sessionId, 'Patient responded to GPS request', 'PATIENT', { latitude, longitude, division, district });
+
+    res.json({
+      success: true,
+      location: { latitude, longitude, division, district, upazilaOrThana, addressOrVillage }
+    });
+  } catch (error) {
+    console.error('[TriageRoutes] respond-gps Error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

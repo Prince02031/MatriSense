@@ -77,7 +77,7 @@ export default function TriageStartPage() {
     setGpsError(null);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         setGpsData({
           latitude,
@@ -85,6 +85,36 @@ export default function TriageStartPage() {
           addressOrVillage: `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
         });
         setAddress(`GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+
+        // Reverse-geocode to auto-fill location fields
+        try {
+          const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`;
+          const resp = await fetch(url, {
+            headers: { 'User-Agent': 'MatriSense/1.0' }
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            const addr = data.address || {};
+            const gDiv = (addr.state || '').replace(/\s*Division$/i, '').trim();
+            const gDist = (addr.state_district || addr.county || '').replace(/\s*District$/i, '').trim();
+            const gUpazila = addr.suburb || addr.town || addr.city_district || addr.city || '';
+            const parts = [addr.village, addr.hamlet, addr.neighbourhood, addr.road].filter(Boolean);
+            const gAddr = parts.length > 0 ? parts.join(', ') : (data.display_name || '');
+
+            if (gDiv) setDivision(gDiv);
+            if (gDist) setDistrict(gDist);
+            if (gUpazila) setUpazila(gUpazila);
+            if (gAddr) setAddress(gAddr);
+
+            setGpsData(prev => ({
+              ...prev,
+              addressOrVillage: gAddr || prev.addressOrVillage
+            }));
+          }
+        } catch (geoErr) {
+          console.warn('Reverse geocoding failed:', geoErr.message);
+          // GPS coords still saved — location fields just won't auto-fill
+        }
       },
       (error) => {
         setGpsEnabled(false);

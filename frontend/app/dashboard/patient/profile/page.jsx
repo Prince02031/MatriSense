@@ -101,13 +101,38 @@ export default function PatientProfilePage() {
 
         setGpsError(null);
         navigator.geolocation.watchPosition(
-            (position) => {
+            async (position) => {
                 const { latitude, longitude } = position.coords;
-                setFormData(prev => ({
-                    ...prev,
+                const updates = {
                     latitude: parseFloat(latitude.toFixed(6)),
                     longitude: parseFloat(longitude.toFixed(6))
-                }));
+                };
+
+                // Reverse-geocode to auto-fill location fields
+                try {
+                    const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`;
+                    const resp = await fetch(url, {
+                        headers: { 'User-Agent': 'MatriSense/1.0' }
+                    });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        const addr = data.address || {};
+                        const gDiv = (addr.state || '').replace(/\s*Division$/i, '').trim();
+                        const gDist = (addr.state_district || addr.county || '').replace(/\s*District$/i, '').trim();
+                        const gUpazila = addr.suburb || addr.town || addr.city_district || addr.city || '';
+                        const parts = [addr.village, addr.hamlet, addr.neighbourhood, addr.road].filter(Boolean);
+                        const gAddr = parts.length > 0 ? parts.join(', ') : '';
+
+                        if (gDiv) updates.division = gDiv;
+                        if (gDist) updates.district = gDist;
+                        if (gUpazila) updates.upazilaOrThana = gUpazila;
+                        if (gAddr) updates.addressOrVillage = gAddr;
+                    }
+                } catch (geoErr) {
+                    console.warn('Reverse geocoding failed:', geoErr.message);
+                }
+
+                setFormData(prev => ({ ...prev, ...updates }));
                 setGpsEnabled(true);
                 setGpsError(null);
             },
