@@ -36,7 +36,8 @@
     "rag:fallback-test": "node src/vectorRag/tests/runHybridFallbackTest.js",
     "rag:hybrid-integration": "node src/vectorRag/tests/runHybridRagIntegrationTest.js",
     "assistant:test": "node src/careAssistant/tests/runCareAssistantSafetyTest.js",
-    "assistant:test:verbose": "cross-env VERBOSE_PROMPTS=true node src/careAssistant/tests/runCareAssistantSafetyTest.js"
+    "assistant:test:verbose": "cross-env VERBOSE_PROMPTS=true node src/careAssistant/tests/runCareAssistantSafetyTest.js",
+    "seed:hospitals": "node src/scripts/seedHospitalsDirectly.js"
   },
   "dependencies": {
     "@google/genai": "^2.0.1",

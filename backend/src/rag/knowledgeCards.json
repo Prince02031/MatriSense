@@ -127,7 +127,11 @@
     "riskLevelAllowed": ["MEDIUM"],
     "symptoms": ["fever"],
     "guidanceType": "CONTACT_HEALTH_WORKER",
-    "stepsBn": ["জ্বর থাকলে স্বাস্থ্যকর্মীর পরামর্শ নিন।"],
+    "stepsBn": [
+      "জ্বর থাকলে স্বাস্থ্যকর্মীর পরামর্শ নিন।",
+      "শরীর ভেজা কাপড় দিয়ে আলতো করে মুছে নিন (জলপট্টি ব্যবহার করুন)।",
+      "পর্যাপ্ত বিশ্রাম নিন এবং প্রচুর তরল খাবার ও পানি পান করুন।"
+    ],
     "monitorBn": ["খুব দুর্বল লাগা", "শ্বাস নিতে কষ্ট"],
     "escalationTriggersBn": ["জ্বর বাড়া", "দুর্বলতা বেড়ে যাওয়া"],
     "doNotSay": ["diagnosis", "medicine dosage", "treatment plan"],
@@ -142,7 +146,11 @@
     "riskLevelAllowed": ["MEDIUM"],
     "symptoms": ["abdominal_pain"],
     "guidanceType": "CONTACT_HEALTH_WORKER",
-    "stepsBn": ["পেটব্যথা থাকলে স্বাস্থ্যকর্মীর পরামর্শ নিন।"],
+    "stepsBn": [
+      "পেটব্যথা থাকলে স্বাস্থ্যকর্মীর পরামর্শ নিন।",
+      "বিশ্রাম নিন এবং ঢিলেঢালা পোশাক পরুন।",
+      "পর্যাপ্ত তরল খাবার গ্রহণ করুন।"
+    ],
     "monitorBn": ["ব্যথা তীব্র হওয়া", "রক্তপাত"],
     "escalationTriggersBn": ["ব্যথা বাড়া", "রক্তপাত শুরু হওয়া"],
     "doNotSay": ["diagnosis", "medicine dosage", "treatment plan"],
@@ -157,7 +165,11 @@
     "riskLevelAllowed": ["MEDIUM"],
     "symptoms": ["vomiting_repeated"],
     "guidanceType": "CONTACT_HEALTH_WORKER",
-    "stepsBn": ["বারবার বমি হলে স্বাস্থ্যকর্মীর পরামর্শ নিন।"],
+    "stepsBn": [
+      "বারবার বমি হলে স্বাস্থ্যকর্মীর পরামর্শ নিন।",
+      "অল্প অল্প করে ঘন ঘন ওরাল রিহাইড্রেশন স্যালাইন (ORS) বা ডাবের পানি পান করুন।",
+      "মসলাযুক্ত বা চর্বিযুক্ত খাবার এড়িয়ে চলুন।"
+    ],
     "monitorBn": ["পানি রাখতে না পারা", "খুব দুর্বল লাগা"],
     "escalationTriggersBn": ["পানি রাখতে না পারা"],
     "doNotSay": ["diagnosis", "medicine dosage", "treatment plan"],
@@ -202,7 +214,11 @@
     "riskLevelAllowed": ["MEDIUM"],
     "symptoms": ["headache"],
     "guidanceType": "CONTACT_HEALTH_WORKER",
-    "stepsBn": ["মাথাব্যথার বিষয়ে স্বাস্থ্যকর্মীর পরামর্শ নিন।"],
+    "stepsBn": [
+      "মাথাব্যথার বিষয়ে স্বাস্থ্যকর্মীর পরামর্শ নিন।",
+      "পর্যাপ্ত বিশ্রাম নিন এবং শান্ত ও অন্ধকার ঘরে থাকুন।",
+      "পর্যাপ্ত পানি পান করে শরীর হাইড্রেটেড রাখুন।"
+    ],
     "monitorBn": ["চোখে ঝাপসা", "মাথাব্যথা তীব্র হওয়া"],
     "escalationTriggersBn": ["চোখে ঝাপসা দেখা"],
     "doNotSay": ["diagnosis", "medicine dosage", "treatment plan"],

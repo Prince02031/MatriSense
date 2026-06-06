@@ -45,6 +45,13 @@ const HospitalSchema = new mongoose.Schema({
   services: [{
     type: String
   }],
+  specialties: [{
+    type: String
+  }],
+  description: {
+    type: String,
+    trim: true
+  },
   isActive: {
     type: Boolean,
     default: true

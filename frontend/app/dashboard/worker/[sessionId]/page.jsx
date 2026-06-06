@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { getWorkerCase, updateWorkerCaseStatus, getAuditLog, setFollowUpDate, assignHospitalToCase } from '../../../api/workerApi';
 import { getNearbyHospitals } from '../../../api/hospitalApi';
-import { createReferralNote, getReferralNote } from '../../../api/referralApi';
+import { createReferralNote, getReferralNote, getPreferences, acceptPreference, rejectPreference } from '../../../api/referralApi';
 import { useAuth } from '../../../context/AuthContext';
 import ProtectedRoute from '../../../components/ProtectedRoute';
 
@@ -48,6 +48,11 @@ export default function WorkerCaseDetailPage({ params }) {
     const [assigningHospitalId, setAssigningHospitalId] = useState(null);
     const [assignReason, setAssignReason] = useState('');
     const [deliveringReferral, setDeliveringReferral] = useState(false);
+
+    // Preference states
+    const [preferences, setPreferences] = useState([]);
+    const [preferencesLoading, setPreferencesLoading] = useState(false);
+    const [handlingPreferenceId, setHandlingPreferenceId] = useState(null);
 
     const loadNearbyHospitals = async (snapshot) => {
         if (!snapshot) return;
@@ -165,11 +170,60 @@ export default function WorkerCaseDetailPage({ params }) {
             if (auditData.success) {
                 setAuditLogs(auditData.logs);
             }
+            // Fetch preferences
+            setPreferencesLoading(true);
+            const prefData = await getPreferences(sessionId);
+            if (prefData.success) {
+                setPreferences(prefData.preferences);
+            }
         } catch (err) {
             console.error(err);
             alert('Failed to load case');
         } finally {
             setLoading(false);
+            setPreferencesLoading(false);
+        }
+    };
+
+    const handleAcceptPreference = async (prefId) => {
+        const note = window.prompt("Enter an optional note for accepting this preference:");
+        if (note === null) return; // User cancelled prompt
+
+        try {
+            setHandlingPreferenceId(prefId);
+            const data = await acceptPreference(prefId, note);
+            if (data.success) {
+                alert('✓ Hospital preference accepted and assigned!');
+                await fetchDetail();
+            }
+        } catch (err) {
+            console.error('Failed to accept preference:', err);
+            alert(err.message || 'Failed to accept preference');
+        } finally {
+            setHandlingPreferenceId(null);
+        }
+    };
+
+    const handleRejectPreference = async (prefId) => {
+        const note = window.prompt("Please enter a reason for rejecting this preference (Required):");
+        if (note === null) return; // User cancelled prompt
+        if (!note.trim()) {
+            alert('A rejection reason is required.');
+            return;
+        }
+
+        try {
+            setHandlingPreferenceId(prefId);
+            const data = await rejectPreference(prefId, note);
+            if (data.success) {
+                alert('✓ Hospital preference rejected.');
+                await fetchDetail();
+            }
+        } catch (err) {
+            console.error('Failed to reject preference:', err);
+            alert(err.message || 'Failed to reject preference');
+        } finally {
+            setHandlingPreferenceId(null);
         }
     };
 
@@ -343,6 +397,104 @@ export default function WorkerCaseDetailPage({ params }) {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Patient Referral Preference Section */}
+                            {preferences.length > 0 && (
+                                <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                                    <h4 style={{ fontSize: '0.95rem', color: 'var(--accent-amber)', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 12px 0' }}>
+                                        <span>⭐ Patient Preferred Hospital Request</span>
+                                    </h4>
+                                    
+                                    {preferences.map((pref) => {
+                                        const isPending = pref.status === 'PENDING_WORKER_REVIEW';
+                                        const matchedHosp = hospitals.find(h => h._id === pref.hospitalId?._id);
+                                        const distance = matchedHosp && matchedHosp.distance !== undefined ? `${matchedHosp.distance} km` : null;
+
+                                        return (
+                                            <div key={pref._id} style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-subtle)', marginBottom: '8px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                                                    <div>
+                                                        <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>{pref.hospitalId?.name || 'Unknown Hospital'}</strong>
+                                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                                                            ({pref.hospitalId?.type?.replace(/_/g, ' ') || 'N/A'})
+                                                        </span>
+                                                    </div>
+                                                    <span style={{ 
+                                                        padding: '4px 8px', 
+                                                        borderRadius: '4px', 
+                                                        fontSize: '0.75rem', 
+                                                        fontWeight: '600',
+                                                        background: isPending ? 'rgba(245, 158, 11, 0.15)' : 
+                                                                    pref.status === 'ACCEPTED' ? 'rgba(22, 163, 74, 0.15)' : 
+                                                                    pref.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.15)' : 
+                                                                    pref.status === 'REASSIGNED' ? 'rgba(14, 165, 168, 0.15)' : 'rgba(100, 116, 139, 0.15)',
+                                                        color: isPending ? 'var(--accent-amber)' : 
+                                                               pref.status === 'ACCEPTED' ? 'var(--accent-emerald)' : 
+                                                               pref.status === 'REJECTED' ? 'var(--accent-rose)' : 
+                                                               pref.status === 'REASSIGNED' ? 'var(--accent-primary)' : 'var(--text-muted)'
+                                                    }}>
+                                                        {pref.status?.replace(/_/g, ' ')}
+                                                    </span>
+                                                </div>
+
+                                                <div style={{ fontSize: '0.85rem', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    {pref.reason && (
+                                                        <div>
+                                                            <strong>Requested Reason:</strong> {pref.reason}
+                                                        </div>
+                                                    )}
+                                                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                                                        <div>
+                                                            <strong>Submitted:</strong> {new Date(pref.createdAt).toLocaleString()}
+                                                        </div>
+                                                        {distance && (
+                                                            <div>
+                                                                <strong>Distance:</strong> {distance} away
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {pref.hospitalId?.services && pref.hospitalId.services.length > 0 && (
+                                                        <div>
+                                                            <strong>Services:</strong> {pref.hospitalId.services.join(', ')}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {isPending && (
+                                                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px', borderTop: '1px solid var(--border-subtle)', paddingTop: '8px' }}>
+                                                        <button
+                                                            onClick={() => handleAcceptPreference(pref._id)}
+                                                            disabled={handlingPreferenceId !== null}
+                                                            className="btn btn-primary"
+                                                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                                                        >
+                                                            {handlingPreferenceId === pref._id ? 'Processing...' : 'Accept Preference'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRejectPreference(pref._id)}
+                                                            disabled={handlingPreferenceId !== null}
+                                                            className="btn btn-danger"
+                                                            style={{ padding: '6px 12px', fontSize: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-rose)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                                                        >
+                                                            {handlingPreferenceId === pref._id ? 'Processing...' : 'Reject Preference'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setAssignReason(`Reassignment from preference: patient requested ${pref.hospitalId?.name}`);
+                                                                document.getElementById('hospital-selection').scrollIntoView({ behavior: 'smooth' });
+                                                            }}
+                                                            className="btn btn-outline"
+                                                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                                                        >
+                                                            Reassign Hospital
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
 
                             {/* Leaflet Map Integration */}
                             {caseDetail.profileSnapshot?.latitude && caseDetail.profileSnapshot?.longitude && (

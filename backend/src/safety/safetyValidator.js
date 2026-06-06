@@ -124,14 +124,73 @@ const validateLLMOutput = (llmOutput, decision, careGuidanceContext) => {
       ...(getSafeFallback(decision?.riskLevel)?.stepsNowBn || [])
     ];
 
+    const riskLevel = decision?.riskLevel || 'UNKNOWN';
+
+    // Helper to normalize strings (stripping punctuation, spaces, numbers, and list markers)
+    const normalizeStr = (str) => {
+      return str
+        .replace(/[।,?!.:;\-\*•\s]/g, '')
+        .replace(/[0-9০-৯]/g, '')
+        .trim()
+        .toLowerCase();
+    };
+
+    // Helper to extract significant words (length >= 2 to capture short Bengali words like "কম")
+    const getSignificantWords = (str) => {
+      return str
+        .split(/[\s,।?!.:;\-\(\)\[\]"'\r\n]+/)
+        .map(w => w.trim().toLowerCase())
+        .filter(w => w.length >= 2);
+    };
+
     llmOutput.stepsNowBn.forEach(step => {
       if (typeof step === 'string') {
-        const isAllowed = allowedSteps.some(allowed => 
-          typeof allowed === 'string' && (
-            step.trim() === allowed.trim() || 
-            allowed.includes(step.trim())
-          )
-        );
+        const cleanStep = step.trim();
+        if (cleanStep.length === 0) return;
+
+        let isAllowed = false;
+
+        // Step 1: Normalization exact match
+        const normalizedStep = normalizeStr(cleanStep);
+        isAllowed = allowedSteps.some(allowed => {
+          if (typeof allowed !== 'string') return false;
+          return normalizeStr(allowed) === normalizedStep;
+        });
+
+        // Step 2: Dual-metric (recall & precision) token-based check if normalization exact match fails
+        if (!isAllowed) {
+          const generatedWords = getSignificantWords(cleanStep);
+
+          if (generatedWords.length === 0) {
+            isAllowed = true; // No significant words to validate
+          } else {
+            const generatedWordsSet = new Set(generatedWords);
+
+            isAllowed = allowedSteps.some(allowed => {
+              if (typeof allowed !== 'string') return false;
+              const allowedWords = getSignificantWords(allowed);
+              if (allowedWords.length === 0) return false;
+
+              // Calculate intersection
+              const intersection = allowedWords.filter(w => generatedWordsSet.has(w));
+              const intersectionCount = intersection.length;
+
+              // Recall: what fraction of the allowed step's words are in the generated step
+              const recall = intersectionCount / allowedWords.length;
+
+              // Precision: what fraction of the generated step's words are in the allowed step
+              const precision = intersectionCount / generatedWords.length;
+
+              // Apply strictness thresholds based on risk level
+              if (riskLevel === 'HIGH') {
+                return recall >= 0.75 && precision >= 0.60;
+              } else {
+                return recall >= 0.50 && precision >= 0.30;
+              }
+            });
+          }
+        }
+
         if (!isAllowed) {
           issues.push(`LLM output steps contain unauthorized guidance: "${step}"`);
         }

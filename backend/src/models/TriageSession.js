@@ -90,6 +90,22 @@ const TriageSessionSchema = new mongoose.Schema({
     action: { type: String, enum: ['ASSIGNED', 'REASSIGNED'] }
   }],
 
+  // Patient preferred hospital (expressed via Guided Care Assistant — NOT a confirmed assignment)
+  // Health worker must review and confirm via assignHospital before this becomes active.
+  preferredHospitalId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', required: false },
+  preferredHospitalSnapshot: {
+    name: { type: String },
+    type: { type: String },
+    district: { type: String },
+    upazilaOrThana: { type: String },
+    address: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    phone: { type: String },
+    services: { type: [String] }
+  },
+  preferredHospitalAt: { type: Date },
+
   // Session Status Lifecycle
   status: {
     type: String,

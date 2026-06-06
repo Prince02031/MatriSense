@@ -93,6 +93,7 @@ const buildAssistantContext = async (sessionId) => {
 
   return {
     sessionId: session._id,
+    patientId: session.patientId || null,
     riskLevel,
     caseState: session.caseState || {},
     inputTextBn: session.inputTextBn || '',
@@ -110,7 +111,13 @@ const buildAssistantContext = async (sessionId) => {
       phone: patient.phone,
       trimester: patient.trimester,
       gestationalWeek: patient.gestationalWeek,
-      knownRiskFactors: patient.knownRiskFactors || {}
+      knownRiskFactors: patient.knownRiskFactors || {},
+      // Location fields for referral service
+      district: patient.district || null,
+      upazilaOrThana: patient.upazilaOrThana || null,
+      latitude: patient.latitude || null,
+      longitude: patient.longitude || null,
+      consentToUseLocationForReferral: patient.consentToUseLocationForReferral || false
     } : null
   };
 };

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { sendCareAssistantMessage } from '../../api/triageApi';
+import { sendCareAssistantMessage, createPatientPreference } from '../../api/triageApi';
+import AssistantReferralMap from './AssistantReferralMap';
 import { speakTextSegment, stopSpeaking, isTtsSupported } from '../../../src/utils/voice/ttsService';
 import { useVoiceRecorder } from '../../../src/hooks/useVoiceRecorder';
 import { transcribeAudio } from '../../../src/api/speechApi';
@@ -317,6 +318,8 @@ export default function CareAssistantPanel({ sessionId, riskLevel, isOpen, onClo
           quickReplies: response.quickReplies,
           safetyDisclaimer: response.safetyDisclaimer,
           debug: response.debug || null,
+          // Store structured UI payload (map, referral options, etc.)
+          ui: response.ui || null,
           timestamp: Date.now()
         };
 
@@ -453,6 +456,36 @@ export default function CareAssistantPanel({ sessionId, riskLevel, isOpen, onClo
                 <p className="text-sm font-medium leading-relaxed whitespace-pre-line break-words text-slate-800">
                   {msg.content}
                 </p>
+
+                {/* ---- Referral Map UI Payload ---- */}
+                {msg.role === 'assistant' && msg.ui?.type === 'REFERRAL_OPTIONS_MAP' && (
+                  <AssistantReferralMap
+                    uiPayload={msg.ui}
+                    sessionId={sessionId}
+                    onPreferenceCreated={async (hospitalId, hospitalName) => {
+                      // Call the backend preference endpoint
+                      const result = await createPatientPreference(sessionId, {
+                        hospitalId,
+                        reason: `Patient selected ${hospitalName} via Guided Care Assistant`,
+                        source: 'guided_care_assistant'
+                      });
+                      // Inject a confirmation message into the chat
+                      const confirmTurn = {
+                        role: 'assistant',
+                        content: result?.message ||
+                          `আপনার পছন্দের হাসপাতাল (${hospitalName}) নথিভুক্ত হয়েছে। আপনার স্বাস্থ্যকর্মী এটি পর্যালোচনা করে চূড়ান্ত রেফারেল নিশ্চিত করবেন।`,
+                        safetyDisclaimer: 'এটি চূড়ান্ত রেফারেল নয় — স্বাস্থ্যকর্মী নিশ্চিত করবেন।',
+                        timestamp: Date.now()
+                      };
+                      setMessages(prev => {
+                        const updated = [...prev, confirmTurn];
+                        persistChat(updated);
+                        return updated;
+                      });
+                      return result;
+                    }}
+                  />
+                )}
 
                 {msg.safetyDisclaimer && (
                   <p className="mt-3 border-t border-rose-100 pt-2 text-[11px] font-bold text-rose-600 leading-normal" role="note">

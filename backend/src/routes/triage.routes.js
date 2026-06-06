@@ -547,4 +547,42 @@ router.get('/patient/:patientId/history', async (req, res) => {
 const careAssistantController = require('../careAssistant/careAssistant.controller');
 router.post('/:sessionId/assistant/message', careAssistantController.handleAssistantMessage);
 
+// POST /api/triage/:sessionId/preference
+// Patient expresses a preferred hospital via the Guided Care Assistant.
+// The patientId is resolved server-side from the session — never trusted from client body.
+router.post('/:sessionId/preference', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { hospitalId, reason, source } = req.body;
+
+    if (!hospitalId) {
+      return res.status(400).json({ success: false, error: 'hospitalId is required' });
+    }
+
+    const session = await TriageSession.findById(sessionId);
+    if (!session) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    if (!session.patientId) {
+      return res.status(400).json({ success: false, error: 'Session has no linked patient — cannot save preference' });
+    }
+
+    const { referral_create_patient_preference } = require('../services/referralAssistantService');
+
+    const result = await referral_create_patient_preference({
+      sessionId,
+      patientId: session.patientId.toString(),
+      hospitalId,
+      reason: reason || '',
+      source: source || 'guided_care_assistant'
+    });
+
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('[TriageRoutes] Preference Error:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

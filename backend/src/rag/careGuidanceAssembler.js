@@ -211,6 +211,15 @@ const assembleCareGuidanceContext = async ({ decision, caseState, knowledgeCards
           }
         }
       }
+      steps.forEach((step) => {
+        stepsNowBn = addByActionGroup(stepsNowBn, card, usedActionGroups, step);
+      });
+      monitors.forEach((item) => {
+        monitorBn = addByActionGroup(monitorBn, card, usedActionGroups, item);
+      });
+      triggers.forEach((trigger) => {
+        urgentWarningBn = addByActionGroup(urgentWarningBn, card, usedActionGroups, trigger);
+      });
       return;
     }
 
@@ -316,7 +325,12 @@ const assembleCareGuidanceContext = async ({ decision, caseState, knowledgeCards
     ];
     
     // Ensure we don't repeat the primary action in the supportive steps
-    finalSteps = supportiveSteps.filter(step => step !== primaryActionBn).slice(0, 3);
+    const combinedSteps = [
+      primaryActionBn,
+      ...limitedSteps,
+      ...supportiveSteps.filter(step => step !== primaryActionBn)
+    ];
+    finalSteps = dedupeText(combinedSteps).slice(0, limits.maxStepsNow || 4);
   }
 
   // Ensure immediate steps never render as empty
