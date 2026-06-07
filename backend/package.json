@@ -39,7 +39,9 @@
     "assistant:test:verbose": "cross-env VERBOSE_PROMPTS=true node src/careAssistant/tests/runCareAssistantSafetyTest.js",
     "seed:hospitals": "node src/scripts/seedHospitalsDirectly.js",
     "mcp:case": "node src/mcp/caseContext/server.js --stdio",
-    "mcp:case:test": "node src/mcp/caseContext/scripts/smokeTest.js"
+    "mcp:case:test": "node src/mcp/caseContext/scripts/smokeTest.js",
+    "mcp:referral": "node src/mcp/referral/server.js --stdio",
+    "mcp:referral:test": "node src/mcp/referral/scripts/smokeTest.js"
   },
   "dependencies": {
     "@google/genai": "^2.0.1",

@@ -1,0 +1,5 @@
+{
+  "name": "Error",
+  "message": "TEST FAILED: Test 1: Should not return raw lat/long coordinates to patient",
+  "stack": "Error: TEST FAILED: Test 1: Should not return raw lat/long coordinates to patient\n    at assert (E:\\Hackathon\\6_6\\MatriSense\\backend\\src\\mcp\\referral\\scripts\\smokeTest.js:13:15)\n    at runTests (E:\\Hackathon\\6_6\\MatriSense\\backend\\src\\mcp\\referral\\scripts\\smokeTest.js:86:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+}
