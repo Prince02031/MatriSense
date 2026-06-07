@@ -394,18 +394,41 @@ async function referralUpdateReferralStatus({ sessionId, status, note, requester
     }
 }
 
-async function referralAddReferralNote({ sessionId, note, requester }) {
+async function referralAddReferralNote({ sessionId, note, actionTaken, statusAfterNote, referredTo, followUpDate, requester }) {
     try {
-        const session = await TriageSession.findById(sessionId).lean();
+        const session = await TriageSession.findById(sessionId);
+        if (!session) throw new Error('Session not found');
         enforceAssignmentModification(requester, session);
+
         const newNote = new ReferralNote({
             triageSessionId: sessionId,
+            patientId: session.patientId || null,
             healthWorkerId: requester.workerId || null,
-            actionTaken: 'MCP_NOTE_ADDED',
-            note: note,
-            statusAfterNote: 'UPDATED'
+            actionTaken: actionTaken || 'MCP_NOTE_ADDED',
+            referredTo: referredTo || null,
+            followUpDate: followUpDate ? new Date(followUpDate) : null,
+            note: note || '',
+            statusAfterNote: statusAfterNote || 'UPDATED'
         });
         await newNote.save();
+
+        // Sync to TriageSession
+        const sessionUpdate = {
+            status: statusAfterNote || session.status || 'UPDATED',
+            updatedAt: Date.now()
+        };
+        if (followUpDate) {
+            sessionUpdate.nextCheckupDate = new Date(followUpDate);
+        }
+        await TriageSession.findByIdAndUpdate(sessionId, sessionUpdate);
+
+        // Audit Log
+        const { logAction } = require('../../../services/auditService');
+        await logAction(sessionId, 'Referral note added', requester.role || 'WORKER', {
+            actionTaken: actionTaken || 'MCP_NOTE_ADDED',
+            referredTo: referredTo || null
+        });
+
         return { success: true, noteId: newNote._id };
     } catch (error) {
         throw safeError(error, 'Failed to add referral note');
