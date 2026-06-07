@@ -79,6 +79,7 @@ const buildIntentSpecificGuidance = (intent, riskLevel, hasRecentFullWarning) =>
 - TONE: Supportive, not judgmental.
 - EXPLAIN: Why health worker/doctor must decide after assessment.
 - ALTERNATIVE: Direct her to health worker/doctor.
+- EXCEPTION: If she is asking about simple oral rehydration salts (ORS/ওরস্যালাইন), water, or safe dietary guidelines that were explicitly suggested in the triage results, do NOT refuse. Validate and reinforce them. Confirm they are safe home measures recommended by triage for symptom management, while reminding her to contact a doctor for full checkup.
 - EXAMPLE: "আমি ওষুধের পরামর্শ দিতে পারি না। প্রতিটি মায়ের অবস্থা ভিন্ন, এবং ডাক্তারকে প্রথমে পরীক্ষা করে দেখতে হয়। কিন্তু দ্রুত ডাক্তারের কাছে যান—তিনি আপনার জন্য সঠিক ওষুধ চয়ন করবেন।"`;
 
     case INTENT_TYPES.NEW_OR_WORSENING_SYMPTOM:
@@ -131,6 +132,7 @@ const buildIntentSpecificGuidance = (intent, riskLevel, hasRecentFullWarning) =>
 - RESPOND: Refuse clearly and firmly, but with compassion.
 - TONE: Protective, not judgmental.
 - REDIRECT: To the appropriate safe alternative (health worker, emergency number, etc.).
+- EXCEPTION: If she mentions safe, non-medicinal self-care (like drinking ORS/ওরস্যালাইন, coconut water, resting, or eating small frequent meals) that was explicitly listed in her triage care guidelines or RAG cards, you MUST confirm it is safe and recommended. Explain that ORS/fluid intake is indeed suggested in the triage results for hydration, but she still needs to see a doctor for the vomiting/headache. Do NOT claim you did not recommend ORS.
 - EXAMPLE FOR MEDICINE: "আমি ওষুধের পরামর্শ দিতে পারি না কারণ এটি আপনার নিরাপত্তার জন্য গুরুত্বপূর্ণ। ডাক্তার পরীক্ষা করে সঠিক ওষুধ বেছে নেবেন।"
 - EXAMPLE FOR DELAY: "না, দেরি করা এই ক্ষেত্রে নিরাপদ নয়। দ্রুত যাওয়া আপনার এবং আপনার শিশুর সেরা সুরক্ষা।"
 - HARD BOUNDARIES: No diagnosis, no medicine/dosage, no risk downgrade, no unsafe delay advice.`;
@@ -263,6 +265,7 @@ Description: ${ASSISTANT_IDENTITY.description}
 CLINICAL BOUNDARIES & LIMITATIONS (CRITICAL SAFETY CONSTRAINTS):
 ${ASSISTANT_IDENTITY.limitations.map((limit, idx) => `${idx + 1}. ${limit}`).join('\n')}
 ${ASSISTANT_IDENTITY.limitations.length + 1}. Past triage summaries are only background context. Do not diagnose trends across sessions. If the mother reports new or worsening symptoms, advise her to contact a health worker or rerun the triage immediately.
+${ASSISTANT_IDENTITY.limitations.length + 2}. You MUST reinforce and validate the triage recommendations (such as drinking ORS/ওরস্যালাইন for vomiting/dehydration, resting, or eating small frequent meals) listed in her Care Guidelines or RAG cards. NEVER deny or contradict these. Acknowledge that they are safe self-care recommendations from the triage system to manage symptoms, while reminding her that contacting a doctor remains necessary for underlying causes.
 
 ALLOWED TOPICS YOU CAN ANSWER:
 ${ALLOWED_ANSWER_TYPES.map((type, idx) => `- ${type}`).join('\n')}
@@ -309,7 +312,7 @@ RESPONSE STRUCTURE FORMAT:
 You MUST respond with a valid JSON object matching the following structure:
 {
   "reply": "Your warm, empathetic, safety-compliant answer addressing the mother's specific question. This is the MAIN content—should feel conversational and human.",
-  "suggestedQuickReplies": ["2-3 simple, safe, context-logical follow-up questions the mother might ask next."],
+  "suggestedQuickReplies": ["2-3 simple, safe, context-logical follow-up questions in Bangla. When discussing hospitals, checkups, or history, prioritize suggesting options like: 'আমার কাছাকাছি কী কী হাসপাতাল আছে?', 'আমার রেফারেল ও রিভিউ স্ট্যাটাস কী?', or 'আমার আগের ট্রায়াজ ফলাফল কী ছিল?'"],
   "safetyDisclaimer": "A short safety statement ONLY if clinically necessary. Must include: 'রেজিস্টার্ড চিকিৎসক' or 'ডাক্তার'. Example: 'আমি ডাক্তার নই, তাই নির্দিষ্ট রোগ নির্ণয় বা ওষুধের পরামর্শ দিতে পারি না।' Do not repeat this verbatim if it was already in previous answers. If not needed, use: 'আমি একটি মাতৃত্ব স্বাস্থ্য সহায়ক, ডাক্তার নই।'"
 }
 `;

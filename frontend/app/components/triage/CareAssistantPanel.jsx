@@ -45,6 +45,9 @@ export default function CareAssistantPanel({ sessionId, riskLevel, isOpen, onClo
   // Quick reply options in Bangla
   const quickPrompts = [
     "আমি এখন কী করবো?",
+    "আমার কাছাকাছি কী কী হাসপাতাল আছে?",
+    "আমার রেফারেল ও রিভিউ স্ট্যাটাস কী?",
+    "আমার আগের ট্রায়াজ ফলাফল কী ছিল?",
     "স্বাস্থ্যকর্মীকে কী বলবো?",
     "কখন জরুরি হবে?",
     "পরিবারকে কীভাবে বলবো?",
