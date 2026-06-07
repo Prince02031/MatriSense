@@ -81,7 +81,7 @@ function useLeaflet(onReady) {
 // ------------------------------------------------------------------
 // Inner map renderer (pure DOM Leaflet)
 // ------------------------------------------------------------------
-function LeafletMapInner({ patientLocation, hospitals, highlightedId }) {
+function LeafletMapInner({ patientLocation, hospitals, highlightedId, onRequestPreference, preferenceState, height = '220px' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef({});
@@ -111,6 +111,25 @@ function LeafletMapInner({ patientLocation, hospitals, highlightedId }) {
     }
 
     const map = mapRef.current;
+
+    // Listen to popup open to bind button actions dynamically
+    map.off('popupopen'); // clear duplicate bindings
+    map.on('popupopen', (e) => {
+      const container = e.popup.getElement();
+      if (!container) return;
+      const btn = container.querySelector('.map-select-btn');
+      if (btn) {
+        btn.onclick = (event) => {
+          event.preventDefault();
+          const hospitalId = btn.getAttribute('data-id');
+          const selectedHospital = hospitals.find(hosp => hosp.hospitalId === hospitalId);
+          if (selectedHospital && onRequestPreference) {
+            onRequestPreference(selectedHospital);
+            map.closePopup();
+          }
+        };
+      }
+    });
 
     // Clear old markers
     Object.values(markersRef.current).forEach(m => map.removeLayer(m));
@@ -155,15 +174,25 @@ function LeafletMapInner({ patientLocation, hospitals, highlightedId }) {
       const serviceList = (h.maternalServices || h.services || []).slice(0, 3).join(', ') || 'সেবার তথ্য নেই';
       const dist = h.distanceKm != null ? `${h.distanceKm} কিমি` : '';
 
+      const status = preferenceState?.[h.hospitalId];
+      const isDone = status === 'done';
+      const isPending = status === 'pending';
+      const buttonHtml = isDone
+        ? `<div style="width:100%; margin-top:8px; padding:6px; border:1px solid #bbf7d0; border-radius:4px; background:#f0fdf4; color:#059669; font-size:11px; font-weight:bold; text-align:center;">✓ পছন্দ নথিভুক্ত</div>`
+        : isPending
+          ? `<div style="width:100%; margin-top:8px; padding:6px; border:none; border-radius:4px; background:#e2e8f0; color:#94a3b8; font-size:11px; font-weight:bold; text-align:center;">পাঠানো হচ্ছে...</div>`
+          : `<button class="map-select-btn" data-id="${h.hospitalId}" style="width:100%; margin-top:8px; padding:6px; border:none; border-radius:4px; background:#0d9488; color:white; font-size:11px; font-weight:bold; cursor:pointer; text-align:center;">🏥 পছন্দ করুন</button>`;
+
       const marker = L.marker([h.lat, h.lng], { icon })
         .addTo(map)
         .bindPopup(`
-          <div style="min-width:160px;font-family:sans-serif;">
-            <b style="font-size:13px;">${h.name}</b><br/>
-            <span style="font-size:11px;color:#555;">${h.upazila || h.district || ''}</span>${dist ? `<br/><span style="font-size:11px;color:#0d9488;">📍 ${dist}</span>` : ''}
-            <hr style="margin:6px 0;border-color:#eee;"/>
-            <span style="font-size:11px;">${serviceList}</span>
+          <div style="min-width:160px;font-family:sans-serif;line-height:1.4;">
+            <b style="font-size:13px;color:#1e293b;">${h.name}</b><br/>
+            <span style="font-size:11px;color:#64748b;">${h.upazila || h.district || ''}</span>${dist ? `<br/><span style="font-size:11px;color:#0d9488;font-weight:600;">📍 ${dist}</span>` : ''}
+            <hr style="margin:6px 0;border-color:#e2e8f0;"/>
+            <span style="font-size:11px;color:#475569;">${serviceList}</span>
             ${h.emergencyCapability ? '<br/><span style="font-size:11px;color:#dc2626;font-weight:bold;">⚡ জরুরি সেবা উপলব্ধ</span>' : ''}
+            ${buttonHtml}
           </div>
         `);
 
@@ -183,7 +212,7 @@ function LeafletMapInner({ patientLocation, hospitals, highlightedId }) {
         map.fitBounds(bounds, { padding: [30, 30] });
       }
     }
-  }, [patientLocation, hospitals, highlightedId]);
+  }, [patientLocation, hospitals, highlightedId, preferenceState, onRequestPreference]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -198,7 +227,7 @@ function LeafletMapInner({ patientLocation, hospitals, highlightedId }) {
   return (
     <div
       ref={containerRef}
-      style={{ height: '220px', width: '100%', borderRadius: '12px', overflow: 'hidden', zIndex: 0 }}
+      style={{ height: height, width: '100%', borderRadius: '12px', overflow: 'hidden', zIndex: 0 }}
       aria-label="হাসপাতালের মানচিত্র"
     />
   );
@@ -374,6 +403,7 @@ export default function AssistantReferralMap({ uiPayload, sessionId, onPreferenc
   const [preferenceState, setPreferenceState] = useState({}); // { [hospitalId]: 'pending'|'done'|'error' }
   const [highlightedId, setHighlightedId] = useState(null);
   const [mapReady, setMapReady] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const leafletLoaded = useLeaflet(() => setMapReady(true));
 
@@ -416,8 +446,11 @@ export default function AssistantReferralMap({ uiPayload, sessionId, onPreferenc
 
   return (
     <div style={{ marginTop: '12px' }} role="region" aria-label="হাসপাতাল বিকল্প মানচিত্র">
-      {/* Spin keyframes injected inline for the button spinner */}
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* CSS Keyframes injected inline */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+      `}</style>
 
       {/* Risk badge */}
       <div style={{
@@ -432,12 +465,42 @@ export default function AssistantReferralMap({ uiPayload, sessionId, onPreferenc
       </div>
 
       {/* Leaflet Map */}
-      <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
+      <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
+        {/* Enlarge button */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            zIndex: 10,
+            background: 'white',
+            border: '1px solid #cbd5e1',
+            borderRadius: '6px',
+            padding: '5px 9px',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            color: '#334155',
+            cursor: 'pointer',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; }}
+        >
+          ⛶ বড় করে দেখুন
+        </button>
+
         {leafletLoaded && mapReady ? (
           <LeafletMapInner
             patientLocation={patientLocation}
             hospitals={options}
             highlightedId={highlightedId}
+            onRequestPreference={handleRequestPreference}
+            preferenceState={preferenceState}
           />
         ) : (
           <div style={{
@@ -487,6 +550,123 @@ export default function AssistantReferralMap({ uiPayload, sessionId, onPreferenc
           fontSize: '11px', color: '#92400e', lineHeight: 1.5
         }} role="note">
           ⚠️ {disclaimer}
+        </div>
+      )}
+
+      {/* Fullscreen Map Modal */}
+      {isModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}
+        onClick={() => setIsModalOpen(false)}
+        >
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            width: '90vw',
+            maxWidth: '800px',
+            height: '80vh',
+            maxHeight: '600px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '16px 20px',
+              borderBottom: '1px solid #f1f5f9'
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>
+                  🏥 কাছাকাছি হাসপাতালের বিস্তারিত মানচিত্র
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>
+                  মানচিত্রের মার্কারগুলোতে ক্লিক করে সরাসরি হাসপাতাল পছন্দ করতে পারেন
+                </p>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '20px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  lineHeight: 1
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body (Map Container) */}
+            <div style={{ flex: 1, padding: '16px', position: 'relative' }}>
+              {leafletLoaded && mapReady ? (
+                <LeafletMapInner
+                  patientLocation={patientLocation}
+                  hospitals={options}
+                  highlightedId={highlightedId}
+                  onRequestPreference={handleRequestPreference}
+                  preferenceState={preferenceState}
+                  height="100%"
+                />
+              ) : (
+                <div style={{
+                  height: '100%', background: '#f1f5f9', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', borderRadius: '12px'
+                }}>
+                  <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '6px' }}>🗺️</div>
+                    <p style={{ fontSize: '12px', margin: 0 }}>মানচিত্র লোড হচ্ছে...</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '12px 20px',
+              background: '#f8fafc',
+              borderTop: '1px solid #f1f5f9',
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#64748b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

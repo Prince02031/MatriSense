@@ -4,6 +4,7 @@ const { buildAssistantPrompt } = require('./careAssistantPromptBuilder');
 const { generateJson } = require('../ai/llmClient');
 const { validateLLMOutput } = require('../safety');
 const { classifyIntent, getIntentName, INTENT_TYPES } = require('./careAssistantIntentClassifier');
+const { runAgenticAssistantFlow } = require('./careAssistantAgenticService');
 const { getFallbackByIntent } = require('./careAssistantIntentFallbacks');
 const {
   referral_find_hospital_options,
@@ -379,6 +380,7 @@ exports.handleAssistantMessage = async (req, res) => {
     let fallbackUsed = false;
     let safetyPassed = true;
     let safetyValidationErrors = [];
+    let executedTools = [];
 
     const provider = process.env.LLM_PROVIDER || 'gemini';
     const isGeminiMissingKey = provider.toLowerCase() === 'gemini' && !process.env.GEMINI_API_KEY;
@@ -388,6 +390,82 @@ exports.handleAssistantMessage = async (req, res) => {
       assistantOutput = GET_CONSERVATIVE_FALLBACK(context.riskLevel);
       fallbackUsed = true;
       safetyPassed = true;
+    } else if (process.env.AGENTIC_ASSISTANT_TOOLS === 'true') {
+      try {
+        const agenticResult = await runAgenticAssistantFlow({
+          sessionId,
+          userMessage: message,
+          cleanHistory,
+          language,
+          assistantSchema,
+          buildAssistantPrompt,
+          ensureSafetyDisclaimer,
+          validateLLMOutput,
+          getFallbackByIntent,
+          detectedIntent
+        });
+
+        assistantOutput = agenticResult.assistantOutput;
+        safetyPassed = agenticResult.safetyPassed;
+        fallbackUsed = agenticResult.fallbackUsed;
+        safetyValidationErrors = agenticResult.safetyValidationErrors;
+        executedTools = agenticResult.executedTools || [];
+
+      } catch (agenticError) {
+        console.error('[CareAssistantController] Agentic Flow Failed, falling back to static RAG:', agenticError.message);
+        // Fallback to static flow
+        try {
+          const response = await generateJson({ systemInstruction, userPrompt, responseSchema: assistantSchema });
+
+          if (response && response.reply) {
+            assistantOutput = response;
+          } else {
+            throw new Error('Malformed or empty JSON response from LLM');
+          }
+
+          // Post-processing: ensure disclaimer
+          assistantOutput = ensureSafetyDisclaimer(assistantOutput, context.riskLevel);
+
+          // Safety validation
+          const safetyCheckInput = {
+            ...assistantOutput,
+            safetyDisclaimerBn: assistantOutput.safetyDisclaimer || 'রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।',
+            riskLevel: context.riskLevel,
+            stepsNowBn: [],
+            urgentWarningBn: ['সতর্ক থাকুন']
+          };
+
+          const safetyValidation = validateLLMOutput(safetyCheckInput, { riskLevel: context.riskLevel }, context.careGuidanceContext);
+
+          if (!safetyValidation.valid) {
+            console.warn('[CareAssistantController] Static Safety Validator Rejected. Intent:', getIntentName(detectedIntent));
+            safetyValidationErrors = safetyValidation.issues;
+            safetyPassed = false;
+            fallbackUsed = true;
+
+            const intentFallback = getFallbackByIntent(detectedIntent, context.riskLevel);
+            assistantOutput = {
+              reply: intentFallback.replyBn,
+              suggestedQuickReplies: ["আর কোনো প্রশ্ন আছে কি?", "আমি এটা বুঝতে পারছি না"],
+              safetyDisclaimer: intentFallback.disclaimerBn
+            };
+          } else {
+            console.log('[CareAssistantController] Static Safety Validation PASSED. Intent:', getIntentName(detectedIntent));
+          }
+
+        } catch (llmError) {
+          console.error('[CareAssistantController] Static Fallback LLM Execution Failed:', llmError.message);
+          const intentFallback = getFallbackByIntent(detectedIntent, context.riskLevel);
+          assistantOutput = {
+            reply: intentFallback.replyBn,
+            suggestedQuickReplies: ["আরকোনো প্রশ্ন আছে কি?", "আমি এটা বুঝতে পারছি না"],
+            safetyDisclaimer: intentFallback.disclaimerBn
+          };
+          fallbackUsed = true;
+          safetyPassed = true;
+          safetyValidationErrors = [`LLM_ERROR: ${llmError.message}`];
+        }
+      }
     } else {
       try {
         const response = await generateJson({ systemInstruction, userPrompt, responseSchema: assistantSchema });
@@ -466,7 +544,8 @@ exports.handleAssistantMessage = async (req, res) => {
         ragMode: process.env.RAG_MODE || 'hybrid(default)',
         usedRetrievedCards: context.retrievedCards?.length || 0,
         usedRetrievedChunks: context.retrievedChunks?.length || 0,
-        chatHistoryTurnsUsed: cleanHistory.length
+        chatHistoryTurnsUsed: cleanHistory.length,
+        executedTools: executedTools
       }
     });
 

@@ -1,25 +1,30 @@
-// Enable module aliases or env vars before startup if needed
+// MCP stdio demo launcher
+// Run: npm run mcp:case (or node src/mcp/caseContext/scripts/runStDioDemo.js)
 require('dotenv').config();
 const mongoose = require('mongoose');
-const { CaseContextMcpServer } = require('../mcpServer');
-const { StdioTransport } = require('../transports/stdio');
 
 async function main() {
-    if (!process.env.MONGO_URI) {
-        console.error("Missing MONGO_URI in .env");
+    const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+    if (!uri) {
+        console.error("Missing MONGODB_URI or MONGO_URI in .env");
         process.exit(1);
     }
 
-    await mongoose.connect(process.env.MONGO_URI);
-    console.error("Connected to MongoDB for MCP demo payload resolution.");
+    await mongoose.connect(uri);
+    console.error("Connected to MongoDB for MCP stdio demo.");
 
-    const server = new CaseContextMcpServer();
-    const transport = new StdioTransport(server);
+    // The server.js handles stdio transport when invoked with --stdio.
+    // This script is a convenience wrapper for manual testing.
+    // For production stdio, use: npm run mcp:case
+    const { mcpServer } = require('../server');
+    const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 
-    await transport.start();
+    const transport = new StdioServerTransport();
+    await mcpServer.connect(transport);
+    console.error("MatriSense Case Context MCP Server running on stdio (demo mode)");
 }
 
 main().catch((err) => {
-    console.error("Failed to start server", err);
+    console.error("Failed to start MCP stdio demo:", err);
     process.exit(1);
 });
