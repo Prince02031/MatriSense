@@ -431,6 +431,9 @@ const INTENT_KEYWORDS = {
       'এটা select করো',
       'এটা confirm করো',
       'পছন্দ করলাম',
+      'পছন্দ করো',
+      'pochondo koro',
+      'pochondo',
       'এখানে যাবো',
       'এই হাসপাতাল ঠিক করো',
       'prefer করি',
@@ -447,6 +450,10 @@ const INTENT_KEYWORDS = {
   [INTENT_TYPES.CANCEL_PATIENT_REFERRAL_PREFERENCE]: {
     patterns: [
       'পছন্দ বাতিল করো',
+      'পছন্দ বাতিল',
+      'pochondo batil',
+      'cancel preference',
+      'cancel pochondo',
       'বাতিল করবো',
       'cancel করো',
       'যেতে চাই না',

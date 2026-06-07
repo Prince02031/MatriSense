@@ -33,19 +33,18 @@ async function getRequester(req) {
 
 exports.createNote = async (req, res) => {
     try {
-        const { triageSessionId, note, actionTaken, statusAfterNote } = req.body;
+        const { triageSessionId, patientId, actionTaken, referredTo, followUpDate, note, statusAfterNote } = req.body;
         const requester = await getRequester(req);
 
         const result = await referralAddReferralNote({
             sessionId: triageSessionId,
-            note: note || `Action: ${actionTaken} -> Status: ${statusAfterNote}`, // Bridge legacy inputs
+            note: note || `Action: ${actionTaken} -> Status: ${statusAfterNote}`,
+            actionTaken,
+            statusAfterNote,
+            referredTo,
+            followUpDate,
             requester
         });
-
-        // Bridge legacy auto-sync
-        if (statusAfterNote) {
-            await referralUpdateReferralStatus({ sessionId: triageSessionId, status: statusAfterNote, requester });
-        }
 
         res.status(201).json({ success: true, noteId: result.noteId });
     } catch (err) {

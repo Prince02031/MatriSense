@@ -1,6 +1,7 @@
 'use strict';
 
 require('dotenv').config();
+process.env.DEMO_MODE = 'false'; // Force safety enforcement in tests
 const mongoose = require('mongoose');
 const service = require('../services/referralMcpService');
 const Hospital = require('../../../models/Hospital');

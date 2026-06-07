@@ -8,7 +8,9 @@ exports.getCases = async (req, res) => {
         const pageLimit = Math.min(parseInt(limit), 100); // Max 100 per page
         const pageSkip = parseInt(skip);
 
-        let query = TriageSession.find()
+        const inProgressStatuses = ['active', 'extracted', 'confirmed', 'answered'];
+
+        let query = TriageSession.find({ status: { $nin: inProgressStatuses } })
             .populate('patientId')
             .populate('followUpDateSetBy', 'name');
 
@@ -20,8 +22,8 @@ exports.getCases = async (req, res) => {
 
         // Apply filterMode: 'all' or 'latest-patient'
         if (filterMode === 'latest-patient') {
-            // Get latest triage for each patient
-            let match = { patientId: { $ne: null } };
+            // Get latest completed triage for each patient
+            let match = { patientId: { $ne: null }, status: { $nin: inProgressStatuses } };
             if (district && district.trim()) {
                 const districtRegex = new RegExp(district.trim(), 'i');
                 match['profileSnapshot.district'] = districtRegex;
@@ -68,7 +70,9 @@ exports.getCases = async (req, res) => {
 
         // Get total count
         let totalCount;
-        let countMatch = filterMode === 'latest-patient' ? { patientId: { $ne: null } } : {};
+        let countMatch = filterMode === 'latest-patient' 
+            ? { patientId: { $ne: null }, status: { $nin: inProgressStatuses } } 
+            : { status: { $nin: inProgressStatuses } };
         if (district && district.trim()) {
             const districtRegex = new RegExp(district.trim(), 'i');
             countMatch['profileSnapshot.district'] = districtRegex;

@@ -429,6 +429,57 @@ exports.handleAssistantMessage = async (req, res) => {
         safetyValidationErrors = agenticResult.safetyValidationErrors;
         executedTools = agenticResult.executedTools || [];
 
+        // Build UI payload dynamically if referral tools were executed
+        if (agenticResult.referralData) {
+          const riskLevel = (context.riskLevel || 'MEDIUM').toUpperCase();
+          uiPayload = {
+            type: 'REFERRAL_OPTIONS_MAP',
+            riskLevel,
+            patientLocation: agenticResult.referralData.patientLocationSummary,
+            locationSource: agenticResult.referralData.locationSource,
+            options: agenticResult.referralData.options,
+            canCreatePreference: true,
+            disclaimer: REFERRAL_DISCLAIMER[riskLevel] || REFERRAL_DISCLAIMER.MEDIUM
+          };
+        } else if (executedTools.includes('referral_create_patient_preference')) {
+          const riskLevel = (context.riskLevel || 'MEDIUM').toUpperCase();
+          uiPayload = {
+            type: 'REFERRAL_STATUS_CARD',
+            riskLevel,
+            preferenceStatus: 'PENDING_WORKER_REVIEW',
+            canCreatePreference: false,
+            disclaimer: REFERRAL_DISCLAIMER[riskLevel] || REFERRAL_DISCLAIMER.MEDIUM
+          };
+        } else if (executedTools.includes('referral_cancel_patient_preference')) {
+          const riskLevel = (context.riskLevel || 'MEDIUM').toUpperCase();
+          uiPayload = {
+            type: 'REFERRAL_STATUS_CARD',
+            riskLevel,
+            preferenceStatus: null,
+            canCreatePreference: true,
+            disclaimer: REFERRAL_DISCLAIMER[riskLevel] || REFERRAL_DISCLAIMER.MEDIUM
+          };
+        } else if (executedTools.includes('referral_get_referral_status') || executedTools.includes('referral_get_assigned_hospital')) {
+          const riskLevel = (context.riskLevel || 'MEDIUM').toUpperCase();
+          const patientId = context.patientId || null;
+          const requester = { role: 'PATIENT', patientId: patientId || undefined };
+          try {
+            const statusResult = await referralGetReferralStatus({ sessionId, patientId, requester });
+            uiPayload = {
+              type: 'REFERRAL_STATUS_CARD',
+              riskLevel,
+              patientLocation: context.patientProfile?.district || null,
+              referralStatus: statusResult.referralStatus,
+              assignedHospital: statusResult.assignedHospital || null,
+              preferenceStatus: statusResult.workerReviewStatus,
+              canCreatePreference: !statusResult.workerReviewStatus && !statusResult.assignedHospital,
+              disclaimer: REFERRAL_DISCLAIMER[riskLevel] || REFERRAL_DISCLAIMER.MEDIUM
+            };
+          } catch (err) {
+            console.error('[CareAssistantController] Error building dynamic status card:', err.message);
+          }
+        }
+
       } catch (agenticError) {
         console.error('[CareAssistantController] Agentic Flow Failed, falling back to static RAG:', agenticError.message);
         // Fallback to static flow

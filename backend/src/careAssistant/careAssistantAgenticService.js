@@ -6,6 +6,13 @@ const path = require('path');
 const TriageSession = require('../models/TriageSession');
 const Patient = require('../models/Patient');
 const { getGuidedCareContext, getRecentTriageHistory, getPatientVisibleStatus } = require('../mcp/caseContext/services/caseContextService');
+const {
+  referralGetReferralStatus,
+  referralGetAssignedHospital,
+  referralFindHospitalOptions,
+  referralCreatePatientPreference,
+  referralCancelPatientPreference
+} = require('../mcp/referral/services/referralMcpService');
 const { assembleCareGuidanceContext } = require('../rag/careGuidanceAssembler');
 const { retrieveEvidenceWithMode } = require('../vectorRag/retrieval/hybridRagService');
 
@@ -54,6 +61,67 @@ const toolDeclarations = [
         audience: { type: 'STRING', enum: ['PATIENT'], description: 'The target audience' }
       },
       required: ['sessionId', 'userQuestion', 'audience']
+    }
+  },
+  {
+    name: 'referral_get_referral_status',
+    description: 'Use when the user asks about the current status of their referral request (e.g. status details or worker notes).',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING', description: 'The official triage session ID' }
+      },
+      required: ['sessionId']
+    }
+  },
+  {
+    name: 'referral_get_assigned_hospital',
+    description: 'Use when the user asks which hospital has been assigned to them for their referral.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING', description: 'The official triage session ID' }
+      },
+      required: ['sessionId']
+    }
+  },
+  {
+    name: 'referral_find_hospital_options',
+    description: 'Use to find nearby maternal health hospitals. Returns a list of facilities, their locations, services, and distances.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING', description: 'The official triage session ID' },
+        district: { type: 'STRING', description: 'The district to search in (e.g., Dhaka)' },
+        upazila: { type: 'STRING', description: 'Optional upazila to filter by' },
+        serviceNeeded: { type: 'STRING', enum: ["ANC", "EMERGENCY", "DELIVERY", "GENERAL_MATERNAL"], description: 'Optional service category filter' }
+      },
+      required: ['sessionId', 'district']
+    }
+  },
+  {
+    name: 'referral_create_patient_preference',
+    description: 'Use when the patient explicitly requests to choose or set a specific hospital as their preference from the options.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING', description: 'The official triage session ID' },
+        hospitalId: { type: 'STRING', description: 'The MongoDB ObjectId of the hospital chosen' },
+        reason: { type: 'STRING', description: 'The patient\'s reason for preferring this hospital' }
+      },
+      required: ['sessionId', 'hospitalId']
+    }
+  },
+  {
+    name: 'referral_cancel_patient_preference',
+    description: 'Use when the patient explicitly requests to cancel their pending hospital preference request.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        sessionId: { type: 'STRING', description: 'The official triage session ID' },
+        preferenceId: { type: 'STRING', description: 'The MongoDB ObjectId of the preference to cancel' }
+      },
+      required: ['sessionId', 'preferenceId']
     }
   }
 ];
@@ -238,6 +306,64 @@ INSTRUCTIONS:
             toolResults.careContext = resultPayload;
             executedTools.push(name);
           } 
+          else if (name === 'referral_get_referral_status') {
+            resultPayload = await referralGetReferralStatus({
+              sessionId: sessionId,
+              patientId: patientId,
+              requester: { role: 'PATIENT', patientId: patientId }
+            });
+            toolResults.statusData = {
+              caseStatus: resultPayload.referralStatus,
+              assignedHospitalName: resultPayload.assignedHospital?.name || null
+            };
+            executedTools.push(name);
+          }
+          else if (name === 'referral_get_assigned_hospital') {
+            resultPayload = await referralGetAssignedHospital({
+              sessionId: sessionId,
+              patientId: patientId,
+              requester: { role: 'PATIENT', patientId: patientId }
+            });
+            executedTools.push(name);
+          }
+          else if (name === 'referral_find_hospital_options') {
+            const patientLocation = session.profileSnapshot?.latitude && session.profileSnapshot?.longitude ? {
+              lat: session.profileSnapshot.latitude,
+              lng: session.profileSnapshot.longitude
+            } : undefined;
+
+            resultPayload = await referralFindHospitalOptions({
+              sessionId: sessionId,
+              patientId: patientId,
+              riskLevel: riskLevel,
+              district: args.district,
+              upazila: args.upazila || undefined,
+              patientLocation,
+              serviceNeeded: args.serviceNeeded || undefined,
+              requester: { role: 'PATIENT', patientId: patientId }
+            });
+            toolResults.referralData = resultPayload;
+            executedTools.push(name);
+          }
+          else if (name === 'referral_create_patient_preference') {
+            resultPayload = await referralCreatePatientPreference({
+              sessionId: sessionId,
+              patientId: patientId,
+              hospitalId: args.hospitalId,
+              reason: args.reason || '',
+              requester: { role: 'PATIENT', patientId: patientId }
+            });
+            executedTools.push(name);
+          }
+          else if (name === 'referral_cancel_patient_preference') {
+            resultPayload = await referralCancelPatientPreference({
+              sessionId: sessionId,
+              patientId: patientId,
+              preferenceId: args.preferenceId,
+              requester: { role: 'PATIENT', patientId: patientId }
+            });
+            executedTools.push(name);
+          }
           else {
             throw new Error(`Tool not whitelisted: ${name}`);
           }
@@ -400,7 +526,8 @@ INSTRUCTIONS:
     fallbackUsed,
     safetyValidationErrors,
     assembledContext,
-    executedTools
+    executedTools,
+    referralData: toolResults.referralData
   };
 };
 
