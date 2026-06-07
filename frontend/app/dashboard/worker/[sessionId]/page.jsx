@@ -2,9 +2,9 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { getWorkerCase, updateWorkerCaseStatus, getAuditLog, setFollowUpDate, assignHospitalToCase } from '../../../api/workerApi';
+import { getWorkerCase, getAuditLog, setFollowUpDate, assignHospitalToCase, getReferralPreferences, acceptReferralPreference, rejectReferralPreference, addReferralNote, updateReferralStatusFromWorker, getAssignmentHistory, getReferralNotesForSession } from '../../../api/workerApi';
 import { getNearbyHospitals } from '../../../api/hospitalApi';
-import { createReferralNote, getReferralNote, getPreferences, acceptPreference, rejectPreference } from '../../../api/referralApi';
+// Old imports from referralApi replaced with workerApi imports
 import { useAuth } from '../../../context/AuthContext';
 import ProtectedRoute from '../../../components/ProtectedRoute';
 
@@ -175,19 +175,40 @@ export default function WorkerCaseDetailPage({ params }) {
                     await loadNearbyHospitals(data.session.profileSnapshot);
                 }
             }
-            const noteData = await getReferralNote(sessionId);
+            // Fetch preferences using new workerApi
+            setPreferencesLoading(true);
+            const prefData = await getReferralPreferences(sessionId);
+            if (prefData.success) {
+                setPreferences(prefData.preferences);
+            }
+
+            // Notes via MCP route
+            const noteData = await getReferralNotesForSession(sessionId);
             if (noteData.success) {
                 setNotes(noteData.notes);
             }
+
             const auditData = await getAuditLog(sessionId);
-            if (auditData.success) {
-                setAuditLogs(auditData.logs);
-            }
-            // Fetch preferences
-            setPreferencesLoading(true);
-            const prefData = await getPreferences(sessionId);
-            if (prefData.success) {
-                setPreferences(prefData.preferences);
+
+            // History via MCP route
+            const histData = await getAssignmentHistory(sessionId);
+            if (histData.success) {
+                const mappedHistoryLogs = (histData.history || []).map((h, i) => ({
+                    _id: `hist_${i}_${h.assignedAt}`,
+                    action: h.action || 'HOSPITAL ASSIGNMENT',
+                    actorRole: h.assignedBy || 'MCP_SYSTEM',
+                    createdAt: h.assignedAt || new Date().toISOString(),
+                    details: {
+                        hospitalName: h.hospitalName,
+                        reason: h.reason
+                    }
+                }));
+
+                const allLogs = [...(auditData?.logs || []), ...mappedHistoryLogs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                setAuditLogs(allLogs);
+
+                // If the backend history array is attached to session, update it
+                setCaseDetail(prev => ({ ...prev, hospitalAssignmentHistory: histData.history }));
             }
         } catch (err) {
             console.error(err);
@@ -204,7 +225,7 @@ export default function WorkerCaseDetailPage({ params }) {
 
         try {
             setHandlingPreferenceId(prefId);
-            const data = await acceptPreference(prefId, note);
+            const data = await acceptReferralPreference(prefId);
             if (data.success) {
                 alert('✓ Hospital preference accepted and assigned!');
                 await fetchDetail();
@@ -227,7 +248,7 @@ export default function WorkerCaseDetailPage({ params }) {
 
         try {
             setHandlingPreferenceId(prefId);
-            const data = await rejectPreference(prefId, note);
+            const data = await rejectReferralPreference(prefId, note);
             if (data.success) {
                 alert('✓ Hospital preference rejected.');
                 await fetchDetail();
@@ -248,7 +269,7 @@ export default function WorkerCaseDetailPage({ params }) {
         e.preventDefault();
         setIsSubmittingStatus(true);
         try {
-            const data = await updateWorkerCaseStatus(sessionId, status, user?._id || user?.id);
+            const data = await updateReferralStatusFromWorker(sessionId, status, 'Status updated from dropdown');
             if (data.success) {
                 setCaseDetail(data.session);
                 alert('Status updated successfully');
@@ -265,14 +286,8 @@ export default function WorkerCaseDetailPage({ params }) {
         e.preventDefault();
         setIsSubmittingNote(true);
         try {
-            const data = await createReferralNote({
-                triageSessionId: sessionId,
-                actionTaken,
-                referredTo: referredTo || undefined,
-                followUpDate: noteFollowUpDate || undefined,
-                note: noteText,
-                statusAfterNote: status
-            });
+            const combinedNote = `[${actionTaken}] ${noteText} ${referredTo ? `(Referred: ${referredTo})` : ''} ${noteFollowUpDate ? `(Follow-up: ${noteFollowUpDate})` : ''}`;
+            const data = await addReferralNote(sessionId, combinedNote, actionTaken, status);
 
             if (data.success) {
                 setNotes([data.note, ...notes]);
@@ -353,7 +368,7 @@ export default function WorkerCaseDetailPage({ params }) {
                         {/* Referral & Hospital Assignment Panel */}
                         <div className="dash-card">
                             <h3>🏥 Regional Referral & Hospital Assignment</h3>
-                            
+
                             <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -417,7 +432,7 @@ export default function WorkerCaseDetailPage({ params }) {
                                     <h4 style={{ fontSize: '0.95rem', color: 'var(--accent-amber)', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 12px 0' }}>
                                         <span>⭐ Patient Preferred Hospital Request</span>
                                     </h4>
-                                    
+
                                     {preferences.map((pref) => {
                                         const isPending = pref.status === 'PENDING_WORKER_REVIEW';
                                         const matchedHosp = hospitals.find(h => h._id === pref.hospitalId?._id);
@@ -432,19 +447,19 @@ export default function WorkerCaseDetailPage({ params }) {
                                                             ({pref.hospitalId?.type?.replace(/_/g, ' ') || 'N/A'})
                                                         </span>
                                                     </div>
-                                                    <span style={{ 
-                                                        padding: '4px 8px', 
-                                                        borderRadius: '4px', 
-                                                        fontSize: '0.75rem', 
+                                                    <span style={{
+                                                        padding: '4px 8px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.75rem',
                                                         fontWeight: '600',
-                                                        background: isPending ? 'rgba(245, 158, 11, 0.15)' : 
-                                                                    pref.status === 'ACCEPTED' ? 'rgba(22, 163, 74, 0.15)' : 
-                                                                    pref.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.15)' : 
+                                                        background: isPending ? 'rgba(245, 158, 11, 0.15)' :
+                                                            pref.status === 'ACCEPTED' ? 'rgba(22, 163, 74, 0.15)' :
+                                                                pref.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.15)' :
                                                                     pref.status === 'REASSIGNED' ? 'rgba(14, 165, 168, 0.15)' : 'rgba(100, 116, 139, 0.15)',
-                                                        color: isPending ? 'var(--accent-amber)' : 
-                                                               pref.status === 'ACCEPTED' ? 'var(--accent-emerald)' : 
-                                                               pref.status === 'REJECTED' ? 'var(--accent-rose)' : 
-                                                               pref.status === 'REASSIGNED' ? 'var(--accent-primary)' : 'var(--text-muted)'
+                                                        color: isPending ? 'var(--accent-amber)' :
+                                                            pref.status === 'ACCEPTED' ? 'var(--accent-emerald)' :
+                                                                pref.status === 'REJECTED' ? 'var(--accent-rose)' :
+                                                                    pref.status === 'REASSIGNED' ? 'var(--accent-primary)' : 'var(--text-muted)'
                                                     }}>
                                                         {pref.status?.replace(/_/g, ' ')}
                                                     </span>
@@ -513,7 +528,7 @@ export default function WorkerCaseDetailPage({ params }) {
                             {caseDetail.profileSnapshot?.latitude && caseDetail.profileSnapshot?.longitude && (
                                 <div style={{ marginTop: '20px' }}>
                                     <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>🗺️ Nearby Referrals Map (click hospital marker to select)</h4>
-                                    <LeafletMap 
+                                    <LeafletMap
                                         patientLat={caseDetail.profileSnapshot.latitude}
                                         patientLng={caseDetail.profileSnapshot.longitude}
                                         patientName={caseDetail.profileSnapshot.name}
@@ -526,7 +541,6 @@ export default function WorkerCaseDetailPage({ params }) {
                             {/* Nearby / Recommended Hospitals */}
                             <div style={{ marginTop: '24px' }} id="hospital-selection">
                                 <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>🏥 Select Referral Hospital</h4>
-                                
                                 {/* Hospital Search Bar */}
                                 <div style={{ marginBottom: '12px' }}>
                                     <input
@@ -538,7 +552,6 @@ export default function WorkerCaseDetailPage({ params }) {
                                         style={{ width: '100%' }}
                                     />
                                 </div>
-                                
                                 {/* Assignment Reason */}
                                 <div style={{ marginBottom: '16px' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '6px' }}>
@@ -665,8 +678,12 @@ export default function WorkerCaseDetailPage({ params }) {
                                         <option value="VIEWED">Viewed</option>
                                         <option value="CONTACTED">Contacted Patient</option>
                                         <option value="REFERRED">Referred to Clinic</option>
+                                        <option value="HOSPITAL_ASSIGNED">Hospital Assigned</option>
+                                        <option value="IN_TRANSIT">In Transit</option>
+                                        <option value="ADMITTED">Admitted</option>
                                         <option value="FOLLOW_UP_NEEDED">Follow-up Needed</option>
-                                        <option value="RESOLVED">Resolved</option>
+                                        <option value="COMPLETED">Completed</option>
+                                        <option value="CANCELLED">Cancelled</option>
                                     </select>
                                     <button type="submit" className="btn btn-primary" disabled={isSubmittingStatus}>
                                         {isSubmittingStatus ? 'Saving...' : 'Save'}
