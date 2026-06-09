@@ -1,5 +1,5 @@
 {
   "name": "Error",
-  "message": "TEST FAILED: Test 11: Denied properly for outside district",
-  "stack": "Error: TEST FAILED: Test 11: Denied properly for outside district\n    at assert (D:\\WebDev\\Hackathon\\AIBuildFest\\MatriSense\\backend\\src\\mcp\\referral\\scripts\\smokeTest.js:13:15)\n    at runTests (D:\\WebDev\\Hackathon\\AIBuildFest\\MatriSense\\backend\\src\\mcp\\referral\\scripts\\smokeTest.js:155:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
+  "message": "TEST FAILED: Test 1: Should find 2 hospitals in Dhaka",
+  "stack": "Error: TEST FAILED: Test 1: Should find 2 hospitals in Dhaka\n    at assert (D:\\WebDev\\Hackathon\\AIBuildFest\\MatriSense\\backend\\src\\mcp\\referral\\scripts\\smokeTest.js:14:15)\n    at runTests (D:\\WebDev\\Hackathon\\AIBuildFest\\MatriSense\\backend\\src\\mcp\\referral\\scripts\\smokeTest.js:86:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)"
 }

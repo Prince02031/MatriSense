@@ -2,6 +2,7 @@ const { GoogleGenAI } = require('@google/genai');
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 const TriageSession = require('../models/TriageSession');
 const Patient = require('../models/Patient');
@@ -94,7 +95,8 @@ const toolDeclarations = [
         sessionId: { type: 'STRING', description: 'The official triage session ID' },
         district: { type: 'STRING', description: 'The district to search in (e.g., Dhaka)' },
         upazila: { type: 'STRING', description: 'Optional upazila to filter by' },
-        serviceNeeded: { type: 'STRING', enum: ["ANC", "EMERGENCY", "DELIVERY", "GENERAL_MATERNAL"], description: 'Optional service category filter' }
+        serviceNeeded: { type: 'STRING', enum: ["ANC", "EMERGENCY", "DELIVERY", "GENERAL_MATERNAL"], description: 'Optional service category filter' },
+        limit: { type: 'INTEGER', description: 'Maximum number of options to return (default is 5)' }
       },
       required: ['sessionId', 'district']
     }
@@ -125,6 +127,129 @@ const toolDeclarations = [
     }
   }
 ];
+
+/**
+ * Maps Gemini chat history format to OpenAI-compatible messages array.
+ */
+function mapGeminiHistoryToOpenAi(contents) {
+  const openAiMessages = [];
+  let toolCallCounter = 1;
+  let activeToolCallIds = [];
+
+  for (const turn of contents) {
+    if (turn.role === 'user') {
+      const text = turn.parts.map(p => p.text).join('\n');
+      openAiMessages.push({ role: 'user', content: text });
+    } 
+    else if (turn.role === 'model') {
+      const text = turn.parts.map(p => p.text || '').join('\n').trim();
+      const toolCalls = [];
+      activeToolCallIds = [];
+
+      for (const part of turn.parts) {
+        if (part.functionCall) {
+          const callId = `call_${toolCallCounter++}`;
+          activeToolCallIds.push({ name: part.functionCall.name, id: callId });
+          toolCalls.push({
+            id: callId,
+            type: 'function',
+            function: {
+              name: part.functionCall.name,
+              arguments: JSON.stringify(part.functionCall.args)
+            }
+          });
+        }
+      }
+
+      const assistantMsg = { role: 'assistant' };
+      if (text) assistantMsg.content = text;
+      if (toolCalls.length > 0) assistantMsg.tool_calls = toolCalls;
+      openAiMessages.push(assistantMsg);
+    } 
+    else if (turn.role === 'tool') {
+      for (const part of turn.parts) {
+        if (part.functionResponse) {
+          const name = part.functionResponse.name;
+          const match = activeToolCallIds.find(tc => tc.name === name);
+          const toolCallId = match ? match.id : `call_unknown_${toolCallCounter++}`;
+          
+          openAiMessages.push({
+            role: 'tool',
+            tool_call_id: toolCallId,
+            name: name,
+            content: JSON.stringify(part.functionResponse.response)
+          });
+        }
+      }
+    }
+  }
+
+  return openAiMessages;
+}
+
+/**
+ * Converts Gemini tool declarations parameters from uppercase (STRING, OBJECT) to lowercase (string, object).
+ */
+function convertGeminiToOpenAiTools(geminiTools) {
+  return geminiTools.map(t => {
+    const cleanParams = JSON.parse(
+      JSON.stringify(t.parameters)
+        .replace(/"type":\s*"OBJECT"/g, '"type": "object"')
+        .replace(/"type":\s*"STRING"/g, '"type": "string"')
+        .replace(/"type":\s*"ARRAY"/g, '"type": "array"')
+        .replace(/"type":\s*"NUMBER"/g, '"type": "number"')
+        .replace(/"type":\s*"BOOLEAN"/g, '"type": "boolean"')
+    );
+    return {
+      type: 'function',
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: cleanParams
+      }
+    };
+  });
+}
+
+/**
+ * Calls the local Ollama service using Axios and OpenAI-compatible endpoints.
+ */
+const callLlmLocal = async ({ messages, tools, systemInstruction, temperature, responseFormat }) => {
+  const baseUrl = process.env.LOCAL_LLM_URL || 'http://localhost:11434';
+  const model = process.env.LOCAL_LLM_MODEL || 'qwen2.5:3b';
+  const temp = temperature !== undefined ? temperature : 0.1;
+
+  const formattedMessages = [
+    { role: 'system', content: systemInstruction },
+    ...messages
+  ];
+
+  const payload = {
+    model: model,
+    messages: formattedMessages,
+    temperature: temp
+  };
+
+  if (tools && tools.length > 0) {
+    payload.tools = tools;
+  }
+  if (responseFormat) {
+    payload.response_format = responseFormat;
+  }
+
+  try {
+    const res = await axios.post(`${baseUrl}/v1/chat/completions`, payload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 90000
+    });
+
+    const choice = res.data?.choices?.[0]?.message;
+    return choice;
+  } catch (err) {
+    console.error('[AgenticAssistant Local] Ollama call failed:', err.message);
+    throw err;
+  }
+};
 
 /**
  * Executes the Agentic RAG Flow for Guided Care Assistant
@@ -222,26 +347,79 @@ INSTRUCTIONS:
   let loop = true;
   const executedTools = [];
 
-  while (loop && rounds < maxRounds && callCount < maxCalls) {
-    console.log(`[AgenticAssistant] [Round ${rounds + 1}] Invoking Gemini to select tools...`);
-    
-    const response = await client.models.generateContent({
-      model: modelName,
-      contents: contents,
-      config: {
-        systemInstruction,
-        tools: [{ functionDeclarations: toolDeclarations }]
-      }
-    });
+  const providerType = process.env.LLM_PROVIDER || 'gemini';
 
-    const calls = response.functionCalls || [];
+  while (loop && rounds < maxRounds && callCount < maxCalls) {
+    console.log(`[AgenticAssistant] [Round ${rounds + 1}] Invoking LLM (${providerType}) to select tools...`);
+    
+    let calls = [];
+    let assistantText = '';
+    let responseParts = [];
+
+    if (providerType === 'local') {
+      const openAiMessages = mapGeminiHistoryToOpenAi(contents);
+      const openAiTools = convertGeminiToOpenAiTools(toolDeclarations);
+      
+      const choice = await callLlmLocal({
+        messages: openAiMessages,
+        tools: openAiTools,
+        systemInstruction,
+        temperature: 0.1
+      });
+
+      assistantText = choice?.content || '';
+      if (choice?.tool_calls && choice.tool_calls.length > 0) {
+        for (const tc of choice.tool_calls) {
+          let parsedArgs = {};
+          try {
+            parsedArgs = typeof tc.function.arguments === 'string' 
+              ? JSON.parse(tc.function.arguments) 
+              : tc.function.arguments;
+          } catch (e) {
+            console.error('[AgenticAssistant Local] Failed to parse tool arguments:', tc.function.arguments);
+          }
+          calls.push({
+            name: tc.function.name,
+            args: parsedArgs
+          });
+          responseParts.push({
+            functionCall: {
+              name: tc.function.name,
+              args: parsedArgs
+            }
+          });
+        }
+      }
+      if (assistantText) {
+        responseParts.unshift({ text: assistantText });
+      }
+    } else {
+      const response = await client.models.generateContent({
+        model: modelName,
+        contents: contents,
+        config: {
+          systemInstruction,
+          tools: [{ functionDeclarations: toolDeclarations }]
+        }
+      });
+
+      const geminiCalls = response.functionCalls || [];
+      for (const gc of geminiCalls) {
+        calls.push({
+          name: gc.name,
+          args: gc.args
+        });
+      }
+      responseParts = response?.candidates?.[0]?.content?.parts || [];
+    }
+
     if (calls.length > 0) {
-      console.log(`[AgenticAssistant] Gemini selected tools:`, calls.map(c => c.name));
+      console.log(`[AgenticAssistant] LLM selected tools:`, calls.map(c => c.name));
 
       // Push model's turn to history
       contents.push({
         role: 'model',
-        parts: response.candidates[0].content.parts
+        parts: responseParts
       });
 
       for (const call of calls) {
@@ -340,6 +518,7 @@ INSTRUCTIONS:
               upazila: args.upazila || undefined,
               patientLocation,
               serviceNeeded: args.serviceNeeded || undefined,
+              limit: args.limit || 5,
               requester: { role: 'PATIENT', patientId: patientId }
             });
             toolResults.referralData = resultPayload;
@@ -387,7 +566,7 @@ INSTRUCTIONS:
       }
       rounds++;
     } else {
-      console.log(`[AgenticAssistant] Gemini did not call any tools (or is done).`);
+      console.log(`[AgenticAssistant] LLM did not call any tools (or is done).`);
       loop = false;
     }
   }
@@ -468,22 +647,39 @@ INSTRUCTIONS:
     language: language || 'bn'
   });
 
-  const finalResponse = await client.models.generateContent({
-    model: modelName,
-    contents: [
-      { role: 'user', parts: [{ text: finalUserPrompt }] }
-    ],
-    config: {
+  let rawText;
+  if (providerType === 'local') {
+    const choice = await callLlmLocal({
+      messages: [{ role: 'user', content: finalUserPrompt }],
       systemInstruction: finalSystemInstruction,
       temperature: 0.2,
-      responseMimeType: 'application/json',
-      responseSchema: assistantSchema
+      responseFormat: { type: 'json_object' }
+    });
+    rawText = choice?.content;
+    if (rawText) {
+      rawText = rawText.trim();
+      if (rawText.startsWith('```')) {
+        rawText = rawText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      }
     }
-  });
+  } else {
+    const finalResponse = await client.models.generateContent({
+      model: modelName,
+      contents: [
+        { role: 'user', parts: [{ text: finalUserPrompt }] }
+      ],
+      config: {
+        systemInstruction: finalSystemInstruction,
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+        responseSchema: assistantSchema
+      }
+    });
+    rawText = finalResponse.text ?? finalResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+  }
 
-  const rawText = finalResponse.text ?? finalResponse.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!rawText) {
-    throw new Error('Received empty response from Gemini in Phase 2');
+    throw new Error(`Received empty response from ${providerType === 'local' ? 'Local LLM' : 'Gemini'} in Phase 2`);
   }
 
   let assistantOutput = JSON.parse(rawText);

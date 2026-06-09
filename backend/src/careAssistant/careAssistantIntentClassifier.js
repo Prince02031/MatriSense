@@ -366,6 +366,7 @@ const INTENT_KEYWORDS = {
       'কোন হাসপাতালে যাবো',
       'কোন হাসপাতালে যেতে পারি',
       'কাছাকাছি কোন হাসপাতাল',
+      'কাছাকাছি হাসপাতাল',
       'নিকটস্থ হাসপাতাল',
       'কোন স্বাস্থ্যকেন্দ্র ভালো হবে',
       'কোন হাসপাতাল ভালো',
@@ -373,9 +374,19 @@ const INTENT_KEYWORDS = {
       'কোন হাসপাতাল বেছে নেব',
       'হাসপাতালের তালিকা',
       'হাসপাতাল দেখান',
+      'হাসপাতাল দেখাও',
       'হাসপাতাল খুঁজে দিন',
       'কোন হাসপাতাল সুপারিশ',
-      // Romanized
+      'কোনটায় যাওয়া উচিত',
+      'কোনটাতে যাওয়া উচিত',
+      'কোনটায় যাওয়া ভালো',
+      'কোনটায় যাবো',
+      'হাসপাতাল আছে',
+      'হাসপাতাল কোনটা',
+      'হাসপাতাল গুলোর',
+      'হাসপাতালগুলো',
+      'কোথায় যাব',
+      // Romanized / English
       'kon hospital',
       'hospital ache',
       'kache hospital',
@@ -383,7 +394,15 @@ const INTENT_KEYWORDS = {
       'hospital options',
       'nearby hospital',
       'kothay jabo',
-      'hospital suggest'
+      'hospital suggest',
+      'kon tay jawa uchit',
+      'kontay jawa uchit',
+      'kontate jawa uchit',
+      'hospital gula',
+      'hospital dekhao',
+      'hospital dekhaw',
+      'hospital show',
+      'hospital map'
     ],
     weight: 2.0
   },
@@ -423,6 +442,7 @@ const INTENT_KEYWORDS = {
   [INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE]: {
     // Patient explicitly selecting or confirming a hospital preference
     patterns: [
+      'এই hospital',
       'এই হাসপাতালটা পছন্দ করি',
       'এটা পছন্দ হিসেবে পাঠাও',
       'এই হাসপাতাল বেছে নিতে পারি',
@@ -437,6 +457,17 @@ const INTENT_KEYWORDS = {
       'এখানে যাবো',
       'এই হাসপাতাল ঠিক করো',
       'prefer করি',
+      'অনুরোধ পাঠান',
+      'অনুরোধ পাঠাও',
+      'রেফারেল অনুরোধ',
+      'পছন্দ করুন',
+      '১ম',
+      '২য়',
+      '২য়',
+      '৩য়',
+      '৩য়',
+      '৪র্থ',
+      '৫ম',
       // Romanized
       'ei hospital pochondo',
       'select koro',

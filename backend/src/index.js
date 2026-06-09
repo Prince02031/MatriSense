@@ -45,6 +45,7 @@ const patientRoutes = require('./routes/patient.routes');
 const docsRoutes = require('./routes/docs.routes');
 const DocsConfig = require('./models/DocsConfig');
 
+const mongoose = require('mongoose');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -70,9 +71,20 @@ const initializeDocsConfig = async () => {
     console.error('Error initializing DocsConfig:', error);
   }
 };
-initializeDocsConfig();
 
-app.use(cors({ origin: '*' }));
+// Run initialization once mongoose is connected
+if (mongoose.connection.readyState === 1) {
+  initializeDocsConfig();
+} else {
+  mongoose.connection.once('connected', () => {
+    initializeDocsConfig();
+  });
+}
+
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
@@ -85,6 +97,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/triage', triageRoutes);
 app.use('/api/speech', speechRoutes);
 app.use('/api/patients', patientRoutes);
+app.use('/api/patient/referrals', require('./routes/patientReferrals.routes'));
 app.use('/api/worker', require('./routes/worker.routes'));
 app.use('/api/referral-notes', require('./routes/referral.routes'));
 app.use('/api/referrals', require('./routes/referral.routes'));

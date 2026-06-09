@@ -234,7 +234,8 @@ const buildAssistantPrompt = ({
     previousHistory = [],
     safetyBoundaries = null,
     recommendedAssistantTone = null,
-    documentUploadSummary = null
+    documentUploadSummary = null,
+    injectedHospitalOptions = null
   } = officialTriageContext;
 
   // 0. Detect user intent
@@ -325,7 +326,10 @@ You MUST respond with a valid JSON object matching the following structure:
     : 'None collected';
 
   const formattedRagCards = Array.isArray(retrievedCards) && retrievedCards.length > 0
-    ? retrievedCards.map((card, idx) => `[Card ${idx + 1}] Topic: ${card.topic}\nContent (Bangla): ${card.contentBn || 'N/A'}\nContent (English): ${card.contentEn || 'N/A'}`).join('\n\n')
+    ? retrievedCards.map((card, idx) => {
+        const targetContent = (language === 'en') ? (card.contentEn || card.contentBn) : (card.contentBn || card.contentEn);
+        return `[Card ${idx + 1}] Topic: ${card.topic}\nContent: ${targetContent || 'N/A'}`;
+      }).join('\n\n')
     : 'No matching care card guidance found in DB.';
 
   const formattedPatientProfile = patientProfile
@@ -363,6 +367,7 @@ Follow-up Questionnaire Responses:
 ${formattedFollowUps}
 Assigned Hospital/Referral info: ${assignedHospital || 'Not explicitly designated'}
 Worker Case Status: ${workerStatus}
+${injectedHospitalOptions ? `\n=== INJECTED NEARBY HOSPITAL OPTIONS ===\n${injectedHospitalOptions}\n` : ''}
 
 === SAFETY BOUNDARIES AND TONE ===
 Tone Direction: ${recommendedAssistantTone || 'informative_and_reassuring'}
