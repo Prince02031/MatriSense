@@ -235,3 +235,34 @@ export async function updateReferralStatusFromWorker(sessionId, status, note = '
     return handleResponse(res);
 }
 
+export async function getReferralNotesForSession(sessionId) {
+    if (!sessionId) throw new Error("Local Error: Cannot fetch referral notes without Session ID.");
+    const res = await fetch(`${apiBase}/api/referrals/${sessionId}`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
+// 9. Request GPS coordinates from the patient
+export async function requestPatientGPS(sessionId) {
+    if (!sessionId) throw new Error("Local Error: Cannot request GPS without Session ID.");
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/request-gps`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+    });
+    return handleResponse(res);
+}
+
+// 10. Deliver hospital referral to the patient
+export async function deliverReferralToPatient(sessionId, hospitalId, reason) {
+    if (!sessionId) throw new Error("Local Error: Cannot deliver referral without Session ID.");
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/deliver-referral`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ hospitalId, reason })
+    });
+    return handleResponse(res);
+}
+

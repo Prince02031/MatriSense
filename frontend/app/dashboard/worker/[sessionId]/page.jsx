@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { getWorkerCase, getAuditLog, setFollowUpDate, assignHospitalToCase, getReferralPreferences, acceptReferralPreference, rejectReferralPreference, addReferralNote, updateReferralStatusFromWorker, getAssignmentHistory, getReferralNotesForSession } from '../../../api/workerApi';
+import { getWorkerCase, getAuditLog, setFollowUpDate, assignHospitalToCase, getReferralPreferences, acceptReferralPreference, rejectReferralPreference, addReferralNote, updateReferralStatusFromWorker, getAssignmentHistory, getReferralNotesForSession, requestPatientGPS, deliverReferralToPatient } from '../../../api/workerApi';
 import { getNearbyHospitals } from '../../../api/hospitalApi';
 // Old imports from referralApi replaced with workerApi imports
 import { useAuth } from '../../../context/AuthContext';
@@ -105,14 +105,9 @@ export default function WorkerCaseDetailPage({ params }) {
         }, 100);
     };
 
-    const requestPatientGPS = async () => {
+    const handleRequestGPS = async () => {
         try {
-            const resp = await fetch(`/api/worker/cases/${sessionId}/request-gps`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const data = await resp.json();
+            const data = await requestPatientGPS(sessionId);
             if (data.success) {
                 alert('✓ GPS request sent to patient. They will be prompted to share location on their dashboard.');
             } else {
@@ -120,7 +115,7 @@ export default function WorkerCaseDetailPage({ params }) {
             }
         } catch (err) {
             console.error('Failed to request GPS:', err);
-            alert('Failed to send GPS request');
+            alert('Failed to send GPS request: ' + err.message);
         }
     };
 
@@ -136,26 +131,17 @@ export default function WorkerCaseDetailPage({ params }) {
 
         try {
             setDeliveringReferral(true);
-            const data = await fetch(`/api/worker/cases/${sessionId}/deliver-referral`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    hospitalId: caseDetail.assignedHospitalId,
-                    reason: caseDetail.hospitalAssignmentHistory?.[0]?.reason || 'Hospital referral'
-                })
-            });
+            const result = await deliverReferralToPatient(
+                sessionId,
+                caseDetail.assignedHospitalId,
+                caseDetail.hospitalAssignmentHistory?.[0]?.reason || 'Hospital referral'
+            );
 
-            if (!data.ok) {
-                throw new Error('Failed to deliver referral');
-            }
-
-            const result = await data.json();
             alert('✓ Referral delivered to patient! They will receive a notification.');
             await fetchDetail();
         } catch (err) {
             console.error('Failed to deliver referral:', err);
-            alert('Failed to deliver referral to patient');
+            alert('Failed to deliver referral to patient: ' + err.message);
         } finally {
             setDeliveringReferral(false);
         }
@@ -290,10 +276,10 @@ export default function WorkerCaseDetailPage({ params }) {
             const data = await addReferralNote(sessionId, combinedNote, actionTaken, status);
 
             if (data.success) {
-                setNotes([data.note, ...notes]);
                 setNoteText('');
                 setReferredTo('');
                 setNoteFollowUpDate('');
+                await fetchDetail();
             }
         } catch (err) {
             console.error(err);
@@ -375,7 +361,7 @@ export default function WorkerCaseDetailPage({ params }) {
                                         <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>Patient Location Snapshot</h4>
                                         {!caseDetail.profileSnapshot?.latitude && (
                                             <button
-                                                onClick={requestPatientGPS}
+                                                onClick={handleRequestGPS}
                                                 style={{
                                                     padding: '4px 10px',
                                                     fontSize: '0.75rem',

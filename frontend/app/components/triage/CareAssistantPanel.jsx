@@ -356,6 +356,10 @@ export default function CareAssistantPanel({ sessionId, riskLevel, isOpen, onClo
   // Check if user has started talking yet (to customize quick prompts behavior)
   const hasUserMessaged = messages.some(msg => msg.role === 'user');
 
+  // Retrieve dynamic quick replies from the last assistant message
+  const lastAssistantMessage = [...messages].reverse().find(msg => msg.role === 'assistant');
+  const activeQuickReplies = lastAssistantMessage?.quickReplies || [];
+
   if (!isOpen) return null;
 
   return (
@@ -535,10 +539,10 @@ export default function CareAssistantPanel({ sessionId, riskLevel, isOpen, onClo
 
         {/* Action Panel: Suggestions & Input */}
         <div className="border-t bg-white px-6 py-4 space-y-3">
-          {/* Quick replies - visible prominently before first user message or as guidance prompts */}
-          {(!hasUserMessaged || messages.length <= 2) && (
+          {/* Quick replies - show activeQuickReplies if present, else default quickPrompts before first user message */}
+          {((activeQuickReplies && activeQuickReplies.length > 0) || (!hasUserMessaged || messages.length <= 2)) && (
             <div className="flex gap-2 overflow-x-auto py-1 scrollbar-none whitespace-nowrap" role="group" aria-label="Suggested Prompts">
-              {quickPrompts.map((prompt, idx) => (
+              {(activeQuickReplies && activeQuickReplies.length > 0 ? activeQuickReplies : quickPrompts).map((prompt, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(prompt)}

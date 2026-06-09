@@ -180,26 +180,72 @@ const processReferralIntent = async (intent, context, req) => {
 
   // 3. CREATE_PATIENT_REFERRAL_PREFERENCE
   if (intent === INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE) {
-    if (!hospitalId || !patientId) return { handled: false };
+    let finalHospitalId = hospitalId;
+    let finalHospitalName = '';
+
+    if (!finalHospitalId && patientId && req.body && req.body.message) {
+      const msgLower = req.body.message.toLowerCase();
+      let selectIndex = -1;
+      if (msgLower.includes('১ম') || msgLower.includes('১') || msgLower.includes('প্রথম') || msgLower.includes('1st') || msgLower.includes('first') || msgLower.includes('one')) {
+        selectIndex = 0;
+      } else if (msgLower.includes('২য়') || msgLower.includes('২য়') || msgLower.includes('২') || msgLower.includes('দ্বিতীয়') || msgLower.includes('2nd') || msgLower.includes('second') || msgLower.includes('two')) {
+        selectIndex = 1;
+      } else if (msgLower.includes('৩য়') || msgLower.includes('৩য়') || msgLower.includes('৩') || msgLower.includes('তৃতীয়') || msgLower.includes('3rd') || msgLower.includes('third') || msgLower.includes('three')) {
+        selectIndex = 2;
+      } else if (msgLower.includes('৪র্থ') || msgLower.includes('৪') || msgLower.includes('চতুর্থ') || msgLower.includes('4th') || msgLower.includes('fourth') || msgLower.includes('four')) {
+        selectIndex = 3;
+      } else if (msgLower.includes('৫ম') || msgLower.includes('৫') || msgLower.includes('পঞ্চম') || msgLower.includes('5th') || msgLower.includes('fifth') || msgLower.includes('five')) {
+        selectIndex = 4;
+      }
+
+      if (selectIndex >= 0) {
+        try {
+          const referralData = await referralFindHospitalOptions({
+            sessionId,
+            patientId,
+            riskLevel: context.riskLevel,
+            district: context.patientProfile?.district || null,
+            upazila: context.patientProfile?.upazilaOrThana || null,
+            limit: 5,
+            requester
+          });
+
+          if (referralData && referralData.options && referralData.options[selectIndex]) {
+            const h = referralData.options[selectIndex];
+            finalHospitalId = h.id || h._id;
+            finalHospitalName = h.name;
+          }
+        } catch (err) {
+          console.error('[ReferralIntent] CREATE auto-resolve error:', err.message);
+        }
+      }
+    }
+
+    if (!finalHospitalId || !patientId) return { handled: false };
     try {
       const prefResult = await referralCreatePatientPreference({
         sessionId,
         patientId,
-        hospitalId,
+        hospitalId: finalHospitalId,
         reason: reason || 'Patient-selected via Guided Care Assistant',
         requester
       });
 
+      const replyBn = finalHospitalName
+        ? `আপনার পছন্দ সংরক্ষিত হয়েছে। আপনি "${finalHospitalName}" বেছে নিয়েছেন। আপনার স্বাস্থ্যকর্মী এটি পর্যালোচনা করে নিশ্চিত করবেন।`
+        : "আপনার পছন্দ সংরক্ষিত হয়েছে। আপনার স্বাস্থ্যকর্মী এটি পর্যালোচনা করে নিশ্চিত করবেন।";
+
       return {
         handled: true,
         payload: {
-          reply: "আপনার পছন্দ সংরক্ষিত হয়েছে। আপনার স্বাস্থ্যকর্মী এটি পর্যালোচনা করে নিশ্চিত করবেন।",
+          reply: replyBn,
           quickReplies: ['আমার referral status কী?', 'হাসপাতালে কীভাবে যাবো?', 'স্বাস্থ্যকর্মীকে জানাতে চাই'],
           safetyDisclaimer: `কোনো জটিলতার জন্য দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`,
           ui: {
             type: 'REFERRAL_STATUS_CARD',
             riskLevel,
             preferenceStatus: prefResult.status,
+            assignedHospital: finalHospitalName ? { name: finalHospitalName } : null,
             canCreatePreference: false,
             disclaimer
           },
@@ -257,13 +303,45 @@ const processReferralIntent = async (intent, context, req) => {
         riskLevel: context.riskLevel,
         district: context.patientProfile?.district || null,
         upazila: context.patientProfile?.upazilaOrThana || null,
+        limit: 5,
         requester
       });
 
+      const quickReplies = [];
+      if (referralData && referralData.options && referralData.options.length > 0) {
+        if (referralData.options.length >= 1) quickReplies.push('১ম হাসপাতালটি পছন্দ করুন');
+        if (referralData.options.length >= 2) quickReplies.push('২য় হাসপাতালটি পছন্দ করুন');
+        if (referralData.options.length >= 3) quickReplies.push('৩য় হাসপাতালটি পছন্দ করুন');
+      }
+      quickReplies.push('আমার রেফারেল স্ট্যাটাস কী?');
+      quickReplies.push('হাসপাতালে কী প্রস্তুতি নেব?');
+
+      let optionsListText = '';
+      if (referralData && referralData.options && referralData.options.length > 0) {
+        optionsListText = referralData.options.map((h, i) => `${i+1}. ${h.name} (${h.upazilaOrThana || h.district})`).join('\n');
+      } else {
+        optionsListText = 'কোনো হাসপাতাল পাওয়া যায়নি।';
+      }
+
+      const replyText = `আপনার জন্য নিকটস্থ হাসপাতালগুলোর তালিকা নিচে দেওয়া হলো:\n\n${optionsListText}\n\nআপনি চাইলে উপরোক্ত যেকোনো একটি হাসপাতাল পছন্দ করতে পারেন বা রেফারেলের জন্য অনুরোধ জানাতে পারেন।`;
+
       return {
-        handled: false,
-        referralData,
-        mcpDebug: { toolsCalled: ['referral_find_hospital_options'] }
+        handled: true,
+        payload: {
+          reply: replyText,
+          quickReplies,
+          safetyDisclaimer: `কোনো জটিলতার জন্য দ্রুত রেজিস্টার্ড চিকিৎসকের পরামর্শ নিন।`,
+          ui: {
+            type: 'REFERRAL_OPTIONS_MAP',
+            riskLevel,
+            patientLocation: referralData.patientLocationSummary,
+            locationSource: referralData.locationSource,
+            options: referralData.options,
+            canCreatePreference: true,
+            disclaimer
+          },
+          mcpDebug: { toolsCalled: ['referral_find_hospital_options'] }
+        }
       };
     } catch (err) {
       console.error('[ReferralIntent] ASK_HOSPITAL_OPTIONS fetch error:', err.message);

@@ -314,3 +314,46 @@ exports.requestGPS = async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
+
+/**
+ * POST /api/worker/cases/:sessionId/deliver-referral
+ * Health worker delivers a referral to patient dashboard.
+ * Creates a Referral record and logs action in audit timeline.
+ */
+exports.deliverReferral = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const { hospitalId, reason } = req.body;
+        const Referral = require('../models/Referral');
+
+        if (!hospitalId || !reason) {
+            return res.status(400).json({ success: false, error: 'hospitalId and reason are required' });
+        }
+
+        const session = await TriageSession.findById(sessionId);
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+
+        if (!session.patientId) {
+            return res.status(400).json({ success: false, error: 'Triage session has no associated patient' });
+        }
+
+        // Create the referral record
+        const referral = await Referral.create({
+            triageSessionId: sessionId,
+            patientId: session.patientId,
+            hospitalId,
+            reason,
+            deliveredAt: new Date()
+        });
+
+        // Audit the delivery action
+        await logAction(sessionId, `Referral delivered to patient for hospital: ${hospitalId}`, 'WORKER', { hospitalId, reason });
+
+        res.status(201).json({ success: true, referralId: referral._id });
+    } catch (error) {
+        console.error('[Worker Controller] Failed to deliver referral:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to deliver referral' });
+    }
+};

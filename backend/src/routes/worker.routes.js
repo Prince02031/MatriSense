@@ -82,4 +82,7 @@ router.put('/cases/:sessionId/hospital', workerController.assignHospital);
 // POST /api/worker/cases/:sessionId/request-gps — request GPS from patient
 router.post('/cases/:sessionId/request-gps', workerController.requestGPS);
 
+// POST /api/worker/cases/:sessionId/deliver-referral — deliver referral to patient
+router.post('/cases/:sessionId/deliver-referral', workerController.deliverReferral);
+
 module.exports = router;

@@ -2,6 +2,7 @@ const ReferralNote = require('../models/ReferralNote');
 const TriageSession = require('../models/TriageSession');
 const ReferralPreference = require('../models/ReferralPreference');
 const Patient = require('../models/Patient');
+const Hospital = require('../models/Hospital');
 const { logAction } = require('../services/auditService');
 
 const {
@@ -207,5 +208,113 @@ exports.getAssignmentHistory = async (req, res) => {
         res.json({ success: true, history: result.history });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+/**
+ * GET /api/patient/referrals
+ * Get list of referrals delivered to the patient dashboard
+ */
+exports.getPatientReferrals = async (req, res) => {
+    try {
+        const Patient = require('../models/Patient');
+        const Referral = require('../models/Referral');
+
+        // Find patient profile for the logged in user
+        const patient = await Patient.findOne({ userId: req.user._id });
+        if (!patient) {
+            return res.json({ success: true, referrals: [], notificationCount: 0 });
+        }
+
+        // Fetch all referrals, populating hospital information
+        const referrals = await Referral.find({ patientId: patient._id })
+            .populate('hospitalId')
+            .sort({ deliveredAt: -1 });
+
+        const formatted = referrals.map(r => ({
+            _id: r._id,
+            hospitalName: r.hospitalId?.name || 'Unknown Hospital',
+            hospitalType: r.hospitalId?.type || 'N/A',
+            hospitalAddress: r.hospitalId?.address || 'N/A',
+            hospitalPhone: r.hospitalId?.phone || '',
+            hospitalServices: r.hospitalId?.services || [],
+            reason: r.reason,
+            deliveredAt: r.deliveredAt,
+            readAt: r.readAt,
+            acknowledgedAt: r.acknowledgedAt
+        }));
+
+        const notificationCount = referrals.filter(r => !r.readAt).length;
+
+        res.json({ success: true, referrals: formatted, notificationCount });
+    } catch (error) {
+        console.error('[Referral Controller] Failed to get patient referrals:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to fetch referrals' });
+    }
+};
+
+/**
+ * PUT /api/patient/referrals/:referralId/read
+ * Mark a referral as read
+ */
+exports.markReferralAsRead = async (req, res) => {
+    try {
+        const Patient = require('../models/Patient');
+        const Referral = require('../models/Referral');
+
+        const patient = await Patient.findOne({ userId: req.user._id });
+        if (!patient) {
+            return res.status(404).json({ success: false, error: 'Patient profile not found' });
+        }
+
+        const referral = await Referral.findOneAndUpdate(
+            { _id: req.params.referralId, patientId: patient._id },
+            { readAt: new Date() },
+            { new: true }
+        );
+
+        if (!referral) {
+            return res.status(404).json({ success: false, error: 'Referral not found or unauthorized' });
+        }
+
+        res.json({ success: true, message: 'Referral marked as read' });
+    } catch (error) {
+        console.error('[Referral Controller] Failed to mark referral as read:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to mark read' });
+    }
+};
+
+/**
+ * PUT /api/patient/referrals/:referralId/acknowledge
+ * Acknowledge referral by patient
+ */
+exports.acknowledgeReferral = async (req, res) => {
+    try {
+        const Patient = require('../models/Patient');
+        const Referral = require('../models/Referral');
+        const { logAction } = require('../services/auditService');
+
+        const patient = await Patient.findOne({ userId: req.user._id });
+        if (!patient) {
+            return res.status(404).json({ success: false, error: 'Patient profile not found' });
+        }
+
+        const referral = await Referral.findOneAndUpdate(
+            { _id: req.params.referralId, patientId: patient._id },
+            { acknowledgedAt: new Date(), readAt: new Date() }, // Auto mark read if acknowledged
+            { new: true }
+        );
+
+        if (!referral) {
+            return res.status(404).json({ success: false, error: 'Referral not found or unauthorized' });
+        }
+
+        // Log audit action for patient acknowledging referral
+        await logAction(referral.triageSessionId, 'Referral acknowledged by patient', 'PATIENT', { referralId: referral._id });
+
+        res.json({ success: true, message: 'Referral acknowledged successfully' });
+    } catch (error) {
+        console.error('[Referral Controller] Failed to acknowledge referral:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to acknowledge referral' });
     }
 };

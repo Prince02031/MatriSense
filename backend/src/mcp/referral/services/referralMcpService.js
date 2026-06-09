@@ -110,6 +110,18 @@ async function referralFindHospitalOptions(input) {
         let hospitals;
         try {
             hospitals = await Hospital.find(query).lean();
+            
+            // Fallback: If target district has fewer than the requested limit,
+            // and a limit was explicitly provided, fetch and append active hospitals 
+            // from other districts to fill the gap.
+            if (limit && hospitals.length < limit && district) {
+                const otherQuery = { 
+                    isActive: true, 
+                    district: { $not: new RegExp(`^${district}$`, 'i') } 
+                };
+                const otherHospitals = await Hospital.find(otherQuery).lean();
+                hospitals = hospitals.concat(otherHospitals);
+            }
         } catch (err) {
             // Return safe fallback if DB breaks
             return { options: [], llmSummary: "Temporary issue connecting to hospital database.", safetyNote: "Please try again later." };
@@ -122,6 +134,15 @@ async function referralFindHospitalOptions(input) {
             let isEmergency = Array.isArray(h.services) && h.services.some(s => s.toLowerCase().includes('emerg'));
             let suitabilityLevel = 1;
             let matchReason = [];
+
+            // Same district suitability bonus
+            const isSameDistrict = district && h.district && h.district.toLowerCase() === district.toLowerCase();
+            if (isSameDistrict) {
+                suitabilityLevel += 3;
+                matchReason.push('Same District');
+            } else {
+                matchReason.push('Neighboring District');
+            }
 
             if (risk === 'HIGH' && isEmergency) { suitabilityLevel += 2; matchReason.push('Emergency Capable'); }
             if (serviceNeeded && Array.isArray(h.services) && h.services.includes(serviceNeeded)) { suitabilityLevel += 1; matchReason.push('Matches Service Need'); }
