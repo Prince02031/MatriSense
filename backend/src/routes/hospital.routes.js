@@ -705,9 +705,13 @@ const ensureFaraziHospital = async () => {
         isActive: true
       });
       console.log('Auto-seeded Farazi Hospital, Banasree.');
+    } else if (exists.longitude !== 90.43625) {
+      exists.longitude = 90.43625;
+      await exists.save();
+      console.log('Corrected Farazi Hospital longitude in database to 90.43625.');
     }
   } catch (err) {
-    console.error('Failed to auto-seed Farazi Hospital:', err);
+    console.error('Failed to auto-seed/correct Farazi Hospital:', err);
   }
 };
 
@@ -759,21 +763,15 @@ router.get('/nearby', async (req, res) => {
       const R = 6371; // Earth's radius in km
 
       hospitals = hospitals.map(hosp => {
-        let distance;
-        if (hosp.name.includes('Farazi Hospital')) {
-          // Force a realistic distance for the demo since longitude 80.43625 is faked
-          distance = 2.45;
-        } else {
-          const dLat = (hosp.latitude - lat) * Math.PI / 180;
-          const dLng = (hosp.longitude - lng) * Math.PI / 180;
-          const a = 
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat * Math.PI / 180) * Math.cos(hosp.latitude * Math.PI / 180) * 
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
-          
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          distance = parseFloat((R * c).toFixed(2));
-        }
+        const dLat = (hosp.latitude - lat) * Math.PI / 180;
+        const dLng = (hosp.longitude - lng) * Math.PI / 180;
+        const a = 
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat * Math.PI / 180) * Math.cos(hosp.latitude * Math.PI / 180) * 
+          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = parseFloat((R * c).toFixed(2));
 
         return {
           ...hosp.toObject(),
@@ -783,15 +781,13 @@ router.get('/nearby', async (req, res) => {
 
       // Filter by max distance and sort by closest
       hospitals = hospitals
-        .filter(h => h.distance <= parseFloat(maxDistanceKm) || h.name.includes('Farazi Hospital'))
+        .filter(h => h.distance <= parseFloat(maxDistanceKm))
         .sort((a, b) => a.distance - b.distance);
     } else if (district) {
       // Fallback: Filter by district if GPS not provided
-      hospitals = hospitals.filter(h => h.district.toLowerCase() === district.toLowerCase() || h.name.includes('Farazi Hospital'));
+      hospitals = hospitals.filter(h => h.district.toLowerCase() === district.toLowerCase());
       hospitals = hospitals.map(h => ({ ...h.toObject(), distance: null }));
     } else {
-      // Always include Farazi Hospital
-      hospitals = hospitals.filter(h => h.name.includes('Farazi Hospital'));
       hospitals = hospitals.map(h => ({ ...h.toObject(), distance: null }));
     }
 

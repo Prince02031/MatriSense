@@ -84,9 +84,8 @@ export default function LeafletMap({ patientLat, patientLng, patientName, hospit
 
         hospitals.forEach(h => {
             if (h.latitude && h.longitude) {
-                // Adjust coordinates visually on map for Farazi Hospital to keep map focus in Dhaka Banasree
                 const renderLat = h.latitude;
-                const renderLng = h.name.includes('Farazi Hospital') && h.longitude === 80.43625 ? 90.43625 : h.longitude;
+                const renderLng = h.longitude;
 
                 const marker = L.marker([renderLat, renderLng], { icon: hospitalIcon })
                     .addTo(map);
@@ -134,7 +133,7 @@ export default function LeafletMap({ patientLat, patientLng, patientName, hospit
         hospitals.forEach(h => {
             if (h.latitude && h.longitude) {
                 const renderLat = h.latitude;
-                const renderLng = h.name.includes('Farazi Hospital') && h.longitude === 80.43625 ? 90.43625 : h.longitude;
+                const renderLng = h.longitude;
                 coordinates.push([renderLat, renderLng]);
             }
         });

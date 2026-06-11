@@ -258,12 +258,7 @@ async function referral_find_hospital_options(input) {
     // Distance calculation
     let distanceKm = null;
     if (effectiveLat != null && effectiveLng != null && h.latitude && h.longitude) {
-      // Demo override for Farazi Hospital with faked longitude
-      if (h.name.includes('Farazi Hospital') && Math.abs(h.longitude - 80.43625) < 0.01) {
-        distanceKm = 2.45;
-      } else {
-        distanceKm = haversineKm(effectiveLat, effectiveLng, h.latitude, h.longitude);
-      }
+      distanceKm = haversineKm(effectiveLat, effectiveLng, h.latitude, h.longitude);
     }
 
     const inSameUpazila = effectiveUpazila

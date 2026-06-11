@@ -35,7 +35,7 @@ export const DOCS_SECTIONS = {
     id: 'hero',
     title: 'MatriSense',
     subtitle: 'AI-Assisted Maternal Triage for Rural Bangladesh',
-    stage: 'Working MVP',
+    stage: 'Final Round Version',
     pitch: 'A Bangla-first mobile platform that brings AI-powered maternal health screening to rural clinics, enabling early risk detection and smart referrals to appropriate facilities.',
     ctas: [
       { text: 'Demo Flow', href: '#judge-demo' },
@@ -51,12 +51,12 @@ export const DOCS_SECTIONS = {
       {
         heading: 'Problem',
         content:
-          'In rural Bangladesh, pregnant mothers lack access to trained health professionals who can reliably screen for maternal danger signs. Many critical conditions go undetected until emergencies occur, leading to preventable maternal deaths (MMR: ~173/100k live births). Health workers at clinics exist but have limited training and inconsistent decision-making frameworks.'
+          'Rural pregnant mothers in Bangladesh face two critical challenges: physical access constraints/transport delays in reaching field-level health workers, and cultural taboos/social stigma around discussing early pregnancy complications. Furthermore, regional maternal databases are sparse and disconnected, meaning workers receive clinical case information too late.'
       },
       {
         heading: 'Solution',
         content:
-          'MatriSense is a Bangla-first mobile platform that uses AI to extract and confirm maternal symptoms in natural language, applies evidence-based rule engines to triage risk, integrates rule-aware RAG guidance, validates output through safety guardrails, and empowers trained health workers to make final medical/referral decisions. All data is stored locally and encrypted.'
+          'MatriSense is a Bangla-first mobile platform offering a private reporting channel to bypass stigma and physical isolation. Applying evidence-based rule engines to triage risk, it sends safety-validated guidance to patients, generates structured maternal data to enrich regional databases, and enables health workers to proactively monitor and manage referrals.'
       },
       {
         heading: 'Why Now',
@@ -66,37 +66,37 @@ export const DOCS_SECTIONS = {
       {
         heading: 'Target Users',
         content:
-          'Primary: Pregnant mothers and family in rural areas. Secondary: Community health workers, clinic nurses, midwives, and maternal health coordinators at NGOs and district hospitals. Tertiary: Policy makers and maternal health program coordinators.'
+          'Primary: Pregnant mothers in underserved rural communities needing private, voice symptom checks. Secondary: frontline health workers needing structured dashboards to extend outreach. Tertiary: public health coordinators and NGO managers.'
       },
       {
         heading: 'Market Opportunity',
         content:
-          'Bangladesh: ~3.5M annual births, 50%+ in rural areas. Addressable: ~1.8M mothers/year in underserved rural clinics. Adjacent: India, Nepal, West Africa (280M+ births/year). B2B model: NGOs, clinics, district hospitals, government health programs. Estimated TAM: $15-50M/year in South Asia.'
+          'Bangladesh: ~3.5M annual births, 50%+ in rural areas. Addressable: ~1.8M mothers/year in underserved rural clinics. Adjacent: South Asia and low-resource settings. B2B model: NGOs, clinics, district hospitals, government health programs.'
       },
       {
         heading: 'Business Model',
         content:
-          'B2B SaaS: Clinics and NGOs pay per active worker or per triage (tiered pricing). Clinic features unlocked: health worker dashboards, case history, referral audit logs. Device licensing: One-time fee for offline Android tablets. Government contracts: Maternal health program integration. Data partnerships: Anonymized, aggregated data for research (not PII).'
+          'B2B SaaS: Clinics and NGOs pay per active worker or per triage. Clinic features unlocked: health worker dashboards, case history, referral audit logs. Device licensing for offline Android tablets. Government contracts for maternal health program integration.'
       },
       {
         heading: 'Go-To-Market',
         content:
-          'Phase 1 (Months 1-3): Partner with 1-2 pilot NGOs in Sylhet/Chittagong, gather feedback, stabilize MVP. Phase 2 (Months 4-6): Scale to 5+ NGOs, train health workers, build track record. Phase 3 (Months 7+): Approach district hospitals and government programs, explore international expansion to India/Nepal.'
+          'Phase 1: Demonstrate working MVP with synthetic demo data and validated scenarios. Phase 2: Pilot with local clinic/NGO programs using supervised health worker feedback. Phase 3: Add vector/graph RAG, regional referrals, and structured telemetry.'
       },
       {
         heading: 'Competition',
         content:
-          'Mhealth.app (symptom checker, not workflow-integrated), IntraHealth (mhealth apps but not AI-driven), WHO digital toolkits (static, not personalized), local clinic software (doesn\'t address triage). MatriSense differentiator: Bangla-first, rule-aware RAG, safety-validated, offline-capable, health-worker-integrated.'
+          'Many health apps provide general health information or generic symptom checking. MatriSense differs because it is focused on maternal danger-sign triage, Bangla voice reporting, rule-aware RAG, post-triage chatbot referrals, and integrated clinic dashboards.'
       },
       {
         heading: 'Unique Advantage',
         content:
-          'Combination: Bangla-first LLM extraction + rule-based clinical triage + RAG guidance + safety validation + health worker empowerment (no AI-alone decisions). Evidence-based workflows reduce decision fatigue and support human judgment. Open data model supports interoperability and future enhancements.'
+          'Combination: Bangla symptom extraction + rule-based clinical triage + RAG guidance + safety validation + health worker empowerment (no AI-alone decisions). Evidence-based workflows reduce decision fatigue and support human judgment.'
       },
       {
         heading: 'Vision',
         content:
-          '2-3 years: MatriSense is deployed in 500+ rural clinics across Bangladesh, Ghana, and India, improving maternal outcomes for 2M+ mothers annually. 5+ years: Integrated into government maternal health surveillance systems, with offline Android support and GraphRAG for cross-case learning.'
+          'MatriSense aims to become the trusted maternal triage and referral coordination layer for underserved communities—empowering mothers to report early, enabling workers to prioritize, and helping clinics track follow-up.'
       }
     ]
   },
@@ -106,24 +106,24 @@ export const DOCS_SECTIONS = {
     title: 'Product Overview',
     sections: [
       {
-        heading: 'Mother Side',
+        heading: 'Mother Side & Interactive Chatbot Referral',
         content:
-          'Mothers (or family members) access MatriSense via browser or Android app. They log in or create a quick account, fill in basic profile (name, age, weeks pregnant, contact), then report symptoms in natural Bangla. The app asks confirmation questions, then shows triage result (Low/Medium/High risk) with clear guidance on next steps (home care, clinic visit, or urgent referral).'
+          'Mothers report symptoms in Bangla (voice/text) and receive a rule-based triage risk level (LOW/MEDIUM/HIGH). Post-triage, they chat with the Guided Care Assistant to search nearby hospitals, view them on a map, and submit preferred clinics.'
       },
       {
-        heading: 'Health Worker Side',
+        heading: 'Health Worker Side & Outreach',
         content:
-          'Health workers at clinics log into a dashboard showing all active cases (patients who started triage). They can filter by risk level, district, or status. Clicking a case opens full details: symptoms, AI extraction explanation, confirmation answers, triage result, patient location/GPS, and a notes/status update panel. Workers can assign hospitals, update case status, or close resolved cases.'
+          'Field-level health workers see structured triage profiles, danger-sign justifications, matching RAG evidence, and patient-preferred clinics. Workers update case status, assign/reassign hospitals, and document referral logs.'
       },
       {
-        heading: 'Referral / Clinic Side',
+        heading: 'Security, Consent & Privacy',
         content:
-          'When a case is HIGH risk or requires specialist care, the health worker assigns a hospital from a seeded regional database and clicks "Deliver Referral to Patient." The patient receives a notification showing hospital name, type, address, phone, and services. Patients can acknowledge the referral or call the hospital directly. Health workers see status updates in real time.'
+          'Optional consent-based uploads for medical documents and certificates (not used to train models). Voice recording transcribes on-the-fly, discarding audio files immediately. Strict role-based JWT access isolates all panels.'
       },
       {
-        heading: 'Regional Referral System',
+        heading: 'Regional Referral Workflow',
         content:
-          'MatriSense includes a seeded hospital database (currently Bangladesh divisions/districts). Health workers filter hospitals by district or search nearby (GPS-based). They manually assign the best hospital for each case. All assignments are logged for audit and learning. Future: Machine-learning-based allocation hints based on capacity and outcomes.'
+          'Driven by custom Model Context Protocol (MCP) servers linking MongoDB. Enables hospital lookup, district/upazila filtering, and audit log capturing. Frontend map client calculates distances and capacities.'
       }
     ]
   },
@@ -135,60 +135,53 @@ export const DOCS_SECTIONS = {
       {
         category: 'Patient Input',
         items: [
-          { name: 'Patient Profile', status: 'implemented' },
-          { name: 'Bangla Symptom Input', status: 'implemented' },
+          { name: 'Patient Profile Management', status: 'implemented' },
+          { name: 'Bangla Voice/Text Symptom Input', status: 'implemented' },
           { name: 'GPS Location Capture', status: 'implemented' }
         ]
       },
       {
-        category: 'AI Processing',
+        category: 'AI & Triage Processing',
         items: [
           { name: 'AI Symptom Extraction', status: 'implemented' },
-          { name: 'Follow-up Questions', status: 'implemented' },
-          { name: 'LLM Explanation', status: 'implemented' }
+          { name: 'Follow-up Questions Selection', status: 'implemented' },
+          { name: 'LLM Result Explanation', status: 'implemented' },
+          { name: 'Interactive Chatbot Referrals', status: 'implemented' }
         ]
       },
       {
-        category: 'Clinical Triage',
+        category: 'Clinical Safety',
         items: [
-          { name: 'Rule-Based Triage', status: 'implemented' },
+          { name: 'Deterministic Rule Engine', status: 'implemented' },
           { name: 'Rule-Aware RAG Guidance', status: 'implemented' },
-          { name: 'Safety Validator', status: 'implemented' }
-        ]
-      },
-      {
-        category: 'Patient Output',
-        items: [
-          { name: 'Triage Result Display', status: 'implemented' },
-          { name: 'Patient History', status: 'implemented' },
-          { name: 'Referral Notifications', status: 'implemented' }
+          { name: 'Output Safety Validator', status: 'implemented' }
         ]
       },
       {
         category: 'Health Worker Tools',
         items: [
-          { name: 'Case Dashboard', status: 'implemented' },
+          { name: 'Case Dashboard & List', status: 'implemented' },
           { name: 'Case Detail View', status: 'implemented' },
-          { name: 'Status Updates', status: 'implemented' },
-          { name: 'Hospital Assignment', status: 'implemented' },
-          { name: 'Health Worker Verification', status: 'implemented' }
+          { name: 'Status & Note updates', status: 'implemented' },
+          { name: 'Hospital Assignment & Map', status: 'implemented' },
+          { name: 'Health Worker Verification Portal', status: 'implemented' }
         ]
       },
       {
-        category: 'Data Management',
+        category: 'Data Management & MCP',
         items: [
           { name: 'Patient Document Upload', status: 'implemented' },
-          { name: 'Profile Verification', status: 'implemented' },
-          { name: 'Regional Referral Tracking', status: 'implemented' },
-          { name: 'Hospital Database', status: 'implemented' }
+          { name: 'Model Context Protocol (MCP) Servers', status: 'implemented' },
+          { name: 'Local LLM / Ollama Setup', status: 'implemented' },
+          { name: 'Evidence Library & PDFs', status: 'implemented' }
         ]
       },
       {
-        category: 'Data Science Roadmap',
+        category: 'Future Roadmap',
         items: [
-          { name: 'Vector RAG', status: 'in_progress' },
-          { name: 'GraphRAG', status: 'planned' },
-          { name: 'Analytics Dashboard', status: 'planned' }
+          { name: 'Hybrid Graph RAG Extension', status: 'in_progress' },
+          { name: 'SMS & Outbound Telephony Alerts', status: 'planned' },
+          { name: 'Program Monitoring Analytics', status: 'planned' }
         ]
       }
     ]
@@ -198,41 +191,49 @@ export const DOCS_SECTIONS = {
     id: 'architecture',
     title: 'Architecture',
     description:
-      'MatriSense follows a layered architecture: Frontend (Next.js React) → API Layer (Express.js) → Service Layer (AI, RAG, Safety) → Data Layer (MongoDB).',
+      'MatriSense follows a layered architecture: Frontend (Next.js React) → API Layer (Express.js) → MCP Server Layer → Service Layer (AI, RAG, Safety) → Data Layer (MongoDB).',
     layers: [
       {
         name: 'Frontend (Next.js)',
         components: [
-          'Patient Triage UI (Bangla input, confirmation)',
-          'Health Worker Dashboard (case list, detail)',
-          'Patient Dashboard (history, referrals)',
-          'Admin Panel (docs, user management)'
+          'Patient Triage Panel (Bangla voice/text reporting, confirmation)',
+          '8-Step Guided Care Assistant (chat, maps, clinic selector)',
+          'Health Worker Dashboard (coverage zones, case inbox, referral updates)',
+          'Admin Control Console (docs scheduling, worker verification reviews)'
         ]
       },
       {
         name: 'API Layer (Express.js)',
         components: [
-          'Auth Routes (JWT, role-based)',
-          'Triage Routes (symptom submission, result)',
-          'Patient Routes (profile, history)',
-          'Worker Routes (case management)',
-          'Hospital Routes (search, assignment)',
-          'Docs Routes (public status, admin config)'
+          'Auth Endpoints (JWT security, roles validation)',
+          'Triage Endpoints (symptom parsing, follow-ups, results)',
+          'Referral & Hospital Endpoints (seeded lookup, assignment updates)',
+          'Docs Config Endpoints (visibility settings, server stats)'
+        ]
+      },
+      {
+        name: 'Model Context Protocol (MCP) Servers',
+        components: [
+          'Case Context MCP Server (pregnancy profile, symptoms, care limits)',
+          'Referral MCP Server (hospital coordinates, capacities, patient preferences)'
         ]
       },
       {
         name: 'Service Layer',
         components: [
-          'LLM Client (Gemini API or local fallback)',
-          'Rule Engine (clinical decision logic)',
-          'RAG Service (rule-aware guidance retrieval)',
-          'Safety Validator (guardrails, output validation)',
-          'Speech Service (optional Bangla audio input)'
+          'LLM Client Orchestrator (structured Gemini schemas, Ollama/Qwen fallback)',
+          'Deterministic Rule Engine (danger signs tables, low/medium/high classifications)',
+          'Hybrid RAG Engine (metadata-filtered vector search, Graph RAG traversal)',
+          'Safety Validator (regex filters, fallback templates, disclaimer checks)'
         ]
       },
       {
         name: 'Data Layer (MongoDB)',
-        components: ['User', 'Patient', 'TriageSession', 'Hospital', 'DocsConfig', 'AuditLog']
+        components: [
+          'Collections: Users, Patients, TriageSessions, ReferralNotes, Seeded Hospitals',
+          'Vector Knowledge Store (embedded guidelines with metadata filters)',
+          'Knowledge Graph Store (symptom-risk-rule-source entity linkages)'
+        ]
       }
     ]
   },

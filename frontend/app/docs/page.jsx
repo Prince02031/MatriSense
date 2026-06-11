@@ -70,7 +70,7 @@ const renderMarkdown = (text, onImageClick) => {
     // Image tag: ![Alt Text](url)
     if (trimmed.startsWith('![') && trimmed.includes('](')) {
       const altMatch = trimmed.match(/!\[([^\]]*)\]/);
-      const srcMatch = trimmed.match(/\(([^)]+)\)/);
+      const srcMatch = trimmed.match(/\]\(([^)]+)\)/);
       if (srcMatch) {
         const altText = altMatch ? altMatch[1] : 'Image';
         const srcUrl = srcMatch[1];
@@ -208,6 +208,13 @@ export default function DocsPage() {
   const [markdownSections, setMarkdownSections] = useState({});
   const [evidence, setEvidence] = useState([]);
   const [zoomedImage, setZoomedImage] = useState(null);
+  const [isDoubleZoomed, setIsDoubleZoomed] = useState(false);
+
+  useEffect(() => {
+    if (!zoomedImage) {
+      setIsDoubleZoomed(false);
+    }
+  }, [zoomedImage]);
 
   useEffect(() => {
     const loadDocsData = async () => {
@@ -404,7 +411,7 @@ export default function DocsPage() {
           )}
 
           {gridCards.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className={`grid grid-cols-1 ${gridCards.length === 1 || activeSection === 'architecture' ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-6`}>
               {gridCards.map((card, idx) => (
                 <div key={idx} className="bg-white rounded-2xl border border-teal-100/50 shadow-sm p-6 hover:shadow-md hover:border-teal-200 transition duration-300 flex flex-col justify-between">
                   <div className="space-y-4">
@@ -840,20 +847,45 @@ export default function DocsPage() {
         >
           {/* Close button */}
           <button 
-            className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xl transition-all duration-200 border border-white/10 active:scale-95 shadow-lg"
+            className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center text-xl transition-all duration-200 border border-white/10 active:scale-95 shadow-lg z-50"
             onClick={() => setZoomedImage(null)}
           >
             ✕
           </button>
           
-          <div className="max-w-5xl max-h-[85vh] w-full flex items-center justify-center p-2" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={zoomedImage.src} 
-              alt={zoomedImage.alt}
-              className="max-w-full max-h-[80vh] rounded-3xl object-contain shadow-2xl border border-white/15 animate-scaleUp cursor-default"
-            />
+          <div 
+            className={`w-full max-h-[85vh] flex items-center justify-center p-2 transition-all duration-300 ${
+              isDoubleZoomed ? 'overflow-auto cursor-zoom-out scrollbar-thin scrollbar-thumb-teal-800' : ''
+            }`} 
+            onClick={(e) => {
+              if (isDoubleZoomed) {
+                setIsDoubleZoomed(false);
+              } else {
+                setZoomedImage(null);
+              }
+            }}
+          >
+            <div 
+              className={`flex items-center justify-center transition-all duration-300 ${
+                isDoubleZoomed ? 'min-w-max min-h-max p-10' : 'max-w-5xl w-full'
+              }`}
+            >
+              <img 
+                src={zoomedImage.src} 
+                alt={zoomedImage.alt}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDoubleZoomed(!isDoubleZoomed);
+                }}
+                className={`rounded-3xl shadow-2xl border border-white/15 transition-all duration-300 select-none ${
+                  isDoubleZoomed 
+                    ? 'w-[1800px] max-w-none h-auto cursor-zoom-out' 
+                    : 'max-w-full max-h-[80vh] object-contain cursor-zoom-in animate-scaleUp'
+                }`}
+              />
+            </div>
           </div>
-          {zoomedImage.alt && (
+          {zoomedImage.alt && !isDoubleZoomed && (
             <p className="mt-4 text-xs font-black text-teal-300 uppercase tracking-widest bg-teal-900/50 px-4 py-2 rounded-full border border-teal-800/40">
               {zoomedImage.alt}
             </p>
