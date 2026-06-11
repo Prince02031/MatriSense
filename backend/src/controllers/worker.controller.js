@@ -3,6 +3,7 @@ const AuditLog = require('../models/AuditLog');
 const { logAction } = require('../services/auditService');
 
 exports.getCases = async (req, res) => {
+    console.log('\n[FETCH SOURCE] Requesting Patient List from SERVER (Database)');
     try {
         const { limit = 20, skip = 0, filterMode = 'all', sortBy = 'risk', district = '' } = req.query;
         const pageLimit = Math.min(parseInt(limit), 100); // Max 100 per page
@@ -70,8 +71,8 @@ exports.getCases = async (req, res) => {
 
         // Get total count
         let totalCount;
-        let countMatch = filterMode === 'latest-patient' 
-            ? { patientId: { $ne: null }, status: { $nin: inProgressStatuses } } 
+        let countMatch = filterMode === 'latest-patient'
+            ? { patientId: { $ne: null }, status: { $nin: inProgressStatuses } }
             : { status: { $nin: inProgressStatuses } };
         if (district && district.trim()) {
             const districtRegex = new RegExp(district.trim(), 'i');
@@ -356,4 +357,13 @@ exports.deliverReferral = async (req, res) => {
         console.error('[Worker Controller] Failed to deliver referral:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to deliver referral' });
     }
+};
+
+/**
+ * Simple logging endpoint for frontend to report fetch source in backend terminal
+ */
+exports.logFetchSource = (req, res) => {
+    const { source } = req.query;
+    console.log(`\n[FETCH SOURCE] Patient List loaded from ${source?.toUpperCase() || 'UNKNOWN'}`);
+    res.status(200).json({ success: true });
 };

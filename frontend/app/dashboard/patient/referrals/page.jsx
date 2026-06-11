@@ -9,7 +9,7 @@ import ProtectedRoute from '../../../components/ProtectedRoute';
 const translateHospitalType = (type, lang) => {
     if (!type) return lang === 'bn' ? 'প্রযোজ্য নয়' : 'N/A';
     if (lang !== 'bn') return type.replace(/_/g, ' ');
-    
+
     const types = {
         'COMMUNITY_CLINIC': 'কমিউনিটি ক্লিনিক',
         'UPAZILA_HEALTH_COMPLEX': 'উপজেলা স্বাস্থ্য কমপ্লেক্স',
