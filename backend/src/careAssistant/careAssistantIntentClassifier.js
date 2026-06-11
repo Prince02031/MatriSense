@@ -468,12 +468,22 @@ const INTENT_KEYWORDS = {
       '৩য়',
       '৪র্থ',
       '৫ম',
-      // Romanized
+      // Romanized / Phonetic
       'ei hospital pochondo',
       'select koro',
       'confirm koro',
       'ekhane jabo',
-      'prefer'
+      'prefer',
+      'prothom',
+      'protom',
+      'first',
+      '1st',
+      'second',
+      '2nd',
+      'dtitiyo',
+      'third',
+      '3rd',
+      'tritiyo'
     ],
     weight: 2.0
   },

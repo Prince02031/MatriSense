@@ -231,7 +231,10 @@ exports.getPatientReferrals = async (req, res) => {
             .populate('hospitalId')
             .sort({ deliveredAt: -1 });
 
-        const formatted = referrals.map(r => ({
+        // Filter out referrals with missing/deleted hospitals
+        const validReferrals = referrals.filter(r => r.hospitalId !== null);
+
+        const formatted = validReferrals.map(r => ({
             _id: r._id,
             hospitalName: r.hospitalId?.name || 'Unknown Hospital',
             hospitalType: r.hospitalId?.type || 'N/A',
@@ -244,7 +247,7 @@ exports.getPatientReferrals = async (req, res) => {
             acknowledgedAt: r.acknowledgedAt
         }));
 
-        const notificationCount = referrals.filter(r => !r.readAt).length;
+        const notificationCount = validReferrals.filter(r => !r.readAt).length;
 
         res.json({ success: true, referrals: formatted, notificationCount });
     } catch (error) {
