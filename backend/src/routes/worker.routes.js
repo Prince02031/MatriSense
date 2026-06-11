@@ -61,6 +61,9 @@ router.get(
 // GET /api/worker/cases — list all cases with pagination and filtering
 router.get('/cases', workerController.getCases);
 
+// GET /api/worker/log-fetch-source — log fetch source from frontend
+router.get('/log-fetch-source', workerController.logFetchSource);
+
 // GET /api/worker/cases/:sessionId — get case detail
 router.get('/cases/:sessionId', workerController.getCaseDetail);
 

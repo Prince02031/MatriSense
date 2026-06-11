@@ -16,7 +16,7 @@ function FollowUpPageContent() {
   const { isAuthenticated } = useAuth();
 
   const sessionId = searchParams.get('sessionId');
-  
+
   const [followUpQuestions, setFollowUpQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -30,7 +30,7 @@ function FollowUpPageContent() {
       setError('No session ID provided');
       return;
     }
-    
+
     fetchFollowUpQuestions();
   }, [sessionId]);
 
@@ -38,7 +38,7 @@ function FollowUpPageContent() {
     try {
       setLoading(true);
       const data = await getFollowUpQuestions(sessionId);
-      
+
       setFollowUpQuestions(data.questions || []);
       const initialAnswers = {};
       data.questions?.forEach((q) => {
@@ -76,14 +76,14 @@ function FollowUpPageContent() {
     try {
       setSubmitting(true);
       setError(null);
-      
+
       const answersArray = Object.entries(answers).map(([questionId, value]) => ({
         questionId,
         value
       }));
-      
+
       await submitFollowUpAnswers(sessionId, answersArray);
-      
+
       // Redirect to triage run (which will calculate decision)
       router.push(`/triage/result?sessionId=${sessionId}`);
     } catch (err) {
@@ -141,7 +141,7 @@ function FollowUpPageContent() {
               আপনার অবস্থা আরও ভালভাবে বুঝতে কয়েকটি প্রশ্ন জিজ্ঞাসা করছি।
             </p>
           </div>
-          <ReadAloudButton 
+          <ReadAloudButton
             text="আপনার অবস্থা আরও ভালভাবে বুঝতে কয়েকটি প্রশ্ন জিজ্ঞাসা করছি। প্রতিটি প্রশ্নের উত্তর দিন এবং তারপর পরবর্তী প্রশ্নে যান।"
             label="শুনুন"
             language="bn-BD"
@@ -179,7 +179,7 @@ function FollowUpPageContent() {
             <h2 className="text-xl font-semibold text-slate-900 flex-1">
               {currentQuestion?.questionBn || currentQuestion?.textBn || currentQuestion?.text}
             </h2>
-            <ReadAloudButton 
+            <ReadAloudButton
               text={currentQuestion?.questionBn || currentQuestion?.textBn || currentQuestion?.text}
               label="শুনুন"
               language="bn-BD"
@@ -189,24 +189,61 @@ function FollowUpPageContent() {
 
           {/* Answer Options */}
           <div className="mt-6 space-y-3">
-            {currentQuestion?.options?.map((option) => (
-              <label
-                key={option.value}
-                className="flex items-center gap-4 rounded-lg border border-slate-200 px-4 py-3 cursor-pointer hover:bg-slate-50"
-              >
-                <input
-                  type="radio"
-                  name={`question-${currentQuestion.id}`}
-                  value={option.value}
-                  checked={answers[currentQuestion.id] === option.value}
-                  onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
-                  className="w-4 h-4"
-                />
-                <span className="text-slate-900">
-                  {option.labelBn || option.label}
-                </span>
-              </label>
-            ))}
+            {currentQuestion?.options
+              ?.filter((opt) => opt.value !== 'unknown')
+              .map((option) => {
+                const rawAnswer = answers[currentQuestion.id];
+                const isSelected = String(rawAnswer) === String(option.value);
+                const isNegative = option.value === false || option.labelBn === 'না' || option.label === 'No';
+
+                let activeClasses = 'bg-white border-slate-100 hover:border-slate-300 hover:bg-slate-50 shadow-sm';
+                let textClasses = 'text-slate-600';
+
+                if (isSelected) {
+                  if (isNegative) {
+                    activeClasses = 'bg-rose-400 border-rose-500 shadow-lg scale-[1.05] ring-4 ring-rose-100';
+                    textClasses = 'text-white';
+                  } else {
+                    activeClasses = 'bg-matri-teal border-teal-600 shadow-lg scale-[1.05] ring-4 ring-teal-100';
+                    textClasses = 'text-white';
+                  }
+                }
+
+                return (
+                  <label
+                    key={option.value}
+                    className={`relative flex items-center justify-center p-8 rounded-2xl border-2 transition-all cursor-pointer text-center group ${activeClasses}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`question-${currentQuestion.id}`}
+                      value={String(option.value)}
+                      checked={isSelected}
+                      onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+
+                    <span className={`text-2xl font-bold transition-colors ${textClasses}`}>
+                      {option.labelBn || option.label}
+                    </span>
+
+                    {/* Corner Indicator */}
+                    {isSelected && (
+                      <div className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center shadow-inner bg-white/20`}>
+                        {isNegative ? (
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+                  </label>
+                );
+              })}
           </div>
         </div>
 
