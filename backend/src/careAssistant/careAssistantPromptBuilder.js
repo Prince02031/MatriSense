@@ -185,7 +185,8 @@ const buildIntentSpecificGuidance = (intent, riskLevel, hasRecentFullWarning) =>
 
     case INTENT_TYPES.CREATE_PATIENT_REFERRAL_PREFERENCE:
       return `Mother wants to select or confirm a hospital as her preference.
-- NOTE: The API has already handled saving the preference before reaching the LLM. Your job is to confirm it warmly.
+- CHECK: If INJECTED_REFERRAL_STATUS in the context shows "PENDING_WORKER_REVIEW" or a preference is already noted, confirm it warmly.
+- IF NOT SAVED YET: Use the "referral_create_patient_preference" tool first to save the selection, then confirm.
 - RESPOND: "আপনার পছন্দের হাসপাতাল আমরা নথিভুক্ত করেছি। আপনার স্বাস্থ্যকর্মী এটি পর্যালোচনা করে চূড়ান্ত রেফারেল নিশ্চিত করবেন।"
 - NEVER confirm it as a final assignment.
 - quickReplies: referral status, transport help, next checkup.`;
@@ -327,9 +328,9 @@ You MUST respond with a valid JSON object matching the following structure:
 
   const formattedRagCards = Array.isArray(retrievedCards) && retrievedCards.length > 0
     ? retrievedCards.map((card, idx) => {
-        const targetContent = (language === 'en') ? (card.contentEn || card.contentBn) : (card.contentBn || card.contentEn);
-        return `[Card ${idx + 1}] Topic: ${card.topic}\nContent: ${targetContent || 'N/A'}`;
-      }).join('\n\n')
+      const targetContent = (language === 'en') ? (card.contentEn || card.contentBn) : (card.contentBn || card.contentEn);
+      return `[Card ${idx + 1}] Topic: ${card.topic}\nContent: ${targetContent || 'N/A'}`;
+    }).join('\n\n')
     : 'No matching care card guidance found in DB.';
 
   const formattedPatientProfile = patientProfile

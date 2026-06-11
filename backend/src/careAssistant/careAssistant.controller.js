@@ -186,11 +186,11 @@ const processReferralIntent = async (intent, context, req) => {
     if (!finalHospitalId && patientId && req.body && req.body.message) {
       const msgLower = req.body.message.toLowerCase();
       let selectIndex = -1;
-      if (msgLower.includes('১ম') || msgLower.includes('১') || msgLower.includes('প্রথম') || msgLower.includes('1st') || msgLower.includes('first') || msgLower.includes('one')) {
+      if (msgLower.includes('১ম') || msgLower.includes('১') || msgLower.includes('প্রথম') || msgLower.includes('prothom') || msgLower.includes('protom') || msgLower.includes('1st') || msgLower.includes('first') || msgLower.includes('one')) {
         selectIndex = 0;
-      } else if (msgLower.includes('২য়') || msgLower.includes('২য়') || msgLower.includes('২') || msgLower.includes('দ্বিতীয়') || msgLower.includes('2nd') || msgLower.includes('second') || msgLower.includes('two')) {
+      } else if (msgLower.includes('২য়') || msgLower.includes('২য়') || msgLower.includes('২') || msgLower.includes('দ্বিতীয়') || msgLower.includes('second') || msgLower.includes('dtitiyo') || msgLower.includes('2nd') || msgLower.includes('two')) {
         selectIndex = 1;
-      } else if (msgLower.includes('৩য়') || msgLower.includes('৩য়') || msgLower.includes('৩') || msgLower.includes('তৃতীয়') || msgLower.includes('3rd') || msgLower.includes('third') || msgLower.includes('three')) {
+      } else if (msgLower.includes('৩য়') || msgLower.includes('৩য়') || msgLower.includes('৩') || msgLower.includes('তৃতীয়') || msgLower.includes('third') || msgLower.includes('tritiyo') || msgLower.includes('3rd') || msgLower.includes('three')) {
         selectIndex = 2;
       } else if (msgLower.includes('৪র্থ') || msgLower.includes('৪') || msgLower.includes('চতুর্থ') || msgLower.includes('4th') || msgLower.includes('fourth') || msgLower.includes('four')) {
         selectIndex = 3;
@@ -318,7 +318,7 @@ const processReferralIntent = async (intent, context, req) => {
 
       let optionsListText = '';
       if (referralData && referralData.options && referralData.options.length > 0) {
-        optionsListText = referralData.options.map((h, i) => `${i+1}. ${h.name} (${h.upazilaOrThana || h.district})`).join('\n');
+        optionsListText = referralData.options.map((h, i) => `${i + 1}. ${h.name} (${h.upazilaOrThana || h.district})`).join('\n');
       } else {
         optionsListText = 'কোনো হাসপাতাল পাওয়া যায়নি।';
       }

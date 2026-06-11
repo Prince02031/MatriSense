@@ -1,42 +1,110 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getWorkerCases } from '../../../api/workerApi';
 import RiskBadge from '../../../components/dashboard/RiskBadge';
 import CaseStatusBadge from '../../../components/dashboard/CaseStatusBadge';
 import ProtectedRoute from '../../../components/ProtectedRoute';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function WorkerPatientListPage() {
     const router = useRouter();
+    const { user } = useAuth();
     const [patients, setPatients] = useState([]); // Grouped by patient
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [expandedPatient, setExpandedPatient] = useState(null); // which patient's sessions are open
 
-    useEffect(() => {
-        fetchAllCases();
-    }, []);
+    const isFetchingRef = useRef(false);
+    const hasInitialLoaded = useRef(false);
 
-    const fetchAllCases = async () => {
+    const getCacheKey = useCallback(() => {
+        return user?._id ? `ms_patient_list_${user._id}` : null;
+    }, [user?._id]);
+
+    const fetchAllCases = useCallback(async (isSilent = false) => {
+        if (isFetchingRef.current) return;
+        isFetchingRef.current = true;
+
         try {
-            setLoading(true);
+            if (!isSilent) setLoading(true);
+            console.info('--- Fetching Patient List from SERVER ---');
+
             // Fetch a large batch (up to 200) to ensure we get all cases for grouping
             const data = await getWorkerCases(200, 0, 'all', 'date');
 
             if (data.success) {
                 const grouped = groupByPatient(data.cases);
                 setPatients(grouped);
-                // Auto-expand first patient for convenience
-                if (grouped.length > 0) setExpandedPatient(grouped[0].patientKey);
+
+                // Update cache
+                const cacheKey = getCacheKey();
+                if (cacheKey) {
+                    localStorage.setItem(cacheKey, JSON.stringify(grouped));
+                }
+
+                // Auto-expand first patient if none expanded yet
+                setExpandedPatient(prev => {
+                    if (prev === null && grouped.length > 0) return grouped[0].patientKey;
+                    return prev;
+                });
             }
         } catch (err) {
             console.error('Failed to fetch cases:', err);
+            // Only show error if we have no data at all and it's not a background fetch
+            // In this specific UI, we don't have a separate error state variable, 
+            // but we avoid replacing valid data with nothing on background fail.
         } finally {
             setLoading(false);
+            isFetchingRef.current = false;
+            hasInitialLoaded.current = true;
         }
-    };
+    }, [getCacheKey]);
+
+    // Initial load: Cache first, then background fetch
+    useEffect(() => {
+        if (!user) return;
+
+        const cacheKey = getCacheKey();
+        if (cacheKey) {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                try {
+                    const parsed = JSON.parse(cached);
+                    setPatients(parsed);
+                    setLoading(false);
+                    console.info('--- Fetching Patient List from LOCAL STORAGE ---');
+
+                    // Ping backend to show it in backend terminal as requested
+                    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                    fetch(`${apiBase}/api/worker/log-fetch-source?source=local_storage`).catch(() => { });
+
+                    // If we had cache, we still want to refresh it silently
+                    fetchAllCases(true);
+                } catch (e) {
+                    console.error('Failed to parse cache:', e);
+                    fetchAllCases(false);
+                }
+            } else {
+                fetchAllCases(false);
+            }
+        } else {
+            fetchAllCases(false);
+        }
+    }, [user, getCacheKey, fetchAllCases]);
+
+    // Auto-refresh every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (hasInitialLoaded.current) {
+                fetchAllCases(true);
+            }
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [fetchAllCases]);
 
     /**
      * Group triage sessions by patient.

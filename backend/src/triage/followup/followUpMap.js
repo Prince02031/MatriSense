@@ -6,7 +6,6 @@
 const YES_NO_OPTIONS = [
   { labelBn: 'হ্যাঁ', value: true },
   { labelBn: 'না', value: false },
-  { labelBn: 'নিশ্চিত নই', value: 'unknown' },
 ];
 
 const SEVERITY_OPTIONS = [
