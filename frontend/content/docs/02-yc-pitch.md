@@ -1,22 +1,24 @@
 # YC-style Pitch
 
 ### Problem
-Rural pregnant mothers in Bangladesh can face delays because symptoms are often reported informally, danger signs may not be recognized early, and health workers may receive incomplete case information too late. A mother may describe headache, vomiting, bleeding, swelling, fever, breathing difficulty, or reduced fetal movement in everyday Bangla, but the urgency of those symptoms depends on pregnancy stage, known risk factors, follow-up answers, and recent care history.
+Rural pregnant mothers in Bangladesh face two critical challenges:
+1. **Access Constraints:** Physical distance and lack of transport make reaching field-level health workers difficult and delayed.
+2. **Social Stigma:** Cultural taboos and social stigma around discussing pregnancy-related problems early on discourage open communication, which often leads to severe complications by the time they finally seek help.
 
-The problem is not only lack of information. It is the lack of a structured, accessible, safety-aware communication bridge between mothers and frontline health workers.
+From a health system perspective, maternal health data in rural areas remains sparse and disconnected. Because early symptoms go unrecorded, health workers receive incomplete case information too late, hindering effective follow-up and referral coordination.
 
 ### Solution
-MatriSense is a Bangla-first AI-assisted maternal triage and referral platform. A mother reports symptoms in Bangla through text or voice, the system extracts structured symptoms, asks short follow-up questions, and builds a triage case. A rule-based danger-sign engine decides the risk level, a rule-aware RAG layer retrieves allowed care guidance, and a safety validator checks the final Bangla output before the mother sees it.
+MatriSense is a Bangla-first AI-assisted maternal triage and referral platform that solves these problems. By allowing mothers to report symptoms privately in Bangla (via text or voice), the app overcomes social stigma and physical isolation. The system instantly translates raw descriptions into structured triage profiles using an automated rule engine, providing immediate safety-validated guidance while routing high-risk cases to nearby clinics.
 
-High-risk cases appear in a health worker dashboard with the mother’s profile, symptom report, follow-up answers, matched rules, evidence, guidance shown to the patient, and referral/status controls. The final medical decision remains human-led.
+This digital interaction collects valuable, structured, privacy-preserving maternal data that enriches the sparse regional databases. Concurrently, the platform assists field-level health workers in extending their outreach, enabling them to proactively monitor, contact, and coordinate regional hospital referrals for high-risk mothers in their coverage areas.
 
 ### Why Now
 Bangla-capable LLMs, browser-based speech tools, low-cost cloud deployment, MongoDB Atlas, vector search, and mobile-friendly web apps now make it realistic to build a localized triage-to-referral workflow quickly. Health systems and NGOs are also increasingly interested in digital workflows that improve early warning, structured case records, and human-in-the-loop follow-up.
 
 ### Target Users
-*   **Primary:** Pregnant mothers and family members in underserved Bangla-speaking communities.
-*   **Secondary:** Community health workers, clinic staff, midwives, nurses, and maternal health coordinators.
-*   **Institutional:** Clinics, NGOs, maternal health programs, district health teams, and public health partners.
+*   **Primary:** Pregnant mothers in underserved rural communities who need private, voice-enabled Bangla symptom checks and immediate referral options.
+*   **Secondary:** Community health workers who require structured digital triage dashboards to extend their outreach.
+*   **Institutional:** Regional clinics, public health departments, and maternal health NGOs seeking database enrichment and automated referral coordination.
 
 ### Market Opportunity
 MatriSense is best positioned as a B2B2C maternal health workflow. Mothers use the patient-facing system, while clinics, NGOs, and health programs use the worker dashboard, referral tracking, regional workload view, and analytics. The initial focus is rural Bangladesh, with future relevance for other Bangla-speaking or low-resource maternal health contexts.

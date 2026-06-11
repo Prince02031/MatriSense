@@ -1,30 +1,26 @@
 # Feature Matrix
 
-### Implemented
-*   Patient registration and login.
-*   Patient profile editor and patient history.
-*   Bangla symptom input.
-*   AI symptom extraction with structured symptom codes.
-*   Symptom confirmation and follow-up questions.
-*   Rule-based maternal danger-sign triage.
-*   Rule-aware RAG guidance using curated knowledge cards.
-*   Safety validator and fallback templates.
-*   Patient result page.
-*   Health worker dashboard, patient list, case detail, and status update.
-*   Profile/document information support if present in the current branch.
-*   Public `/docs` page with admin-controlled visibility.
+### Implemented & Finalized
+*   **Patient Registration & Profile Management:** Basic pregnancy profiles and personal details.
+*   **Bangla Voice/Text Input:** Symptoms recorded in native Bangla (voice transcribed dynamically).
+*   **AI Symptom Extraction:** Converts Bangla input into standardized clinical symptom facts.
+*   **Deterministic Rule-Based Triage:** Classifies urgency (LOW/MEDIUM/HIGH) via danger signs, bypassing LLMs for safety-critical decisions.
+*   **Rule-Aware RAG Guidance:** Dual Vector and JSON/Card retrieval grounding, constrained by active urgency levels.
+*   **Output Safety Validator:** Layer checking for forbidden inputs (diagnoses, dosages, risk downgrades, or unsafe delay advice).
+*   **AI Guided Care Assistant:** Chatbot assisting with triage queries, emotional support, and emergency escalations.
+*   **Interactive Chatbot Referrals:** Allows patients to search nearby facilities, view them on a map, and submit clinic preferences.
+*   **Regional Referral System:** Location-based lookup, district/upazila filtering, and manual hospital assignments by health workers.
+*   **Health Worker Verification Workflows:** Verification upload portal for certification files, checked by system admins.
+*   **Model Context Protocol (MCP) Integration:** Dual custom MCP servers (`matrisense-case-context-mcp` and `matrisense-referral-mcp`) exposing standard tool suites.
+*   **Local LLM Integration:** Local deployment scripts and setup instructions for Ollama and Qwen for offline-ready setups.
+*   **Evidence Library:** Core evidence library database connected to source guidelines, PDFs, and Markdown.
+*   **Admin Documentation Controls:** Live config controls for system docs visibility.
 
-### In Progress
-*   District/upazila-based regional referral.
-*   Seeded hospital lookup and manual hospital assignment.
-*   Health worker verification workflow.
-*   Evidence library connected to source PDFs/Markdown.
-*   Vector RAG using metadata-filtered guideline chunks.
+### In Progress / Integration Stage
+*   **Hybrid Graph RAG Extension:** Graph traversal hooks linking symptom-risk-source nodes together.
+*   **In-App Notification Center:** Alert system for health workers on new assigned high-risk cases.
 
 ### Planned
-*   GraphRAG linking symptom → danger sign → rule → risk level → action → source.
-*   SMS or notification support.
-*   Analytics dashboard for program monitoring.
-*   Offline-friendly mode for low-connectivity settings.
-*   Local LLM support for privacy and resilience experiments.
-*   Admin or clinical review dashboard for supervised evaluation.
+*   **SMS & Outbound Telephony Alerts:** Direct mobile SMS notification alerts when high-risk triage sessions are submitted.
+*   **Program Monitoring & Analytics Dashboard:** District-level charts tracking maternal symptom trends, referral rates, and hospital capacities.
+*   **Offline-First Native App:** Progressive Web App (PWA) supporting offline symptom-cache buffering for remote field workers.
