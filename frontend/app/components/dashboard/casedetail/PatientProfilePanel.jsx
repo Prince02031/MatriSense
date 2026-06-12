@@ -76,7 +76,11 @@ export default function PatientProfilePanel({ patient, decision, caseState, next
                 setGpsEnabled(false);
                 setGpsError(`GPS Error: ${error.message}`);
             },
-            { timeout: 10000 }
+            { 
+                enableHighAccuracy: false,
+                timeout: 15000,
+                maximumAge: 60000 // Cache location for 60 seconds
+            }
         );
     };
 

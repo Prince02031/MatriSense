@@ -85,6 +85,60 @@ export default function PatientProfilePage() {
     const [gpsEnabled, setGpsEnabled] = useState(false);
     const [gpsError, setGpsError] = useState(null);
 
+    // Load GPS/Location cache on mount (valid for 6 hours)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const cached = localStorage.getItem('matrisense_gps_cache');
+                if (cached) {
+                    const data = JSON.parse(cached);
+                    const age = Date.now() - data.timestamp;
+                    const sixHours = 6 * 60 * 60 * 1000;
+                    if (age < sixHours) {
+                        setFormData(prev => ({
+                            ...prev,
+                            division: data.division || prev.division,
+                            district: data.district || prev.district,
+                            upazilaOrThana: data.upazila || prev.upazilaOrThana,
+                            addressOrVillage: data.address || prev.addressOrVillage,
+                            latitude: data.gpsData?.latitude || prev.latitude,
+                            longitude: data.gpsData?.longitude || prev.longitude
+                        }));
+                        if (data.gpsEnabled !== undefined) {
+                            setGpsEnabled(data.gpsEnabled);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to load GPS cache in profile:', err);
+            }
+        }
+    }, []);
+
+    // Save GPS/Location to cache whenever location fields change
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const cacheObj = {
+                    gpsData: formData.latitude && formData.longitude ? {
+                        latitude: formData.latitude,
+                        longitude: formData.longitude,
+                        addressOrVillage: formData.addressOrVillage
+                    } : null,
+                    gpsEnabled,
+                    division: formData.division,
+                    district: formData.district,
+                    upazila: formData.upazilaOrThana,
+                    address: formData.addressOrVillage,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('matrisense_gps_cache', JSON.stringify(cacheObj));
+            } catch (err) {
+                console.warn('Failed to save GPS cache from profile:', err);
+            }
+        }
+    }, [formData.latitude, formData.longitude, formData.division, formData.district, formData.upazilaOrThana, formData.addressOrVillage, gpsEnabled]);
+
     useEffect(() => {
         if (!user) return;
         // Request GPS on component mount for persistent tracking

@@ -78,43 +78,72 @@ export default function PatientDashboard() {
         fetchHistory();
     }, [user?._id, user?.id]);
 
+    const sendGpsToServer = async (latitude, longitude) => {
+        try {
+            const resp = await fetch(`/api/triage/${gpsRequestedSession}/respond-gps`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitude, longitude })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                setGpsShared(true);
+                setGpsRequestedSession(null);
+                return true;
+            } else {
+                setGpsShareError(data.error || 'Failed to share location');
+                return false;
+            }
+        } catch (err) {
+            setGpsShareError('নেটওয়ার্ক ত্রুটি। আবার চেষ্টা করুন।');
+            return false;
+        } finally {
+            setSharingGps(false);
+        }
+    };
+
     const handleShareGPS = async () => {
+        setSharingGps(true);
+        setGpsShareError(null);
+
+        // Check cache first (valid for 6 hours)
+        try {
+            const cached = localStorage.getItem('matrisense_gps_cache');
+            if (cached) {
+                const data = JSON.parse(cached);
+                const age = Date.now() - data.timestamp;
+                const sixHours = 6 * 60 * 60 * 1000;
+                if (age < sixHours && data.gpsData?.latitude && data.gpsData?.longitude) {
+                    const { latitude, longitude } = data.gpsData;
+                    const success = await sendGpsToServer(latitude, longitude);
+                    if (success) return;
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to read GPS cache in share flow:', err);
+        }
+
         if (!navigator.geolocation) {
+            setSharingGps(false);
             setGpsShareError('আপনার ডিভাইসে GPS সমর্থিত নয়');
             return;
         }
 
-        setSharingGps(true);
-        setGpsShareError(null);
-
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
-                try {
-                    const resp = await fetch(`/api/triage/${gpsRequestedSession}/respond-gps`, {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ latitude, longitude })
-                    });
-                    const data = await resp.json();
-                    if (data.success) {
-                        setGpsShared(true);
-                        setGpsRequestedSession(null);
-                    } else {
-                        setGpsShareError(data.error || 'Failed to share location');
-                    }
-                } catch (err) {
-                    setGpsShareError('নেটওয়ার্ক ত্রুটি। আবার চেষ্টা করুন।');
-                } finally {
-                    setSharingGps(false);
-                }
+                await sendGpsToServer(latitude, longitude);
             },
             (error) => {
                 setSharingGps(false);
                 setGpsShareError(`GPS ত্রুটি: ${error.message}`);
             },
-            { timeout: 15000 }
+            { 
+                enableHighAccuracy: false,
+                timeout: 15000,
+                maximumAge: 60000 // Cache location for 60 seconds
+            }
         );
     };
 

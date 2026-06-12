@@ -32,6 +32,52 @@ export default function TriageStartPage() {
   const [upazila, setUpazila] = useState('');
   const [address, setAddress] = useState('');
 
+  // Load GPS/Location cache on mount (valid for 6 hours)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('matrisense_gps_cache');
+        if (cached) {
+          const data = JSON.parse(cached);
+          const age = Date.now() - data.timestamp;
+          const sixHours = 6 * 60 * 60 * 1000;
+          if (age < sixHours) {
+            if (data.gpsData) setGpsData(data.gpsData);
+            if (data.gpsEnabled !== undefined) setGpsEnabled(data.gpsEnabled);
+            if (data.division) setDivision(data.division);
+            if (data.district) setDistrict(data.district);
+            if (data.upazila) setUpazila(data.upazila);
+            if (data.address) setAddress(data.address);
+          } else {
+            localStorage.removeItem('matrisense_gps_cache');
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load GPS from cache:', err);
+      }
+    }
+  }, []);
+
+  // Save GPS/Location to cache whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cacheObj = {
+          gpsData,
+          gpsEnabled,
+          division,
+          district,
+          upazila,
+          address,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('matrisense_gps_cache', JSON.stringify(cacheObj));
+      } catch (err) {
+        console.warn('Failed to save GPS to cache:', err);
+      }
+    }
+  }, [gpsData, gpsEnabled, division, district, upazila, address]);
+
   // Auto-populate gestational week and trimester from saved patient profile
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -120,7 +166,11 @@ export default function TriageStartPage() {
         setGpsEnabled(false);
         setGpsError(`GPS ত্রুটি: ${error.message}`);
       },
-      { timeout: 10000 }
+      { 
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 60000 // Cache location for 60 seconds
+      }
     );
   };
 
