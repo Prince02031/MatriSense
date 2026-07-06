@@ -88,7 +88,8 @@ const allowedOrigins = [
 ];
 
 if (process.env.CLIENT_URL) {
-  allowedOrigins.push(process.env.CLIENT_URL.replace(/\/$/, '')); // remove trailing slash if present
+  const urls = process.env.CLIENT_URL.split(',').map(url => url.trim().replace(/\/$/, ''));
+  allowedOrigins.push(...urls);
 }
 
 app.use(cors({
@@ -104,8 +105,8 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
-      console.warn(`[CORS] Blocked request from origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      console.warn(`[CORS] Blocked request from origin: "${origin}". Allowed origins are:`, allowedOrigins);
+      callback(null, false);
     }
   },
   credentials: true
