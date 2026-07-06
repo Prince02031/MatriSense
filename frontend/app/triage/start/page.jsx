@@ -166,7 +166,7 @@ export default function TriageStartPage() {
         setGpsEnabled(false);
         setGpsError(`GPS ত্রুটি: ${error.message}`);
       },
-      { 
+      {
         enableHighAccuracy: false,
         timeout: 15000,
         maximumAge: 60000 // Cache location for 60 seconds

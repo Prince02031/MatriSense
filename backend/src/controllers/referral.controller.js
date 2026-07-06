@@ -18,15 +18,27 @@ const {
 } = require('../mcp/referral/services/referralMcpService');
 
 async function getRequester(req) {
+    const roleMapping = {
+        'patient': 'PATIENT',
+        'MOTHER': 'PATIENT',
+        'PATIENT': 'PATIENT',
+        'worker': 'HEALTH_WORKER',
+        'HEALTH_WORKER': 'HEALTH_WORKER',
+        'admin': 'ADMIN',
+        'ADMIN': 'ADMIN'
+    };
+
+    const mappedRole = roleMapping[req.user.role] || req.user.role;
+
     let patientId = undefined;
-    if (req.user.role === 'PATIENT') {
+    if (mappedRole === 'PATIENT') {
         const patient = await Patient.findOne({ userId: req.user._id });
         if (patient) patientId = patient._id.toString();
     }
     return {
-        role: req.user.role,
+        role: mappedRole,
         patientId,
-        workerId: req.user.role === 'HEALTH_WORKER' ? req.user._id.toString() : undefined,
+        workerId: mappedRole === 'HEALTH_WORKER' ? req.user._id.toString() : undefined,
         coverageDistricts: req.user.coverageDistricts || [],
         canViewAllDistricts: req.user.canViewAllDistricts || false
     };
