@@ -7,41 +7,41 @@
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   @page { size: letter; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 10.5pt; line-height: 1.55; color: #1e293b; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 9.2pt; line-height: 1.42; color: #1e293b; }
 
-  .page { width: 8.5in; min-height: 11in; padding: 0.6in 0.75in 0.7in 0.75in; page-break-after: always; position: relative; }
+  .page { width: 8.5in; min-height: 11in; max-height: 11in; overflow: hidden; padding: 0.5in 0.75in 0.65in 0.75in; page-break-after: always; position: relative; }
   .page:last-child { page-break-after: auto; }
 
   /* Header bar */
-  .page-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 0 10px 0; border-bottom: 2.5px solid #0d9488; margin-bottom: 18px; font-size: 8pt; color: #64748b; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; padding: 4px 0 8px 0; border-bottom: 2px solid #0d9488; margin-bottom: 12px; font-size: 7.5pt; color: #64748b; }
   .page-header .left { font-weight: 600; color: #0d9488; }
 
   /* Title page */
   .cover { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 9in; }
-  .cover h1 { font-size: 28pt; font-weight: 700; color: #0f766e; margin-bottom: 8px; }
-  .cover .subtitle { font-size: 12pt; color: #475569; max-width: 5.5in; margin-bottom: 24px; line-height: 1.6; }
-  .cover .meta { font-size: 9.5pt; color: #64748b; line-height: 1.8; }
+  .cover h1 { font-size: 24pt; font-weight: 700; color: #0f766e; margin-bottom: 8px; }
+  .cover .subtitle { font-size: 11pt; color: #475569; max-width: 5.5in; margin-bottom: 20px; line-height: 1.5; }
+  .cover .meta { font-size: 9pt; color: #64748b; line-height: 1.7; }
   .cover .meta strong { color: #334155; }
-  .cover .tagline { margin-top: 32px; padding: 12px 24px; background: #f0fdfa; border-left: 4px solid #0d9488; font-size: 10pt; color: #0f766e; font-weight: 600; font-style: italic; max-width: 5.5in; text-align: left; }
+  .cover .tagline { margin-top: 28px; padding: 10px 20px; background: #f0fdfa; border-left: 4px solid #0d9488; font-size: 9.5pt; color: #0f766e; font-weight: 600; font-style: italic; max-width: 5.5in; text-align: left; }
   .cover .screenshot-placeholder { width: 5in; height: 1.2in; border: 2px dashed #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 9pt; margin-top: 24px; background: #f8fafc; }
 
   /* Section headers */
-  h2 { font-size: 16pt; font-weight: 700; color: #0f766e; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1.5px solid #e2e8f0; }
-  h3 { font-size: 11.5pt; font-weight: 700; color: #334155; margin: 14px 0 6px 0; }
-  h4 { font-size: 10.5pt; font-weight: 600; color: #475569; margin: 10px 0 4px 0; }
+  h2 { font-size: 13.5pt; font-weight: 700; color: #0f766e; margin: 10px 0 5px 0; padding-bottom: 2px; border-bottom: 1.5px solid #e2e8f0; }
+  h3 { font-size: 10.5pt; font-weight: 700; color: #334155; margin: 8px 0 3px 0; }
+  h4 { font-size: 9.5pt; font-weight: 600; color: #475569; margin: 6px 0 2px 0; }
 
-  p { margin-bottom: 8px; }
-  ul, ol { margin: 4px 0 10px 20px; }
-  li { margin-bottom: 4px; }
+  p { margin-bottom: 6px; }
+  ul, ol { margin: 2px 0 6px 15px; }
+  li { margin-bottom: 2px; }
 
   /* Tables */
-  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px 0; font-size: 9.5pt; }
-  th { background: #0d9488; color: white; padding: 6px 10px; text-align: left; font-weight: 600; }
-  td { padding: 5px 10px; border-bottom: 1px solid #e2e8f0; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 8px 0; font-size: 8.5pt; }
+  th { background: #0d9488; color: white; padding: 4px 8px; text-align: left; font-weight: 600; }
+  td { padding: 4px 8px; border-bottom: 1px solid #e2e8f0; }
   tr:nth-child(even) td { background: #f8fafc; }
 
   /* Callout box */
-  .callout { background: #f0fdfa; border-left: 4px solid #0d9488; padding: 10px 14px; margin: 10px 0 14px 0; font-size: 10pt; color: #0f766e; }
+  .callout { background: #f0fdfa; border-left: 4px solid #0d9488; padding: 8px 12px; margin: 6px 0 10px 0; font-size: 9pt; color: #0f766e; }
   .callout strong { color: #0f766e; }
 
   /* Screenshot placeholder */
@@ -49,34 +49,58 @@
   .screenshot.tall { height: 2in; }
 
   /* Code/mono */
-  code { font-family: 'Consolas', monospace; font-size: 9pt; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+  code { font-family: 'Consolas', monospace; font-size: 8.5pt; background: #f1f5f9; padding: 1px 3px; border-radius: 3px; }
 
   /* Bold key terms */
   .feat { font-weight: 600; color: #0f766e; }
 
   /* Footer */
-  .page-footer { position: absolute; bottom: 0.5in; left: 0.75in; right: 0.75in; font-size: 7.5pt; color: #94a3b8; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+  .page-footer { position: absolute; bottom: 0.45in; left: 0.75in; right: 0.75in; font-size: 7.5pt; color: #94a3b8; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 5px; }
 </style>
 </head>
 <body>
 
 <!-- PAGE 1: COVER -->
 <div class="page">
-  <div class="cover">
-    <h1>MatriSense</h1>
-    <div class="subtitle">AI-Native Maternal Triage & Health Referral System<br>
-    <span style="font-size:10pt;">Bangla-first AI-assisted maternal triage, multimodal document intelligence, and health-worker referral coordination for rural Bangladesh</span></div>
-    <div class="meta">
-      <strong>SciBlitz AI Challenge 2026</strong> · IEEE Student Branch, CUET<br>
-      <strong>Track A</strong> — Health & Society<br>
-      <strong>Team:</strong> Team MatriSense<br>
-      <strong>Submission Date:</strong> July 8, 2026
+  <div class="cover" style="min-height: auto; justify-content: flex-start; padding-top: 20px; text-align: left; align-items: flex-start;">
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 3px solid #0d9488; padding-bottom: 15px; margin-bottom: 25px;">
+      <img src="matrisense_cover_logo.png" alt="MatriSense Logo" style="height: 55px; object-fit: contain;">
+      <div style="text-align: right; font-size: 8.5pt; color: #64748b; line-height: 1.4;">
+        <strong>SciBlitz AI Challenge 2026</strong><br>
+        IEEE Student Branch, CUET
+      </div>
     </div>
-    <div class="tagline">The LLM understands and explains. Rules decide urgency. Health workers make care decisions.</div>
-    <div class="screenshot-placeholder">[ INSERT: cover.png — MatriSense homepage ]</div>
+    
+    <h1 style="font-size: 21pt; font-weight: 700; color: #0f766e; margin-bottom: 6px; line-height: 1.25;">MatriSense: AI-native Bangla Maternal triage and Health Referral System</h1>
+    <div class="subtitle" style="font-size: 10.5pt; color: #475569; max-width: 100%; margin-bottom: 20px; line-height: 1.5; font-style: italic;">
+      Bangla-first AI-assisted maternal triage, multimodal document intelligence, and health-worker referral coordination for rural Bangladesh
+    </div>
+    
+    <div class="meta" style="font-size: 9pt; color: #64748b; line-height: 1.6; margin-bottom: 24px; background: #f8fafc; padding: 12px 16px; border-radius: 6px; border: 1px solid #e2e8f0; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div>
+        <strong>Competition:</strong> SciBlitz AI Challenge 2026<br>
+        <strong>Organizer:</strong> IEEE Student Branch, CUET
+      </div>
+      <div>
+        <strong>Track:</strong> Track A (Health & Society)<br>
+        <strong>Team Name:</strong> IUT_Epoch22<br>
+        <strong>Submission Date:</strong> July 8, 2026
+      </div>
+    </div>
+
+    <div style="width: 82%; margin: 0 auto 25px auto; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; padding: 14px 0;">
+      <h3 style="margin-top: 0; color: #0f766e; font-size: 10.5pt; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.8px; text-align: center;">Abstract</h3>
+      <p style="font-size: 9pt; line-height: 1.45; color: #334155; margin-bottom: 0; text-align: justify; font-style: italic;">
+        Maternal healthcare in rural Bangladesh suffers from critical delays in symptom recognition, lack of structured triage, and fragmented health-worker communication. MatriSense is a safety-first, Bangla-first maternal triage and referral coordination system designed to close this gap. By combining Groq Whisper and Gemini APIs, the platform translates informal Bangla symptom reports and physical paper-based records (prescriptions, blood pressure cards, lab sheets) into structured, validated clinical metrics. Crucially, actual risk classification is driven by a deterministic local rules engine, bypassing LLM clinical judgment. Confirmed cases route to a consent-gated Health Worker Dashboard for Upazila-level facility routing. MatriSense demonstrates how generative AI can be securely bound within deterministic safety thresholds to coordinate maternal care safely.
+      </p>
+    </div>
+
+    <div style="font-size: 9pt; font-weight: 600; color: #0f766e; background: #e6fbf7; padding: 8px 12px; border-radius: 4px; border: 1px solid #a7f3d0; width: 82%; margin: 0 auto; text-align: center; font-style: italic;">
+      "The LLM understands and explains. Rules decide urgency. Health workers make care decisions."
+    </div>
   </div>
   <div class="page-footer">
-    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>MatriSense | Team IUT_Epoch22</span>
     <span>Page 1</span>
   </div>
 </div>
@@ -109,10 +133,10 @@
     <li><strong>Unstructured paper records:</strong> BP logs, prescriptions, and lab sheets exist only as scattered physical papers impossible to digitize at scale.</li>
   </ul>
 
-  <div class="screenshot">[ INSERT: problem.png — optional problem context diagram ]</div>
+<!-- Removed problem diagram placeholder -->
 
   <div class="page-footer">
-    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>MatriSense | Team IUT_Epoch22</span>
     <span>Page 2</span>
   </div>
 </div>
@@ -129,16 +153,16 @@
 
   <h3>For Mothers — Private Reporting & Early Warning</h3>
   <ul>
-    <li><span class="feat">📝 Report Symptoms:</span> Describe symptoms in Bangla text or voice. Voice is transcribed via Groq Whisper, shown as editable text for review before submission.</li>
-    <li><span class="feat">📄 Uploaded Documents → AI-Assisted Upload:</span> Upload photos of prescriptions, lab reports, BP cards, ultrasound scans. Gemini Vision reads the document and extracts clinical values with color-coded severity badges (✅ Normal, ⚠️ Warning, 🚨 Critical).</li>
-    <li><span class="feat">💬 Discuss & Confirm with Assistant:</span> A document-scoped review chat lets the mother ask questions about her report or correct AI misreadings before saving.</li>
-    <li><span class="feat">🩺 My Clinical Data:</span> Saved values are plotted on longitudinal trend charts — BP, hemoglobin, blood sugar tracked over time.</li>
+    <li><span class="feat">Report Symptoms:</span> Describe symptoms in Bangla text or voice. Voice is transcribed via Groq Whisper, shown as editable text for review before submission.</li>
+    <li><span class="feat">Uploaded Documents & AI-Assisted Upload:</span> Upload photos of prescriptions, lab reports, BP cards, ultrasound scans. Gemini Vision reads the document and extracts clinical values with color-coded severity badges (Normal, Warning, Critical).</li>
+    <li><span class="feat">Discuss & Confirm with Assistant:</span> A document-scoped review chat lets the mother ask questions about her report or correct AI misreadings before saving.</li>
+    <li><span class="feat">My Clinical Data:</span> Saved values are plotted on longitudinal trend charts — BP, hemoglobin, blood sugar tracked over time.</li>
     <li><strong>Lower unnecessary travel:</strong> Risk feedback prevents costly journeys for low-risk concerns; accelerates escalation when risk is high.</li>
   </ul>
 
   <h3>For Health Workers — Structured Case Handoff</h3>
   <ul>
-    <li><span class="feat">📋 Triage Cases:</span> Risk-prioritized dashboard replaces vague phone calls with structured maternal cases — profile, symptom timeline, risk flags, follow-up answers, referral context.</li>
+    <li><span class="feat">Triage Cases:</span> Risk-prioritized dashboard replaces vague phone calls with structured maternal cases — profile, symptom timeline, risk flags, follow-up answers, referral context.</li>
     <li><span class="feat">Case Detail Tabs:</span> Overview · Documents · Clinical Data · Recommendations · Triage Review · Referral & Hospital · Notes & Audit.</li>
     <li><strong>Consent-gated access:</strong> Workers see patient data only when sharing consent is enabled in <span class="feat">My Profile</span>.</li>
     <li><span class="feat">Referral & Hospital:</span> Search hospitals by district, check service capabilities, assign facilities with logged reasons.</li>
@@ -147,10 +171,19 @@
   <h3>For the Health System</h3>
   <p>Each case builds <strong>longitudinal rural pregnancy records</strong>, reducing the "blank-slate" problem and capturing previously underreported symptoms and maternal-risk trends.</p>
 
-  <div class="screenshot">[ INSERT: dashboards.png — Patient Portal + Worker Triage Cases side by side ]</div>
+  <div style="display: flex; gap: 20px; margin: 12px 0; justify-content: center; align-items: flex-end;">
+    <div style="text-align: center;">
+      <img src="dashboard_patient.jpeg" alt="Patient Portal Dashboard" style="height: 160px; border: 1.5px solid #cbd5e1; border-radius: 6px; object-fit: contain;">
+      <span style="font-size: 8pt; color: #64748b; margin-top: 4px; display: block;">Patient Mobile App Dashboard</span>
+    </div>
+    <div style="text-align: center;">
+      <img src="dashboard_worker_overview.png" alt="Health Worker Dashboard Overview" style="height: 160px; border: 1.5px solid #cbd5e1; border-radius: 6px; object-fit: contain;">
+      <span style="font-size: 8pt; color: #64748b; margin-top: 4px; display: block;">Health Worker Dashboard Overview</span>
+    </div>
+  </div>
 
   <div class="page-footer">
-    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>MatriSense | Team IUT_Epoch22</span>
     <span>Page 3</span>
   </div>
 </div>
@@ -164,20 +197,20 @@
 
   <h2>3. System Architecture</h2>
 
-  <div class="screenshot tall">[ INSERT: architecture.png — AI architecture diagram ]</div>
+  <div style="text-align: center; margin: 12px 0;">
+    <img src="ai_architecture_final_2_clear.png" alt="MatriSense AI System Architecture Diagram" style="width: 100%; max-height: 250px; object-fit: contain; border-radius: 6px; border: 1px solid #e2e8f0; padding: 5px;">
+    <span style="font-size: 8pt; color: #64748b; margin-top: 4px; display: block;">MatriSense Multimodal AI Triage & Safety Architecture</span>
+  </div>
 
-  <h3>Tech Stack</h3>
-  <table>
-    <tr><th>Layer</th><th>Technology</th></tr>
-    <tr><td>Frontend</td><td>Next.js 15.5, React, Vanilla CSS</td></tr>
-    <tr><td>Backend</td><td>Node.js, Express, JWT role-based auth (MOTHER, HEALTH_WORKER, ADMIN)</td></tr>
-    <tr><td>Database</td><td>MongoDB (Mongoose) + MongoDB Atlas Vector Search</td></tr>
-    <tr><td>AI Models</td><td>Gemini 2.5 Flash (extraction, document analysis, guidance)</td></tr>
-    <tr><td>Speech</td><td>Groq Whisper (<code>whisper-large-v3</code>) for Bangla voice transcription</td></tr>
-    <tr><td>Embeddings</td><td>Local <code>Xenova/multilingual-e5-small</code> (384-dim vectors)</td></tr>
-    <tr><td>Rules</td><td><code>json-rules-engine</code> for deterministic triage</td></tr>
-    <tr><td>Deployment</td><td>Vercel (frontend) + Railway (backend)</td></tr>
-  </table>
+  <h3>Tech Stack Summary</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin: 6px 0 10px 0; font-size: 8.5pt;">
+    <div><strong>Frontend:</strong> Next.js 15.5, React, Vanilla CSS (Vercel)</div>
+    <div><strong>Backend:</strong> Node.js, Express, JWT Security (Railway)</div>
+    <div><strong>Database:</strong> MongoDB (Mongoose), Vector Search & GraphRAG ready</div>
+    <div><strong>AI Models:</strong> Gemini 2.5 Flash, Groq Whisper (v3)</div>
+    <div><strong>Triage Engine:</strong> Deterministic <code>json-rules-engine</code></div>
+    <div><strong>Embeddings:</strong> Local <code>Xenova/multilingual-e5-small</code></div>
+  </div>
 
   <h3>Decoupled Safety Design</h3>
   <p>The core architectural principle is <strong>separation of concerns between AI and clinical decisions</strong>:</p>
@@ -196,7 +229,7 @@
   <p>The Guided Care Assistant uses these MCP tools dynamically, enabling <strong>agentic RAG</strong> within post-triage conversation.</p>
 
   <div class="page-footer">
-    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>MatriSense | Team IUT_Epoch22</span>
     <span>Page 4</span>
   </div>
 </div>
@@ -229,13 +262,23 @@
     <li><strong>Sources:</strong> WHO maternal health guidelines, HEAR HER campaign materials, DGHS/CDC resources — chunked, metadata-tagged, and embedded.</li>
     <li><strong>Search:</strong> MongoDB Atlas Vector Search with <code>Xenova/multilingual-e5-small</code> embeddings.</li>
     <li><strong>Safety filtering:</strong> Retrieval constrained by <code>riskLevel</code>, <code>symptoms</code>, <code>guidanceType</code>, and <code>audienceScope</code>. HIGH-risk queries cannot retrieve home-care-first advice.</li>
-    <li><strong>Fallback chain:</strong> Vector RAG → JSON guidance cards → hardcoded safety templates. The system never returns empty or ungrounded guidance.</li>
+    <li><strong>Fallback chain:</strong> Vector RAG → JSON guidance cards → hardcoded safety templates.</li>
+    <li><strong>GraphRAG Integration:</strong> Transitioning from Vector RAG to GraphRAG to map symptoms, pregnancy conditions, and hospital guidelines for context-aware care routing.</li>
   </ul>
 
-  <div class="screenshot">[ INSERT: ai_upload.png — AI-Assisted Upload with extracted values and severity badges ]</div>
+  <div style="display: flex; gap: 15px; margin: 12px 0; justify-content: space-between; align-items: flex-end;">
+    <div style="width: 48%; text-align: center;">
+      <img src="ai_upload.png" alt="AI-Assisted Upload" style="width: 100%; height: 135px; object-fit: contain; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+      <span style="font-size: 8pt; color: #64748b; margin-top: 4px; display: block;">AI-Assisted Document Upload (Gemini Vision Extraction)</span>
+    </div>
+    <div style="width: 48%; text-align: center;">
+      <img src="AI_assistant_care.png" alt="Guided Care Assistant" style="width: 100%; height: 135px; object-fit: contain; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+      <span style="font-size: 8pt; color: #64748b; margin-top: 4px; display: block;">Guided Care Assistant (AI Chat & Discuss & Confirm)</span>
+    </div>
+  </div>
 
   <div class="page-footer">
-    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>MatriSense | Team IUT_Epoch22</span>
     <span>Page 5</span>
   </div>
 </div>
@@ -281,7 +324,7 @@
   </ul>
 
   <div class="page-footer">
-    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>MatriSense | Team IUT_Epoch22</span>
     <span>Page 6</span>
   </div>
 </div>
@@ -306,7 +349,7 @@
   <h3>End-to-End Demo Scenario (Preeclampsia Simulation)</h3>
   <ol>
     <li>Mother uploads a handwritten BP card showing <code>BP: 145/92 mmHg</code> via <span class="feat">AI-Assisted Upload</span>.</li>
-    <li>Gemini Vision extracts systolic: 145, diastolic: 92. Threshold checker flags both as <strong>🚨 Critical</strong>.</li>
+    <li>Gemini Vision extracts systolic: 145, diastolic: 92. Threshold checker flags both as <strong>Critical</strong>.</li>
     <li>She opens <span class="feat">Discuss & Confirm</span> and asks about the reading — assistant explains in Bangla without diagnosing.</li>
     <li>She saves and navigates to <span class="feat">My Clinical Data</span> — BP trend chart updates with the new critical reading.</li>
     <li>She clicks <span class="feat">Report Symptoms</span> and enters Bangla: <em>"আমার তীব্র মাথা ব্যথা এবং পা ফুলে গেছে"</em> (severe headache, swollen feet).</li>
@@ -315,10 +358,19 @@
     <li>Worker assigns a nearby Upazila Health Complex via <span class="feat">Referral & Hospital</span> tab.</li>
   </ol>
 
-  <div class="screenshot tall">[ INSERT: clinical_result.png — My Clinical Data trends + Triage result HIGH risk ]</div>
+  <div style="display: flex; gap: 15px; margin: 12px 0; justify-content: space-between; align-items: flex-end;">
+    <div style="width: 48%; text-align: center;">
+      <img src="my_clinical_data.png" alt="My Clinical Data" style="width: 100%; height: 200px; object-fit: contain; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+      <span style="font-size: 8pt; color: #64748b; margin-top: 4px; display: block;">Maternal Vital Sign Trend Charts (My Clinical Data)</span>
+    </div>
+    <div style="width: 48%; text-align: center;">
+      <img src="clinical_result_triage.png" alt="Triage History & Results" style="width: 100%; height: 200px; object-fit: contain; border: 1.5px solid #cbd5e1; border-radius: 6px;">
+      <span style="font-size: 8pt; color: #64748b; margin-top: 4px; display: block;">AI-Guided Triage Results & Risk Rating</span>
+    </div>
+  </div>
 
   <div class="page-footer">
-    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>MatriSense | Team IUT_Epoch22</span>
     <span>Page 7</span>
   </div>
 </div>
@@ -363,10 +415,10 @@
     <strong>The LLM understands and explains. Rules decide urgency. Health workers make care decisions.</strong>
   </div>
 
-  <div class="screenshot">[ INSERT: full_system.png — Patient portal, worker dashboard, docs page ]</div>
+<!-- Removed full system diagram placeholder -->
 
   <div class="page-footer">
-    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>MatriSense | Team IUT_Epoch22</span>
     <span>Page 8</span>
   </div>
 </div>

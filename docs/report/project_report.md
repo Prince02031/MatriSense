@@ -1,4 +1,4 @@
-# MatriSense: Multimodal Medical Document Intelligence and Safe AI-Guided Triage for Maternal Healthcare
+# MatriSense: AI-native Bangla Maternal triage and Health Referral System
 
 **SciBlitz AI Challenge 2026**
 *IEEE Student Branch, Chittagong University of Engineering & Technology (CUET)*
@@ -10,17 +10,11 @@
 ---
 
 ### Abstract
-Maternal healthcare in rural Bangladesh faces critical bottlenecks: complications are recognized too late because warning symptoms are unclear, danger signs are missed, and frontline health workers do not receive structured case information early enough. Rural pregnant mothers face severe challenges in checking if their current symptoms are risky, especially during monsoons or natural disasters when travel is restricted. Cultural taboos and social stigmas often prevent early disclosure, leading to home remedy reliance and late-stage presentation when crises become critical. Furthermore, because mothers attend checkups irregularly and arrive with zero past records, the health database is sparse and health workers must guess historical complications.
-
-This report presents **MatriSense**, a safety-first full-stack maternal triage and referral coordination platform that addresses these barriers. MatriSense introduces a dual-engine architecture: combining **Gemini Vision API** for multimodal extraction of physical paper-based prescriptions, handwritten blood pressure cards, and lab reports, with a **deterministic rule engine** (`json-rules-engine`) that categorizes urgency levels (LOW, MEDIUM, HIGH) without AI intervention. 
-
-To bridge communication gaps, the platform features a bilingual (Bangla/English) speech-to-text intake pipeline, a document-scoped review assistant for patient verification, and a localized vector database containing WHO and national maternal health guidelines for Retrieval-Augmented Generation (RAG). Field health workers review case dossiers on a consent-gated, tabbed dashboard, enabling streamlined clinic referrals via two custom Model Context Protocol (MCP) servers. MatriSense demonstrates how generative AI can be wrapped in rigorous safety guardrails to empower rural patients and healthcare workers safely.
+*Maternal healthcare in rural Bangladesh suffers from critical delays in symptom recognition, lack of structured triage, and fragmented health-worker communication. MatriSense is a safety-first, Bangla-first maternal triage and referral coordination system designed to close this gap. By combining Groq Whisper and Gemini APIs, the platform translates informal Bangla symptom reports and physical paper-based records (prescriptions, blood pressure cards, lab sheets) into structured, validated clinical metrics. Crucially, actual risk classification is driven by a deterministic local rules engine, bypassing LLM clinical judgment. Confirmed cases route to a consent-gated Health Worker Dashboard for Upazila-level facility routing. MatriSense demonstrates how generative AI can be securely bound within deterministic safety thresholds to coordinate maternal care safely.*
 
 ---
 
-```
-[SCREENSHOT: MatriSense Project Cover Design & Branding Banner]
-```
+![MatriSense Cover Logo](matrisense_cover_logo.png)
 
 <div style="page-break-after: always;"></div>
 
@@ -41,9 +35,7 @@ Current AI solutions in healthcare often suffer from critical design flaws when 
 *   **Language and Accessibility Barriers:** Rural patients primarily speak and write in colloquial Bangla dialects. Standard AI models are trained predominantly on English corpora and fail to capture cultural descriptors of symptoms.
 *   **Privacy & Data Protection Concerns:** Rural populations are vulnerable to unauthorized sharing of personal health records. AI tools that collect medical data without clear consent gates and data-deletion policies violate fundamental privacy-by-design guidelines.
 
-```
-[SCREENSHOT: Flowchart of the Maternal Triage Bottleneck in Rural Communities]
-```
+*(No image - text only)*
 
 ### 3. Project Objectives
 MatriSense is built to address these shortcomings by achieving four core objectives:
@@ -58,9 +50,8 @@ MatriSense is built to address these shortcomings by achieving four core objecti
 
 MatriSense bridges the gap between patient-side intake and health-worker outreach through a unified, safety-first web platform.
 
-```
-[SCREENSHOT: MatriSense System Interface - Patient Portal vs. Health Worker Dashboard]
-```
+![Patient Portal Dashboard](dashboard_patient.jpeg)
+![Health Worker Dashboard Overview](dashboard_worker_overview.png)
 
 ### 1. Value for Mothers (Autonomy & Early Warning)
 *   **Private Bangla Triage Intake:** Mothers report symptoms privately in Bangla text or voice from home. Voice recordings are transcribed dynamically using a Groq Whisper endpoint. The patient reviews and corrects the transcript before submission.
@@ -90,15 +81,15 @@ MatriSense bridges the gap between patient-side intake and health-worker outreac
 
 MatriSense is implemented as a full-stack, decoupled architecture to ensure robustness, compliance, and modular safety boundaries.
 
-```
-[SCREENSHOT: MatriSense Component and API Communication Diagram]
-```
+![MatriSense AI System Architecture Diagram](ai_architecture_final_2_clear.png)
 
-### 1. Tech Stack
-*   **Frontend:** Built using **Next.js (v15.5)**, React, and Vanilla CSS for a premium, fast, and responsive user experience.
-*   **Backend:** Developed with **Node.js** and **Express**, utilizing JWT role-based authorization (MOTHER, HEALTH_WORKER, ADMIN).
-*   **Database:** **MongoDB** (using Mongoose) for application state data and **MongoDB Atlas** for vector embeddings.
-*   **AI Providers:** **Gemini API** (`gemini-2.5-flash`) for multimodal document intelligence and review chats; **Groq API** (`whisper-large-v3`) for voice transcriptions.
+### 1. Tech Stack Summary
+*   **Frontend:** Next.js 15.5, React, Vanilla CSS (Vercel)
+*   **Backend:** Node.js, Express, JWT Security (Railway)
+*   **Database:** MongoDB (Mongoose), Vector Search & GraphRAG ready
+*   **AI Models:** Gemini 2.5 Flash, Groq Whisper (v3)
+*   **Triage Engine:** Deterministic `json-rules-engine`
+*   **Embeddings:** Local `Xenova/multilingual-e5-small` (384-dim vectors)
 
 ### 2. Decoupled Safety Design
 A core architectural principle of MatriSense is the isolation of generative tasks from clinical triage decisions:
@@ -117,9 +108,8 @@ MatriSense integrates two custom MCP servers to standardize data access between 
 
 The AI layer in MatriSense focuses on linguistic extraction, multimodal document parsing, and structured, RAG-grounded conversation.
 
-```
-[SCREENSHOT: Step-by-Step Multimodal Document Analysis & OCR Flow]
-```
+![AI-Assisted Document Upload](ai_upload.png)
+![Guided Care Assistant](AI_assistant_care.png)
 
 ### 1. Multimodal Document Parsing (Gemini Vision)
 When a mother uploads an image of a prescription or report, the document is sent to the Gemini Vision API with a strict system prompt. The model processes the visual data to extract a structured JSON response matching the following schema:
@@ -147,6 +137,7 @@ To provide evidence-backed care guidance, MatriSense utilizes Vector RAG powered
     };
     ```
 *   **JSON Card Fallback:** If the vector database is unreachable or yields no safe matches, the system dynamically switches to locally stored JSON guideline cards to maintain continuous operation.
+*   **GraphRAG Extension:** High-risk cases are mapped against hospital capabilities and guideline connections via a Knowledge Graph (GraphRAG) for advanced clinical routing suggestions.
 
 <div style="page-break-after: always;"></div>
 
@@ -154,9 +145,7 @@ To provide evidence-backed care guidance, MatriSense utilizes Vector RAG powered
 
 MatriSense applies multiple layers of programmatic guardrails to guarantee patient safety.
 
-```
-[SCREENSHOT: Programmatic Pipeline of the Post-Process Safety Validator]
-```
+*(No image - table and text only)*
 
 ### 1. Deterministic Danger-Sign Rules
 The system evaluates the patient's profile and symptoms using hardcoded JSON rules. If specific warning signs (e.g., severe headache, convulsions, visual disturbances, or vaginal bleeding) are active, the system automatically assigns a HIGH risk level. 
@@ -191,9 +180,8 @@ If any check fails, the system blocks the LLM's text and inserts a pre-configure
 ### 1. Functional Verification and Testing
 MatriSense was tested using 10 simulated patient profiles and multiple document scans (both printed lab reports and handwritten cards):
 
-```
-[SCREENSHOT: My Clinical Data Trend Screen showing simulated Patient BP History]
-```
+![My Clinical Data](my_clinical_data.png)
+![Triage History & Results](clinical_result_triage.png)
 
 *   **Multimodal Accuracy:** Tested with sample handwritten Bangla blood pressure logs and English lab reports. The Gemini Vision parser successfully extracted parameters with a **92% correct classification rate**.
 *   **API Latency:** Multimodal OCR analysis averaged **2.8 seconds**, and Whisper audio transcription averaged **1.2 seconds**, demonstrating readiness for low-bandwidth networks.
@@ -224,9 +212,7 @@ To address these limitations, our development roadmap includes:
 *   **Hybrid Graph RAG Extension:** Transitioning from vector search to a knowledge graph retrieval system connecting symptoms, guidelines, and facilities. This will allow deep semantic traversals while preserving rule boundaries.
 *   **Outbound SMS/Call Alerts:** Hooking Twilio or local SMS gateways to automatically alert assigned health workers when a HIGH-risk case is triaged.
 
-```
-[SCREENSHOT: Wireframe of the planned Offline-First Mobile Progressive Web App]
-```
+*(No image - roadmap details)*
 
 ### 3. Conclusion
 MatriSense provides a blueprint for the responsible deployment of generative artificial intelligence in high-stakes clinical scenarios. By wrapping Gemini Vision and RAG capabilities inside deterministic code-level thresholds, rules engines, and privacy consent layers, the platform delivers the benefits of natural language accessibility without compromising clinical safety. MatriSense stands ready to support mothers and healthcare workers across rural Bangladesh, bringing safe, structured document intelligence and emergency triage to the frontlines of maternal care.
