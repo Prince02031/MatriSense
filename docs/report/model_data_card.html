@@ -7,14 +7,14 @@
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   @page { size: letter; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 9pt; line-height: 1.4; color: #1e293b; background: #f1f5f9; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 8.2pt; line-height: 1.35; color: #1e293b; background: #f1f5f9; }
   
   .page {
     width: 8.5in;
     height: 11in;
     margin: 0 auto;
     background: white;
-    padding: 0.5in 0.75in 0.6in 0.75in;
+    padding: 0.35in 0.55in;
     position: relative;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     display: flex;
@@ -27,77 +27,77 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2.5px solid #0d9488;
-    padding-bottom: 12px;
-    margin-bottom: 16px;
+    border-bottom: 2px solid #0d9488;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
   }
   .header img {
-    height: 38px;
+    height: 32px;
     object-fit: contain;
   }
   .header-meta {
     text-align: right;
-    font-size: 8pt;
+    font-size: 7.5pt;
     color: #64748b;
-    line-height: 1.3;
+    line-height: 1.25;
   }
 
   /* Title & Subtitle */
   .title-section {
     text-align: center;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
   }
   h1 {
-    font-size: 18pt;
+    font-size: 15pt;
     font-weight: 700;
     color: #0f766e;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
   }
   .subtitle {
-    font-size: 9.5pt;
+    font-size: 8.5pt;
     color: #475569;
     font-style: italic;
   }
 
   /* Sections */
   h2 {
-    font-size: 11.5pt;
+    font-size: 10.5pt;
     font-weight: 700;
     color: #0f766e;
     border-left: 3px solid #0d9488;
-    padding-left: 8px;
-    margin: 12px 0 6px 0;
+    padding-left: 6px;
+    margin: 10px 0 5px 0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
   
   h3 {
-    font-size: 9.5pt;
+    font-size: 8.5pt;
     font-weight: 600;
     color: #334155;
-    margin: 6px 0 3px 0;
+    margin: 5px 0 3px 0;
   }
 
   p {
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     color: #334155;
   }
   
   ul {
-    margin: 3px 0 8px 16px;
+    margin: 2px 0 6px 14px;
   }
   
   li {
-    margin-bottom: 3px;
+    margin-bottom: 2px;
     color: #334155;
   }
 
   code {
     font-family: 'Consolas', monospace;
-    font-size: 8pt;
+    font-size: 7.5pt;
     background: #f1f5f9;
-    padding: 1px 3px;
-    border-radius: 3px;
+    padding: 1px 2px;
+    border-radius: 2px;
     color: #0f766e;
   }
 
@@ -105,19 +105,19 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 5px 0 10px 0;
-    font-size: 8.5pt;
+    margin: 4px 0 6px 0;
+    font-size: 8pt;
   }
   th {
     background: #f0fdfa;
     color: #0f766e;
     font-weight: 600;
     text-align: left;
-    padding: 4px 8px;
+    padding: 4px 6px;
     border-bottom: 1.5px solid #0d9488;
   }
   td {
-    padding: 4px 8px;
+    padding: 4px 6px;
     border-bottom: 1px solid #e2e8f0;
   }
   tr:nth-child(even) td {
@@ -127,12 +127,12 @@
   /* Footnote / Footer */
   .footer {
     border-top: 1px solid #e2e8f0;
-    padding-top: 8px;
+    padding-top: 6px;
     display: flex;
     justify-content: space-between;
     font-size: 7.5pt;
     color: #94a3b8;
-    margin-top: 15px;
+    margin-top: 10px;
   }
 </style>
 </head>
@@ -158,7 +158,7 @@
     <!-- 1. MODEL DETAILS -->
     <h2>1. Model Details</h2>
     
-    <h3>1.1 Pre-trained Foundation Models</h3>
+    <h3>1.1 Pre-trained Foundation & Local Models</h3>
     <table>
       <tr>
         <th style="width: 25%;">Model Name</th>
@@ -170,24 +170,30 @@
         <td><strong>Gemini 2.5 Flash</strong></td>
         <td>Google AI</td>
         <td>Commercial API</td>
-        <td>Parses unstructured Bangla text/voice symptoms; extracts parameters via Vision OCR from document images; supports reviews chat.</td>
+        <td>Parses raw Bangla text/voice symptoms; extracts parameters via Vision OCR from report photos; supports reviews chat.</td>
       </tr>
       <tr>
         <td><strong>Groq Whisper (v3)</strong></td>
         <td>Groq / OpenAI</td>
         <td>Open Source API</td>
-        <td>Transcribes patient voice inputs in Bangla (using the <code>whisper-large-v3</code> model) for conversion to structured text.</td>
+        <td>Transcribes spoken Bangla audio (using the <code>whisper-large-v3</code> checkpoint) for text conversion.</td>
+      </tr>
+      <tr>
+        <td><strong>Qwen 2.5 (7B)</strong></td>
+        <td>Alibaba / Local</td>
+        <td>Apache 2.0</td>
+        <td>Local LLM fallback (run via Ollama) to parse symptoms and summarize case metrics when offline.</td>
       </tr>
       <tr>
         <td><strong>multilingual-e5-small</strong></td>
         <td>Microsoft / Xenova</td>
         <td>MIT License</td>
-        <td>Local embedding model running via <code>transformers.js</code> to generate 384-dim vectors from local WHO guidelines.</td>
+        <td>Local embedding model running via <code>transformers.js</code> in Node.js to generate 384-dim vectors for local guidelines.</td>
       </tr>
     </table>
 
     <h3>1.2 Training, Tuning & Prompts Paradigm</h3>
-    <p>No weights were modified or trained from scratch. The system utilizes zero-shot and few-shot structural role prompts with strict system instructions and forced JSON schemas. Prompts enforce strict clinical boundaries: blocking diagnostic claims, preventing drug dosage recommendations, and barring the LLM from setting or modifying patient risk ratings.</p>
+    <p>No weights were trained from scratch. The system utilizes structural role prompting with JSON schemas. System instructions enforce strict boundaries: blocking diagnostic claims, preventing drug recommendations, and barring the LLM from changing patient risk ratings (computed deterministically in backend code).</p>
 
     <!-- 2. DATA DETAILS -->
     <h2>2. Data Details</h2>
@@ -202,7 +208,7 @@
       <tr>
         <td><strong>WHO ANC Guidelines</strong></td>
         <td>World Health Org.</td>
-        <td>Ingested, chunked, and embedded into local database to retrieve clinical warning guides and care procedures.</td>
+        <td>Ingested, chunked, and embedded into local database to retrieve clinical warning guides.</td>
       </tr>
       <tr>
         <td><strong>CDC HEAR HER Campaign</strong></td>
@@ -217,7 +223,7 @@
       <tr>
         <td><strong>Synthetic Eval Dataset</strong></td>
         <td>Developer Seeded</td>
-        <td>25 simulated patient profiles and clinical documents used to test validation thresholds and rule engine paths.</td>
+        <td>25 simulated patient profiles and documents used to test validation thresholds and rule engine paths.</td>
       </tr>
     </table>
 
@@ -226,14 +232,14 @@
     
     <h3>3.1 System Limitations</h3>
     <ul>
-      <li><strong>OCR Dependency:</strong> Gemini Vision OCR accuracy is highly dependent on image quality, low-light exposures, and handwriting legibility. Unread documents are flagged for human inspection.</li>
-      <li><strong>Dialect Variation:</strong> Bangla symptom extraction can vary due to regional dialects (e.g., Chittagonian, Sylheti). The system prompts are optimized for colloquial Bangla but may miss highly localized descriptors.</li>
+      <li><strong>OCR Dependency:</strong> Gemini Vision OCR accuracy is dependent on image resolution and handwriting legibility. Blurry or illegible files are flagged for human worker manual review.</li>
+      <li><strong>Dialect Variation:</strong> Bangla symptom extraction can vary due to regional dialects. Prompts are optimized for colloquial Bangla, but highly localized terms may require user confirmation.</li>
       <li><strong>Offline Connectivity:</strong> Zero-shot LLM queries require active internet connections. Local cache guidelines and deterministic checklists act as offline fallbacks.</li>
     </ul>
 
     <h3>3.2 Safety Decoupling & Privacy Safeguards</h3>
     <ul>
-      <li><strong>Separation of Powers:</strong> Generative AI models handle linguistic translation and OCR extraction only. Risk levels (LOW, MEDIUM, HIGH) are computed by a local deterministic rules validator (<code>json-rules-engine</code>).</li>
+      <li><strong>Separation of Powers:</strong> AI models handle linguistic translation and OCR extraction only. Risk levels (LOW, MEDIUM, HIGH) are computed by a local deterministic rules validator (<code>json-rules-engine</code>).</li>
       <li><strong>Output Safety Validator:</strong> A regex-based post-process filter checks LLM outputs. It blocks prescription names, dosage descriptions, and diagnostic claims, replacing them with standard warning templates.</li>
       <li><strong>Consent-Gated Data Sharing:</strong> Patients retain total control. Health workers cannot view clinical trend history or uploaded documents unless the mother sets <code>consentToShareWithHealthWorker</code> to true.</li>
     </ul>

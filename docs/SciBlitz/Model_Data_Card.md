@@ -15,6 +15,10 @@
     *   **Provider:** Hugging Face / Microsoft
     *   **License:** MIT License
     *   **Role in System:** Generates semantic embeddings for maternal health guideline chunks and care-guidance cards to enable local vector search.
+*   **Offline LLM Option:** Qwen 2.5 (7B) (Local inference via Ollama)
+    *   **Provider:** Alibaba Group / Community
+    *   **License:** Apache 2.0 License
+    *   **Role in System:** Serves as a local, offline LLM fallback option for symptom translation and summarization when cloud APIs are disconnected.
 
 #### 1.2 Training & Customization
 No models were trained from scratch. The system uses a zero-shot/few-shot role prompting paradigm with strict JSON schema outputs. System prompts enforce strict clinical boundaries:
