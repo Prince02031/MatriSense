@@ -248,6 +248,8 @@ export default function WorkerPatientListPage() {
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
+                                        gap: '12px',
+                                        flexWrap: 'wrap',
                                         padding: '16px 20px',
                                         cursor: 'pointer',
                                         borderBottom: expandedPatient === patient.patientKey
@@ -308,19 +310,8 @@ export default function WorkerPatientListPage() {
                                 {/* Expanded session list */}
                                 {expandedPatient === patient.patientKey && (
                                     <div style={{ padding: '0' }}>
-                                        {/* Column headers */}
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: '1fr 1fr 1fr 1fr 160px',
-                                            gap: '8px',
-                                            padding: '8px 20px',
-                                            background: 'var(--surface)',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '700',
-                                            color: 'var(--text-secondary)',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.05em'
-                                        }}>
+                                        {/* Column headers (desktop only) */}
+                                        <div className="session-head" style={{ background: 'var(--surface)' }}>
                                             <span>Date</span>
                                             <span>Symptoms</span>
                                             <span>Risk</span>
@@ -331,13 +322,8 @@ export default function WorkerPatientListPage() {
                                         {patient.sessions.map((session, idx) => (
                                             <div
                                                 key={session._id}
+                                                className="session-row"
                                                 style={{
-                                                    display: 'grid',
-                                                    gridTemplateColumns: '1fr 1fr 1fr 1fr 160px',
-                                                    gap: '8px',
-                                                    padding: '12px 20px',
-                                                    alignItems: 'center',
-                                                    borderTop: '1px solid var(--border-subtle)',
                                                     background: idx === 0
                                                         ? 'rgba(99, 102, 241, 0.04)'   // Highlight most recent
                                                         : 'transparent',
@@ -359,7 +345,7 @@ export default function WorkerPatientListPage() {
                                                 </div>
 
                                                 {/* Symptoms */}
-                                                <div style={{
+                                                <div className="session-symptoms" style={{
                                                     fontSize: '0.8rem',
                                                     color: 'var(--text-secondary)',
                                                     overflow: 'hidden',
@@ -381,7 +367,7 @@ export default function WorkerPatientListPage() {
                                                 </div>
 
                                                 {/* Review button */}
-                                                <div style={{ textAlign: 'right' }}>
+                                                <div className="session-action">
                                                     <Link href={`/dashboard/worker/${session._id}`}>
                                                         <button className="btn btn-primary" style={{ padding: '5px 14px', fontSize: '0.85rem' }}>
                                                             Review →
