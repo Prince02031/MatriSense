@@ -179,6 +179,56 @@ const getPatientVisibleStatus = async ({ sessionId, requester }) => {
     }
 };
 
+/**
+ * Retrieves already-analyzed medical document data (Gemini Vision extraction
+ * results stored on UploadedDocument.documentAnalysis by POST /api/documents/analyze).
+ * This does NOT re-run analysis — it surfaces existing structured data so the
+ * assistant/MCP client can answer "what did her last lab report show?" style
+ * questions without needing the image re-processed.
+ *
+ * Accepts either a specific documentId, or a patientId/sessionId to fetch the
+ * most recently analyzed documents for that scope.
+ */
+const getDocumentAnalyses = async ({ documentId, patientId, sessionId, limit = 3, requester }) => {
+    try {
+        const query = { ownerType: 'PATIENT', isActive: true, documentAnalysis: { $ne: null } };
+
+        if (documentId) {
+            query._id = documentId;
+        } else if (sessionId) {
+            query.relatedSessionId = sessionId;
+        } else if (patientId) {
+            query.ownerId = patientId;
+        } else {
+            return null;
+        }
+
+        const docs = await UploadedDocument
+            .find(query)
+            .sort({ analyzedAt: -1 })
+            .limit(documentId ? 1 : limit);
+
+        if (!docs.length) return { documents: [] };
+
+        // Access is checked against the document's actual owner, not any
+        // caller-supplied patientId, so a mismatched claim can't be used to
+        // read someone else's document.
+        const targetPatientId = docs[0].ownerId;
+        if (!(await canAccessPatient(requester, targetPatientId))) return null;
+
+        return {
+            documents: docs.map(d => ({
+                documentId: d._id,
+                documentType: d.documentType,
+                analyzedAt: d.analyzedAt,
+                analysis: d.documentAnalysis
+            }))
+        };
+    } catch (e) {
+        return null;
+    }
+};
+
 const getHealthWorkerCaseSummary = async ({ sessionId, requester }) => {
     try {
         if (!requiresWorkerOrAdmin(requester)) return null;
@@ -220,5 +270,6 @@ module.exports = {
     getGuidedCareContext,
     getRecentTriageHistory,
     getPatientVisibleStatus,
-    getHealthWorkerCaseSummary
+    getHealthWorkerCaseSummary,
+    getDocumentAnalyses
 };
