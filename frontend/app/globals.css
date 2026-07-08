@@ -733,6 +733,10 @@ a:hover {
   background: rgba(52, 211, 153, 0.15);
 }
 
+.icon-green {
+  background: rgba(52, 211, 153, 0.15);
+}
+
 .dash-card-label {
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -823,6 +827,29 @@ a:hover {
   font-size: 0.78rem;
   color: var(--text-muted);
   margin: 0;
+}
+
+/* "Your summary" cards — reuse the .dash-card pill/card look but lay the
+   icon beside the value so each stays a compact card, and keep three
+   across on every width (they shrink rather than stack). */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.summary-card .dash-card-value {
+  font-size: 1.35rem;
+  margin-bottom: 0;
+  line-height: 1.15;
 }
 
 /* Section */
@@ -1038,6 +1065,24 @@ a:hover {
   .landing h1 {
     font-size: 2rem;
   }
+
+  /* Flatten the "boxed card" look everywhere on mobile — less padding,
+     no drop shadow, tighter corners — so pages feel dense, not stacked
+     slabs the user has to scroll past. */
+  .dash-card {
+    padding: 14px;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+  }
+
+  .dash-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .dash-card-value {
+    font-size: 1.5rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1054,7 +1099,11 @@ a:hover {
   }
 
   .welcome-card {
-    padding: 20px;
+    padding: 18px;
+  }
+
+  .welcome-card h1 {
+    font-size: 1.3rem;
   }
 
   .dashboard-header {
@@ -1064,13 +1113,62 @@ a:hover {
     gap: 8px;
   }
 
-  .action-card {
-    flex-direction: column;
-    gap: 10px;
+  /* Quick actions become a compact icon grid — 3 across, no subtitle —
+     instead of tall full-width rows that force a long scroll. */
+  .quick-actions {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 14px;
   }
 
-  .quick-actions {
-    grid-template-columns: 1fr;
+  .action-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 12px 6px;
+    gap: 6px;
+  }
+
+  .action-card .action-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+  }
+
+  .action-card .action-text h3 {
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+
+  .action-card .action-text p {
+    display: none;
+  }
+
+  /* Summary cards stay 3-across but stack icon over value and shrink so
+     numbers/dates have room to breathe in a narrow column. */
+  .summary-grid {
+    gap: 8px;
+  }
+
+  .summary-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 10px;
+    gap: 8px;
+  }
+
+  .summary-card .dash-card-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+
+  .summary-card .dash-card-value {
+    font-size: 1rem;
+  }
+
+  .summary-card .dash-card-sub {
+    font-size: 0.68rem;
   }
 }
 
