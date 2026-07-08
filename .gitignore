@@ -49,3 +49,4 @@ scratch/
 # Old copies / extra folders
 ProjectOdyssey - Copy/
 node.zip
+.vscode/c_cpp_properties.json

@@ -114,3 +114,17 @@ export const analyzeMedicalDocument = async (formData) => {
 
   return response.json();
 };
+
+/**
+ * Send one turn to the standalone document-review chat
+ * (POST /api/documents/:documentId/review-chat). Stateless per call —
+ * pass the full chatHistory each time, same convention as the triage assistant.
+ */
+export const sendDocumentReviewMessage = async (documentId, { message, chatHistory, language }) => {
+  const res = await authFetch(`${API_BASE}/api/documents/${documentId}/review-chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, chatHistory, language }),
+  });
+  return res.json();
+};

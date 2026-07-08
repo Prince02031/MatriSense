@@ -4,11 +4,13 @@ const fs = require('fs');
 const router = express.Router();
 
 const UploadedDocument = require('../models/UploadedDocument');
+const ClinicalDataPoint = require('../models/ClinicalDataPoint');
 const Patient = require('../models/Patient');
 const TriageSession = require('../models/TriageSession');
 const { protect } = require('../middleware/authMiddleware');
 const { handleUploadErrors } = require('../middleware/uploadMiddleware');
 const { analyzeDocument } = require('../services/documentAnalysisService');
+const { runDocumentReviewChat } = require('../services/documentReviewChatService');
 
 const { logAction } = require('../services/auditService');
 
@@ -111,6 +113,28 @@ router.post(
                 await patient.save();
             }
 
+            // --- Write one ClinicalDataPoint per extracted value, for the ---
+            // --- unified cross-source clinical history view.               ---
+            if (Array.isArray(analysis.extractedValues) && analysis.extractedValues.length > 0) {
+                const rows = analysis.extractedValues.map((v) => ({
+                    patientId: patient._id,
+                    parameter: v.parameter,
+                    displayName: v.displayName,
+                    displayNameBn: v.displayNameBn,
+                    value: v.value,
+                    unit: v.unit,
+                    severity: v.severity,
+                    isAbnormal: v.isAbnormal,
+                    source: 'DOCUMENT_UPLOAD',
+                    sourceDocumentId: doc._id,
+                    sourceContext: analysis.summary || '',
+                    confidence: v.confidence,
+                    confirmedByPatient: false,
+                    recordedAt: new Date(),
+                }));
+                await ClinicalDataPoint.insertMany(rows);
+            }
+
             await logAction(null, 'PATIENT_DOCUMENT_ANALYZED', 'PATIENT', {
                 patientId: patient._id,
                 documentId: doc._id,
@@ -133,6 +157,62 @@ router.post(
         }
     }
 );
+
+// ============================================================================
+// POST /api/documents/:documentId/review-chat
+// Standalone, document-scoped chat that helps the patient confirm/correct
+// the values Gemini Vision extracted. Independent of the triage assistant —
+// no TriageSession involved. Stateless per turn (frontend resends chatHistory).
+// ============================================================================
+router.post('/:documentId/review-chat', protect, async (req, res) => {
+    try {
+        if (req.user.role !== 'MOTHER') {
+            return res.status(403).json({
+                success: false,
+                error: 'Only patients can use the document review chat.',
+            });
+        }
+
+        const patient = await Patient.findOne({ userId: req.user._id });
+        if (!patient) {
+            return res.status(404).json({
+                success: false,
+                error: 'No patient profile found.',
+            });
+        }
+
+        const { message, chatHistory, language } = req.body;
+        if (!message || typeof message !== 'string') {
+            return res.status(400).json({ success: false, error: 'message is required.' });
+        }
+
+        const { documentId } = req.params;
+
+        try {
+            const { reply, updatedValues } = await runDocumentReviewChat({
+                documentId,
+                patientId: patient._id,
+                message,
+                chatHistory,
+                language,
+            });
+
+            res.json({ success: true, reply, updatedValues });
+        } catch (chatError) {
+            console.error('[DocumentRoutes] review-chat error:', chatError.message);
+            const status = chatError.message.includes('not found') || chatError.message.includes('access')
+                ? 404
+                : 502;
+            res.status(status).json({ success: false, error: chatError.message });
+        }
+    } catch (error) {
+        console.error('[DocumentRoutes] POST /:documentId/review-chat error:', error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process review chat message.',
+        });
+    }
+});
 
 // ============================================================================
 // GET /api/documents/:documentId/download
