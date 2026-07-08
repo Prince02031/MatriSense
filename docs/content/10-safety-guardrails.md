@@ -12,6 +12,8 @@ MatriSense is designed as a triage and referral support tool, not a diagnosis or
 6.  **Evidence-Bound Steps:** Patient-facing steps should come from retrieved guidance cards or fallback templates, not unsupported LLM invention.
 7.  **Fallback Templates:** If the LLM output violates safety rules or fails, the system shows a predefined safe response based on risk level.
 8.  **Human-in-the-Loop:** Health workers and doctors remain responsible for medical decisions, referral action, and follow-up.
+9.  **Deterministic Maternal Thresholds:** Any parameters extracted by Gemini Vision from uploaded documents are validated by hardcoded clinical thresholds (e.g. BP >= 140/90 mmHg, Hemoglobin < 11 g/dL, Fasting Blood Sugar > 95 mg/dL) in code to override any LLM misclassifications.
+10. **Review Chat Validation:** If a patient corrects an extracted value in the review chat, the new value is immediately validated against the hardcoded clinical threshold rules rather than trusting the LLM.
 
 ### Why This Matters
 Maternal health is sensitive and safety-critical. MatriSense uses the LLM for language understanding and explanation, while deterministic rules, retrieved guidance, and safety validation control the clinical boundary.

@@ -10,6 +10,15 @@ Voice input is transcribed into editable text first. The user can review or corr
 
 The extraction layer may use keyword or rule-based fallback logic for demo reliability, but extraction does not decide medical risk.
 
+### Multimodal Document Analyzer
+
+MatriSense includes a multimodal document analysis layer powered by Gemini Vision. 
+
+*   **Extraction & OCR:** Patients upload photos of medical reports (lab tests, prescriptions, ultrasound scans, blood pressure log cards). Gemini Vision extracts unstructured data and converts handwritten or printed text (in Bangla, English, or mixed) into structured parameters.
+*   **Deterministic Safety Checks:** Extracted values are passed through a deterministic maternal safety validator. Values like blood pressure (systolic/diastolic), hemoglobin levels, fasting blood sugar, urine protein, and platelets are cross-referenced against WHO/ACOG pregnancy-safe thresholds.
+*   **Bilingual Result Cards:** Displays color-coded severity badges (✅ NORMAL, ⚠️ WARNING, 🚨 CRITICAL) and natural language summaries in Bangla and English.
+*   **Interactive Review Chat:** A document-scoped AI assistant chat allows patients to ask questions about their report or correct any mistranscribed readings (e.g. *"Actually, my BP was 130/85"*). Any user corrections are run through the deterministic clinical threshold rules for verification, never relying on raw LLM outputs alone.
+
 ### Follow-up Logic
 
 Follow-up questions are selected from an approved question bank rather than generated freely. The system asks only a small number of questions that can affect risk interpretation, such as:
