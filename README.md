@@ -1,4 +1,4 @@
-# MatriSense: AI-native Bangla Maternal Triage and Health Referral System
+# MatriSense: AI-Native Bangla Maternal Triage & Health Referral System
 
 **SciBlitz AI Challenge 2026**  
 *Track A (Health & Society)*  
@@ -6,80 +6,65 @@
 
 ---
 
-### 🚀 Live Deployment & Resource Links
-*   **Frontend Application:** [https://matri-sense.vercel.app/](https://matri-sense.vercel.app/)
-*   **Backend API Services:** [http://matrisense-production.up.railway.app](http://matrisense-production.up.railway.app)
-*   **Demo Video:** [Link to Demo Video]() *(Placeholder)*
+## 🚀 Important Links
+- **Live Frontend Portal**: [https://matri-sense.vercel.app/](https://matri-sense.vercel.app/)
+- **Backend API Server**: [http://matrisense-production.up.railway.app](http://matrisense-production.up.railway.app)
+- **Backend API Health Check**: [http://matrisense-production.up.railway.app/api/health](http://matrisense-production.up.railway.app/api/health)
+- **Demo Video**: [Link to Demo Video]() *(Placeholder)*
+- **System Architecture Diagram**: [docs/report/ai_architecture_final_2_clear.png](docs/report/ai_architecture_final_2_clear.png)
+- **Full Technical Report**: [docs/report/project_report.html](docs/report/project_report.html)
 
 ---
 
-## 📌 Project Overview
-Maternal healthcare in rural Bangladesh suffers from critical delays in symptom recognition, lack of structured triage, and fragmented health-worker communication. **MatriSense** is a safety-first, Bangla-first maternal triage and referral coordination system designed to close this gap.
-
-![MatriSense Cover Logo](docs/report/matrisense_cover_logo.png)
-
-By combining Groq Whisper and Gemini APIs, the platform translates informal Bangla symptom reports and physical paper-based records (prescriptions, blood pressure cards, lab sheets) into structured, validated clinical metrics. Crucially, actual risk classification is driven by a deterministic local rules engine, bypassing LLM clinical judgment. Confirmed cases route to a consent-gated Health Worker Dashboard for Upazila-level facility routing.
+## 1. Problem Summary
+Pregnant mothers in remote, rural areas of Bangladesh face unique barriers that delay recognition of emergency symptoms and increase maternal mortality rates:
+1. **Lack of Healthcare Autonomy:** Women often cannot make independent decisions or spend family funds on healthcare without male family members' consent, leading to critical delays.
+2. **Symptom Confusion & Costly Travel:** Poor families spend valuable money on long journeys to clinics for minor, non-emergency issues, while delaying help for high-risk symptoms because they cannot determine urgency.
+3. **Social Taboos & Stigma:** Cultural stigmas lead to massive underreporting of symptoms. Mothers arrive at clinics with zero past history ("blank-slate" visits).
+4. **Unstructured Paper Records:** Vital readings exist only on scattered paper prescriptions, handwritten blood pressure cards, and lab sheets, making historical trend analysis impossible.
+5. **AI Safety Risks:** Standard medical AI chatbots frequently hallucinate, outputting unsafe drug dosages or downplaying critical warning signs (like recommending rest for preeclampsia symptoms).
 
 ---
 
-## 🗺️ System Architecture
-MatriSense is built with a strictly decoupled architecture, separating language processing and document extraction (generative AI) from clinical triage decisions (deterministic rules).
+## 2. Solution Overview
+MatriSense solves these bottlenecks by wrapping generative AI inside deterministic, code-level safety boundaries:
+1. **Bangla Voice Intake:** Mothers describe symptoms in informal Bangla. Groq Whisper transcribes it, and Gemini extracts clinical facts.
+2. **Multimodal Document Reader:** Gemini Vision OCR parses handwritten blood pressure cards, prescriptions, and lab reports, extracting parameters (BP, hemoglobin, blood sugar) to build longitudinal records.
+3. **Deterministic Rules Engine:** A local rules engine (`json-rules-engine`) categorizes triage risk (LOW, MEDIUM, HIGH) based on clinical thresholds. **AI is strictly blocked from making risk determinations.**
+4. **Rule-Aware RAG:** Evidence-backed care guidance is retrieved from a MongoDB Atlas vector database (populated with WHO/DGHS guidelines). High-risk cases are restricted from receiving home-care advice.
+5. **Worker Console:** Verified community health workers manage cases through a structured, consent-gated dashboard, assigning patients to Upazila hospitals.
+
+---
+
+## 3. System Architecture & Safety Design
+MatriSense enforces a strict separation of concerns between linguistic extraction (AI models) and clinical decision logic (local code).
 
 ![MatriSense System Architecture Diagram](docs/report/ai_architecture_final_2_clear.png)
 
-### Core Separation of Concerns:
-1.  **AI Extraction Layer:** Groq Whisper transcribes spoken Bangla. Gemini 2.5 Flash extracts clinical metrics from text and physical paper uploads (prescriptions, blood pressure cards, lab reports).
-2.  **Deterministic Rules Engine:** Extracted clinical data (systolic/diastolic blood pressure, hemoglobin, blood sugar, urine protein) is routed through `json-rules-engine` locally in the Node.js backend. **No AI model calculates the triage risk level.**
-3.  **Rule-Aware RAG retrieval:** Guidelines from WHO and the HEAR HER campaign are stored in MongoDB Atlas and retrieved based on the patient's exact triage risk level and symptoms. High-risk patients cannot retrieve home-care guidance.
-4.  **Post-Process Safety Validator:** All LLM responses are parsed by a regex-based output validator to block drug dosage recommendations, diagnoses, and home-care suggestions for high-risk cases.
+*   **Generative Layer:** Restrained to translation, transcription, OCR, and conversational explanations.
+*   **Validation Layer:** Re-evaluates all extracted values against local code-level thresholds. If an LLM attempts to output a diagnosis, drug dosage, or home-care advice for high-risk cases, the **Post-Process Safety Validator** intercepts it and injects a pre-approved template.
+*   **MCP Integration:** Two custom Model Context Protocol (MCP) servers standardized tools for patient case context and hospital referral lookups.
 
 ---
 
-## 🛠️ Technical Stack
-*   **Frontend:** Next.js 15.5, React, Vanilla CSS (Deployed on Vercel)
-*   **Backend:** Node.js, Express, JWT security (Deployed on Railway)
-*   **Database:** MongoDB, Mongoose, MongoDB Atlas Vector Search
-*   **AI Providers:** Gemini API (`gemini-2.5-flash`), Groq API (`whisper-large-v3`)
-*   **Triage Engine:** Local `json-rules-engine`
-*   **Embeddings:** Local `Xenova/multilingual-e5-small` (384-dim vectors)
-*   **Interoperability:** Model Context Protocol (MCP) servers
+## 4. Challenge Requirement Coverage
+
+| Track Requirement | MatriSense Implementation Details |
+| :--- | :--- |
+| **Multimodal Document OCR** | Gemini 2.5 Flash Vision extracts metrics from handwritten cards & printed reports |
+| **Speech Intake Pipeline** | Groq Whisper `whisper-large-v3` API translates Bangla speech to editable text |
+| **Deterministic Risk Engine** | Local `json-rules-engine` runs on backend; no AI computes risk ratings |
+| **Localized Guidelines RAG** | MongoDB Atlas Vector Search + `Xenova/multilingual-e5-small` embeddings |
+| **Triage Dashboards** | Next.js 15.5 React portals for patients (mobile) and health workers (tabbed desktop) |
+| **External Interoperability** | Two custom Node.js Model Context Protocol (MCP) servers |
+| **Privacy & Consent Gates** | Health worker access is locked unless patient toggles `shareConsent` to true |
 
 ---
 
-## ✨ Key Features & User Interfaces
+## 5. Exact Vital Thresholds & Safety Rules
+Even if the AI model parses a value as "Normal", the backend forces an override check against these clinical thresholds:
 
-### 1. Patient Portal (For Pregnant Mothers)
-*   🗣️ **Voice Triage in Bangla:** Mothers speak in colloquial Bangla. Groq Whisper transcribes the audio, displaying it as editable text for the patient to verify.
-*   📸 **AI-Assisted Document Upload:** Patients upload photos of medical records. Gemini Vision extracts metrics and tags them with color-coded severity badges.
-*   💬 **Document Review Chat:** A document-scoped assistant explains the medical record values in Bangla and allows mothers to correct any OCR extraction errors.
-*   📈 **Clinical Data History:** Longitudinal trend charts track vital indicators (BP, hemoglobin, blood sugar) across the pregnancy.
-
-| Patient Mobile Dashboard | AI-Assisted Upload & Review Chat |
-| :---: | :---: |
-| ![Patient Mobile App Dashboard](docs/report/dashboard_patient.jpeg) | ![AI-Assisted Document Upload](docs/report/ai_upload.png) |
-
-| Guided Care Assistant (Discuss & Confirm) |
-| :---: |
-| ![Guided Care Assistant](docs/report/AI_assistant_care.png) |
-
----
-
-### 2. Clinical Console (For Frontline Health Workers)
-*   📋 **Triage Case Console:** Prioritized list of active maternal cases with complete case details (pregnancy week, risk flag, symptoms, audit logs).
-*   🔒 **Consent-Gated Privacy:** Patient document scans and trend charts are completely locked unless the patient explicitly toggles sharing consent on.
-*   🏥 **Facility Referral Matching:** A dedicated referral panel allows searching for regional Upazila and district hospitals based on service capabilities (NICU, emergency delivery, blood bank).
-
-| Health Worker Dashboard Overview |
-| :---: |
-| ![Health Worker Dashboard Overview](docs/report/dashboard_worker_overview.png) |
-
----
-
-## 🛡️ Safety & Quality Guardrails
-
-### 1. Deterministic Maternal Vital Thresholds
-Backend code overrides all OCR outputs to run them through absolute clinical thresholds:
-| Parameter | Normal Range | Warning Range | Critical Range |
+| Parameter | Normal Range | Warning Range | Critical Range (Flags Triage Alert) |
 | :--- | :--- | :--- | :--- |
 | **Systolic BP** | < 120 mmHg | 120 - 139 mmHg | ≥ 140 mmHg |
 | **Diastolic BP** | < 80 mmHg | 80 - 89 mmHg | ≥ 90 mmHg |
@@ -87,65 +72,175 @@ Backend code overrides all OCR outputs to run them through absolute clinical thr
 | **Blood Sugar** | < 95 mg/dL | 95 - 125 mg/dL | ≥ 126 mg/dL |
 | **Urine Protein** | Negative | Trace / 1+ | ≥ 2+ |
 
-### 2. Output Validator Regex Filters
-Before displaying LLM text, a regex validator checks and intercepts:
-*   **Diagnosis attempts:** E.g. *"You have preeclampsia."*
-*   **Prescription/Dosages:** E.g. *"Take 500mg Methyldopa."*
-*   **Home-care suggestions for high-risk patients:** Forces fallback to immediate referral templates.
+---
+
+## 6. Key Features & Visual Previews
+
+### Patient Portal (Mobile-Optimized)
+*   **Bangla Voice Triage:** Translates colloquial voice inputs to structured symtoms.
+*   **AI-Assisted Document Upload:** Extracts vital signs from uploaded images of clinical papers.
+*   **Discuss & Confirm Chat:** Interactive conversational assistant explaining OCR metrics with correction loops.
+
+| Patient Dashboard | AI-Assisted Document Upload |
+| :---: | :---: |
+| ![Patient Mobile App Dashboard](docs/report/dashboard_patient.jpeg) | ![AI-Assisted Document Upload](docs/report/ai_upload.png) |
+
+| Guided Care Assistant Review Chat |
+| :---: |
+| ![Guided Care Assistant](docs/report/AI_assistant_care.png) |
 
 ---
 
-## 📊 Evaluation & Simulation Results
-MatriSense was evaluated using 10 simulated patient profiles and multiple document scans.
+### Frontline Health Worker Console
+*   **Structured Cases:** Triage list prioritizing HIGH risk pregnant mothers.
+*   **Tabbed Dossier Console:** 7-tab console (*Overview, Triage Review, Documents, Clinical Data, Recommendations, Referral & Hospital, Notes & Audit*).
+*   **Facility Routing:** Search and match district and Upazila hospitals based on emergency capabilities.
+
+| Health Worker Dashboard Overview |
+| :---: |
+| ![Health Worker Dashboard Overview](docs/report/dashboard_worker_overview.png) |
+
+---
+
+### Evaluation Trend Metrics
+*   **My Clinical Data:** Dynamic charts plotting historical blood pressure, hemoglobin, and blood sugar trends.
+*   **Triage Risk Log:** Color-coded timeline displaying risk ratings.
 
 | Vital Trend Charts (My Clinical Data) | AI-Guided Triage Results & Risk Rating |
 | :---: | :---: |
 | ![Maternal Vital Sign Trend Charts](docs/report/my_clinical_data.png) | ![AI-Guided Triage Results & Risk Rating](docs/report/clinical_result_triage.png) |
 
-*   **Multimodal Accuracy:** The Gemini Vision parser successfully extracted vital parameters from handwritten blood pressure logs and printed prescriptions with a **92% correct classification rate**.
-*   **API Latency:** Multimodal OCR analysis averaged **2.8 seconds**, and Whisper audio transcription averaged **1.2 seconds**, demonstrating readiness for low-bandwidth networks.
+---
+
+## 7. Project Structure
+```text
+MatriSense/
+├── backend/                  # Node.js + Express API server, local rules engine
+│   ├── src/
+│   │   ├── controllers/      # Triage, Document OCR, Auth, Hospital controller logic
+│   │   ├── models/           # Mongoose schemas (Case, Patient, ClinicalDataPoint)
+│   │   ├── rag/              # Vector RAG retrieval query pipelines
+│   │   ├── routes/           # REST endpoints
+│   │   ├── safety/           # Post-process safety regex validators
+│   │   └── services/         # Gemini Vision parser, Groq Whisper transcription
+├── frontend/                 # Next.js 15.5 Patient & Health Worker portals
+│   ├── src/
+│   │   ├── app/              # Next.js App Router pages
+│   │   └── components/       # Core UI (vitals tracker, chat console, referral forms)
+├── matrisense-referral-mcp/  # Custom Model Context Protocol (MCP) server
+├── docs/                     # Documentation and static report assets
+│   └── report/               # 8-page print-ready HTML & Markdown report files
+└── README.md
+```
 
 ---
 
-## 🔌 Model Context Protocol (MCP) Servers
-MatriSense includes two custom MCP servers to standardized data-sharing with clinical agents:
-1.  **`matrisense-case-context-mcp`:** Accesses active patient triage details and pregnancy parameters.
-2.  **`matrisense-referral-mcp`:** Facilitates GIS-based searches for hospitals with specialized capacities.
-
----
-
-## 🏃 Local Setup Instructions
+## 8. Local Setup & Installation
 
 ### Prerequisites
 *   Node.js (v18+)
-*   MongoDB Instance (Local or Atlas)
+*   MongoDB Instance (Local or Atlas URL)
 *   Gemini API Key
 *   Groq API Key
 
-### Backend Setup
-1.  Navigate to `/backend`
-2.  Create a `.env` file from `.env.example`:
-    ```env
-    PORT=5000
-    MONGO_URI=mongodb://localhost:27017/matrisense
-    JWT_SECRET=your_jwt_secret
-    GEMINI_API_KEY=your_gemini_key
-    GROQ_API_KEY=your_groq_key
-    ```
-3.  Install dependencies and start:
-    ```bash
-    npm install
-    npm run dev
-    ```
+### 1. Backend Server Setup
+```bash
+cd backend
+npm install
+npm run dev
+```
+*Backend runs locally at: `http://localhost:5000`*
 
-### Frontend Setup
-1.  Navigate to `/frontend`
-2.  Create a `.env.local` file:
-    ```env
-    NEXT_PUBLIC_API_URL=http://localhost:5000
-    ```
-3.  Install dependencies and start:
-    ```bash
-    npm install
-    npm run dev
-    ```
+### 2. Frontend Portal Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*Frontend runs locally at: `http://localhost:3000`*
+
+### 3. MCP Server Setup
+```bash
+cd matrisense-referral-mcp
+npm install
+npm start
+```
+
+---
+
+## 9. Backend API Route Reference
+All API endpoints are prefixed with `/api`:
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| **POST** | `/api/auth/register` | Register new user (MOTHER or HEALTH_WORKER) |
+| **POST** | `/api/auth/login` | Authenticate user and sign JWT |
+| **POST** | `/api/speech/transcribe` | Transcribe audio files using Groq Whisper |
+| **POST** | `/api/documents/upload` | Upload document file for Gemini Vision OCR parsing |
+| **POST** | `/api/documents/chat` | Chat with document-scoped review assistant |
+| **POST** | `/api/documents/confirm` | Save extracted clinical values to profile database |
+| **POST** | `/api/triage/submit` | Evaluate symptoms against local rule engine and save triage |
+| **GET** | `/api/triage/cases` | Fetch all triage cases (Health Worker role required) |
+| **GET** | `/api/patient/history/:id` | Retrieve patient longitudinal vital stats (BP, sugar, Hb) |
+| **POST** | `/api/referral/assign` | Refer patient to designated hospital |
+
+---
+
+## 10. Model Context Protocol (MCP) Tools
+The custom MCP server exposes standard JSON tools for clinical agents:
+
+### `matrisense-case-context-mcp`
+*   `get_case_details(patientId)`: Returns pregnancy week, active symptoms, and historical risk level.
+*   `fetch_vital_history(patientId)`: Retrieves longitudinal blood pressure, blood sugar, and hemoglobin data.
+
+### `matrisense-referral-mcp`
+*   `search_hospitals(district, minimumCapabilities)`: Queries hospitals matching services like NICU, emergency delivery, or blood banks.
+*   `calculate_hospital_distance(patientCoords, hospitalCoords)`: Computes geographic distance to recommend the closest capable facility.
+
+---
+
+## 11. Environment Configuration
+
+### Backend (`backend/.env`)
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/matrisense
+JWT_SECRET=your_jwt_signing_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+### Frontend (`frontend/.env.local`)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
+
+### Referral MCP Server (`matrisense-referral-mcp/.env`)
+```env
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/matrisense
+PORT=8080
+```
+
+---
+
+## 12. Deployment Instructions
+
+### Deploying Backend (Railway)
+1.  Initialize a new service on **Railway** linking your GitHub repository.
+2.  Set the Root Directory to `/backend`.
+3.  Set Build Command to `npm install` and Start Command to `npm run start`.
+4.  Configure all variables in the Railway console (`MONGO_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, `GROQ_API_KEY`).
+
+### Deploying Frontend (Vercel)
+1.  Add a new project on **Vercel** linking the repository.
+2.  Set the Root Directory to `/frontend`.
+3.  Add the environment variable `NEXT_PUBLIC_API_URL` pointing to your deployed Railway API URL.
+4.  Click **Deploy**.
+
+---
+
+## 13. Future Roadmap & Scaling
+*   📶 **Offline-First PWA:** Cache symptoms and profile state locally on patient devices. Execute local JavaScript rules offline and queue document uploads for synchronization when connectivity returns.
+*   🦙 **Edge LLMs (Ollama):** Host fine-tuned models (e.g. Qwen-1.5B, LLaMA-3B) at Upazila community clinics for local OCR extraction and translation without public internet.
+*   💬 **SMS Outreach Channels:** Integrate Twilio or local GSM modems to send automated SMS notifications to health workers when high-risk cases are logged.
+*   🕸️ **GraphRAG Extensions:** Build knowledge graphs linking symptoms, national obstetric guidelines, and hospital facilities for advanced semantic routing and context-aware referral checks.
