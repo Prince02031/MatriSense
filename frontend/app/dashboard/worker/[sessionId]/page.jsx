@@ -10,6 +10,7 @@ import ProtectedRoute from '../../../components/ProtectedRoute';
 
 import PatientProfilePanel from '../../../components/dashboard/casedetail/PatientProfilePanel';
 import PatientDocumentsPanel from '../../../components/dashboard/casedetail/PatientDocumentsPanel';
+import CaseClinicalDataPanel from '../../../components/dashboard/casedetail/CaseClinicalDataPanel';
 import FollowUpAnswersPanel from '../../../components/dashboard/casedetail/FollowUpAnswersPanel';
 import HealthWorkerSummaryCard from '../../../components/dashboard/casedetail/HealthWorkerSummaryCard';
 import MatchedRulesPanel from '../../../components/dashboard/casedetail/MatchedRulesPanel';
@@ -18,6 +19,16 @@ import ReferralNoteList from '../../../components/dashboard/casedetail/ReferralN
 import AuditTimeline from '../../../components/dashboard/casedetail/AuditTimeline';
 import CaseStatusBadge from '../../../components/dashboard/CaseStatusBadge';
 import LeafletMap from '../../../components/dashboard/casedetail/LeafletMap';
+
+const CASE_TABS = [
+    { id: 'overview', icon: '🏠', label: 'Overview' },
+    { id: 'triage', icon: '📋', label: 'Triage Review' },
+    { id: 'documents', icon: '📄', label: 'Documents' },
+    { id: 'clinical', icon: '🩺', label: 'Clinical Data' },
+    { id: 'recommendations', icon: '💡', label: 'Recommendations' },
+    { id: 'referral', icon: '🏥', label: 'Referral & Hospital' },
+    { id: 'notes', icon: '🗒️', label: 'Notes & Audit' },
+];
 
 export default function WorkerCaseDetailPage({ params }) {
     const { sessionId } = use(params);
@@ -29,6 +40,7 @@ export default function WorkerCaseDetailPage({ params }) {
     const [auditLogs, setAuditLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState('');
+    const [activeTab, setActiveTab] = useState('overview');
 
     // Note form
     const [noteText, setNoteText] = useState('');
@@ -324,34 +336,77 @@ export default function WorkerCaseDetailPage({ params }) {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '24px', alignItems: 'start' }}>
-                    {/* Left Column - Main Content */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <PatientProfilePanel
-                            patient={caseDetail.patientId}
-                            decision={caseDetail.decision}
-                            caseState={caseDetail.caseState}
-                            nextCheckupDate={caseDetail.nextCheckupDate}
-                            followUpDateSetBy={caseDetail.followUpDateSetBy}
-                            onLocationDataChange={(locationData) => {
-                                // Handle GPS location data if needed for other features
-                                console.log('Location data updated:', locationData);
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '2px' }}>
+                    {CASE_TABS.map((tabItem) => (
+                        <button
+                            key={tabItem.id}
+                            type="button"
+                            onClick={() => setActiveTab(tabItem.id)}
+                            style={{
+                                padding: '8px 14px',
+                                border: 'none',
+                                borderBottom: activeTab === tabItem.id ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                                background: 'transparent',
+                                color: activeTab === tabItem.id ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                fontWeight: activeTab === tabItem.id ? 600 : 500,
+                                cursor: 'pointer',
+                                fontSize: '0.88rem',
+                                whiteSpace: 'nowrap',
                             }}
-                        />
+                        >
+                            {tabItem.icon} {tabItem.label}
+                        </button>
+                    ))}
+                </div>
 
-                        <PatientDocumentsPanel sessionId={sessionId} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '24px', alignItems: 'start' }}>
+                    {/* Left Column - Tabbed Main Content */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        {activeTab === 'overview' && (
+                            <PatientProfilePanel
+                                patient={caseDetail.patientId}
+                                decision={caseDetail.decision}
+                                caseState={caseDetail.caseState}
+                                nextCheckupDate={caseDetail.nextCheckupDate}
+                                followUpDateSetBy={caseDetail.followUpDateSetBy}
+                                onLocationDataChange={(locationData) => {
+                                    // Handle GPS location data if needed for other features
+                                    console.log('Location data updated:', locationData);
+                                }}
+                            />
+                        )}
 
-                        <HealthWorkerSummaryCard
-                            safeOutput={caseDetail.safeOutput}
-                            profileSnapshot={caseDetail.profileSnapshot}
-                        />
+                        {activeTab === 'documents' && (
+                            <PatientDocumentsPanel sessionId={sessionId} />
+                        )}
 
-                        <FollowUpAnswersPanel
-                            inputTextBn={caseDetail.inputTextBn}
-                            caseState={caseDetail.caseState}
-                        />
+                        {activeTab === 'clinical' && (
+                            <CaseClinicalDataPanel sessionId={sessionId} />
+                        )}
+
+                        {activeTab === 'recommendations' && (
+                            <HealthWorkerSummaryCard
+                                safeOutput={caseDetail.safeOutput}
+                                profileSnapshot={caseDetail.profileSnapshot}
+                            />
+                        )}
+
+                        {activeTab === 'triage' && (
+                            <>
+                                <FollowUpAnswersPanel
+                                    inputTextBn={caseDetail.inputTextBn}
+                                    caseState={caseDetail.caseState}
+                                />
+                                <MatchedRulesPanel decision={caseDetail.decision} />
+                                <EvidencePanel
+                                    evidenceTags={caseDetail.decision?.evidenceTags}
+                                    careGuidanceContext={caseDetail.careGuidanceContext}
+                                />
+                            </>
+                        )}
 
                         {/* Referral & Hospital Assignment Panel */}
+                        {activeTab === 'referral' && (
                         <div className="dash-card">
                             <h3>🏥 Regional Referral & Hospital Assignment</h3>
 
@@ -642,16 +697,67 @@ export default function WorkerCaseDetailPage({ params }) {
                                 </div>
                             )}
                         </div>
+                        )}
 
-                        <div className="dash-card">
-                            <h3>🗒️ Activity & Notes History</h3>
-                            <div style={{ marginTop: '16px' }}>
-                                <ReferralNoteList notes={notes} />
-                            </div>
-                        </div>
+                        {activeTab === 'notes' && (
+                            <>
+                                <div className="dash-card">
+                                    <h3>Add Referral / Follow-up Note</h3>
+                                    <form onSubmit={handleAddNote} style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <select value={actionTaken} onChange={e => setActionTaken(e.target.value)} className="form-input">
+                                            <option value="CONTACTED">Contacted Patient</option>
+                                            <option value="URGENT_REFERRAL">Urgent Referral</option>
+                                            <option value="MONITOR">Monitor Only</option>
+                                        </select>
+
+                                        {actionTaken === 'URGENT_REFERRAL' && (
+                                            <input
+                                                type="text"
+                                                placeholder="Referred To (Clinic/Hospital)"
+                                                value={referredTo}
+                                                onChange={e => setReferredTo(e.target.value)}
+                                                className="form-input"
+                                            />
+                                        )}
+
+                                        <div>
+                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Follow-up Date (Optional)</label>
+                                            <input
+                                                type="date"
+                                                value={noteFollowUpDate}
+                                                onChange={e => setNoteFollowUpDate(e.target.value)}
+                                                className="form-input"
+                                            />
+                                        </div>
+
+                                        <textarea
+                                            placeholder="Enter clinical notes..."
+                                            value={noteText}
+                                            onChange={e => setNoteText(e.target.value)}
+                                            className="form-input"
+                                            rows="3"
+                                            required
+                                        />
+
+                                        <button type="submit" className="btn btn-outline" style={{ width: '100%', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }} disabled={isSubmittingNote}>
+                                            {isSubmittingNote ? 'Adding Note...' : 'Add Note'}
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div className="dash-card">
+                                    <h3>🗒️ Activity & Notes History</h3>
+                                    <div style={{ marginTop: '16px' }}>
+                                        <ReferralNoteList notes={notes} />
+                                    </div>
+                                </div>
+
+                                <AuditTimeline session={caseDetail} auditLogs={auditLogs} />
+                            </>
+                        )}
                     </div>
 
-                    {/* Right Column - Audit & Action Tools */}
+                    {/* Right Column - Persistent Quick Actions */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
                         <div className="dash-card">
@@ -691,60 +797,7 @@ export default function WorkerCaseDetailPage({ params }) {
                                     {isSubmittingFollowUp ? 'Setting...' : 'Set Checkup Date'}
                                 </button>
                             </form>
-
-                            <hr style={{ margin: '16px 0', borderColor: 'var(--border-subtle)' }} />
-
-                            <h4 style={{ fontSize: '0.95rem', marginBottom: '12px' }}>Add Referral / Follow-up Note</h4>
-                            <form onSubmit={handleAddNote} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                <select value={actionTaken} onChange={e => setActionTaken(e.target.value)} className="form-input">
-                                    <option value="CONTACTED">Contacted Patient</option>
-                                    <option value="URGENT_REFERRAL">Urgent Referral</option>
-                                    <option value="MONITOR">Monitor Only</option>
-                                </select>
-
-                                {actionTaken === 'URGENT_REFERRAL' && (
-                                    <input
-                                        type="text"
-                                        placeholder="Referred To (Clinic/Hospital)"
-                                        value={referredTo}
-                                        onChange={e => setReferredTo(e.target.value)}
-                                        className="form-input"
-                                    />
-                                )}
-
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Follow-up Date (Optional)</label>
-                                    <input
-                                        type="date"
-                                        value={noteFollowUpDate}
-                                        onChange={e => setNoteFollowUpDate(e.target.value)}
-                                        className="form-input"
-                                    />
-                                </div>
-
-                                <textarea
-                                    placeholder="Enter clinical notes..."
-                                    value={noteText}
-                                    onChange={e => setNoteText(e.target.value)}
-                                    className="form-input"
-                                    rows="3"
-                                    required
-                                />
-
-                                <button type="submit" className="btn btn-outline" style={{ width: '100%', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }} disabled={isSubmittingNote}>
-                                    {isSubmittingNote ? 'Adding Note...' : 'Add Note'}
-                                </button>
-                            </form>
                         </div>
-
-                        <MatchedRulesPanel decision={caseDetail.decision} />
-
-                        <EvidencePanel
-                            evidenceTags={caseDetail.decision?.evidenceTags}
-                            careGuidanceContext={caseDetail.careGuidanceContext}
-                        />
-
-                        <AuditTimeline session={caseDetail} auditLogs={auditLogs} />
 
                     </div>
                 </div>

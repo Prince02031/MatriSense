@@ -254,6 +254,52 @@ exports.getCaseDocuments = async (req, res) => {
     }
 };
 
+// ============================================================================
+// GET /api/worker/cases/:sessionId/clinical-data
+// Get the patient's unified clinical data history (document + chat-scan
+// derived). Gated behind the same document-sharing consent flag as
+// getCaseDocuments, since this history is derived from those documents.
+// ============================================================================
+exports.getCaseClinicalData = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+
+        const session = await TriageSession.findById(sessionId).populate('patientId');
+
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+
+        if (!session.patientId) {
+            return res.json({ success: true, dataPoints: [] });
+        }
+
+        const Patient = require('../models/Patient');
+        const patient = await Patient.findById(session.patientId._id);
+        if (!patient || !patient.consentToShareWithHealthWorker) {
+            return res.json({
+                success: true,
+                dataPoints: [],
+                consentDenied: true,
+                message: 'Patient has not granted consent to share clinical data with health workers.'
+            });
+        }
+
+        const ClinicalDataPoint = require('../models/ClinicalDataPoint');
+        const dataPoints = await ClinicalDataPoint.find({
+            patientId: patient._id,
+            isActive: true,
+        })
+            .sort({ recordedAt: -1 })
+            .populate('sourceDocumentId', 'documentType originalName');
+
+        res.json({ success: true, dataPoints });
+    } catch (error) {
+        console.error('[Worker Controller] Failed to fetch case clinical data:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch case clinical data' });
+    }
+};
+
 /**
  * PUT /api/worker/cases/:sessionId/hospital
  * Assign or reassign a hospital to a triage session
