@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Patient = require('../models/Patient');
 const UploadedDocument = require('../models/UploadedDocument');
+const ClinicalDataPoint = require('../models/ClinicalDataPoint');
 const { protect } = require('../middleware/authMiddleware');
 const { handleUploadErrors } = require('../middleware/uploadMiddleware');
 
@@ -76,6 +77,10 @@ const SAFE_DOC_FIELDS = [
   'verificationStatus',
   'isActive',
   'uploadedAt',
+  // Included here because this route is patient-self-scoped only — a patient
+  // seeing their own AI-extracted values is safe (see plan §3).
+  'documentAnalysis',
+  'analyzedAt',
 ];
 
 // --- Helpers ---
@@ -296,9 +301,31 @@ router.get('/me/documents', protect, async (req, res) => {
       isActive: true,
     }).sort({ uploadedAt: -1 });
 
+    // --- Compute per-document confirmation status from ClinicalDataPoint rows ---
+    const dataPoints = await ClinicalDataPoint.find({
+      patientId: patient._id,
+      sourceDocumentId: { $in: docs.map((d) => d._id) },
+      isActive: true,
+    }).select('sourceDocumentId confirmedByPatient');
+
+    const confirmationByDoc = {};
+    dataPoints.forEach((dp) => {
+      const key = dp.sourceDocumentId.toString();
+      if (!confirmationByDoc[key]) confirmationByDoc[key] = { total: 0, confirmed: 0 };
+      confirmationByDoc[key].total += 1;
+      if (dp.confirmedByPatient) confirmationByDoc[key].confirmed += 1;
+    });
+
+    const documentsWithStatus = docs.map((d) => {
+      const safe = toSafeDoc(d);
+      const stats = confirmationByDoc[d._id.toString()];
+      safe.allValuesConfirmed = stats ? stats.confirmed === stats.total : false;
+      return safe;
+    });
+
     res.json({
       success: true,
-      documents: docs.map(toSafeDoc),
+      documents: documentsWithStatus,
       total: docs.length,
     });
   } catch (error) {

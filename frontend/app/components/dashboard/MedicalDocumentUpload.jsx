@@ -2,18 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { analyzeMedicalDocument } from '../../api/patientApi';
-
-const SEVERITY_BADGE = {
-    NORMAL: 'badge-success',
-    WARNING: 'badge-warning',
-    CRITICAL: 'badge-danger',
-};
-
-const SEVERITY_ICON = {
-    NORMAL: '✅',
-    WARNING: '⚠️',
-    CRITICAL: '🚨',
-};
+import ExtractedValuesList from './ExtractedValuesList';
+import DocumentReviewChat from './DocumentReviewChat';
 
 const DOC_TYPE_LABELS = {
     prescription: 'Prescription',
@@ -28,8 +18,10 @@ export default function MedicalDocumentUpload() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [stage, setStage] = useState('idle'); // idle | preview | analyzing | result | confirmed
     const [result, setResult] = useState(null);
+    const [documentId, setDocumentId] = useState(null);
     const [riskFactorsApplied, setRiskFactorsApplied] = useState(null);
     const [error, setError] = useState(null);
+    const [showReviewChat, setShowReviewChat] = useState(false);
 
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
@@ -60,6 +52,7 @@ export default function MedicalDocumentUpload() {
             }
 
             setResult(data.analysis);
+            setDocumentId(data.documentId || null);
             setRiskFactorsApplied(data.riskFactorsApplied || {});
             setStage('result');
         } catch (err) {
@@ -78,8 +71,10 @@ export default function MedicalDocumentUpload() {
         setPreviewUrl(null);
         setSelectedFile(null);
         setResult(null);
+        setDocumentId(null);
         setRiskFactorsApplied(null);
         setError(null);
+        setShowReviewChat(false);
         setStage('idle');
         if (cameraInputRef.current) cameraInputRef.current.value = '';
         if (galleryInputRef.current) galleryInputRef.current.value = '';
@@ -205,38 +200,7 @@ export default function MedicalDocumentUpload() {
                         </span>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {result.extractedValues.map((v) => (
-                            <div
-                                key={v.parameter}
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '10px 14px',
-                                    border: '1px solid var(--border-subtle)',
-                                    borderRadius: '8px',
-                                }}
-                            >
-                                <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem' }}>
-                                        {v.displayName}
-                                    </div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        {v.displayNameBn} · confidence {Math.round(v.confidence * 100)}%
-                                    </div>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontWeight: 700 }}>
-                                        {v.value} <span style={{ fontWeight: 400, fontSize: '0.8rem' }}>{v.unit}</span>
-                                    </div>
-                                    <span className={`badge ${SEVERITY_BADGE[v.severity]}`}>
-                                        {SEVERITY_ICON[v.severity]} {v.severity}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <ExtractedValuesList values={result.extractedValues} />
 
                     <div
                         style={{
@@ -254,14 +218,23 @@ export default function MedicalDocumentUpload() {
                     </div>
 
                     {stage === 'result' && (
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
+                            <button
+                                type="button"
+                                className="badge badge-info"
+                                style={{ padding: '10px 18px', cursor: 'pointer', border: 'none', fontSize: '0.9rem' }}
+                                onClick={() => setShowReviewChat(true)}
+                                disabled={!documentId}
+                            >
+                                💬 Discuss &amp; Confirm with Assistant
+                            </button>
                             <button
                                 type="button"
                                 className="badge badge-success"
                                 style={{ padding: '10px 18px', cursor: 'pointer', border: 'none', fontSize: '0.9rem' }}
                                 onClick={handleConfirm}
                             >
-                                ✓ Confirm &amp; Save as Risk Factors
+                                ✓ Save without discussing
                             </button>
                             <button
                                 type="button"
@@ -290,6 +263,17 @@ export default function MedicalDocumentUpload() {
                         </div>
                     )}
                 </div>
+            )}
+
+            {showReviewChat && documentId && (
+                <DocumentReviewChat
+                    documentId={documentId}
+                    onClose={() => setShowReviewChat(false)}
+                    onDone={() => {
+                        setShowReviewChat(false);
+                        handleConfirm();
+                    }}
+                />
             )}
         </div>
     );
