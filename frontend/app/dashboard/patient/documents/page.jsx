@@ -119,9 +119,55 @@ export default function PatientDocumentsPage() {
                         <div key={doc._id} className="dash-card">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                                 <div>
-                                    <span className="badge badge-info">
-                                        {docTypeLabels[doc.documentType] || doc.documentType}
-                                    </span>
+                                    {/* Document type badge + source label */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        <span className="badge badge-info">
+                                            {docTypeLabels[doc.documentType] || doc.documentType}
+                                        </span>
+
+                                        {/* Source: AI-analyzed or manually uploaded */}
+                                        {doc.documentAnalysis ? (
+                                            <span style={{
+                                                fontSize: '0.72rem', fontWeight: 600,
+                                                background: 'rgba(5,150,105,0.1)', color: '#065f46',
+                                                padding: '2px 8px', borderRadius: '999px',
+                                                border: '1px solid rgba(5,150,105,0.25)',
+                                            }}>
+                                                🤖 AI Analyzed
+                                            </span>
+                                        ) : (
+                                            <span style={{
+                                                fontSize: '0.72rem', fontWeight: 600,
+                                                background: 'rgba(107,114,128,0.1)', color: '#6b7280',
+                                                padding: '2px 8px', borderRadius: '999px',
+                                                border: '1px solid rgba(107,114,128,0.2)',
+                                            }}>
+                                                📁 Manually Uploaded
+                                            </span>
+                                        )}
+
+                                        {/* For AI docs: show the specific type the AI detected */}
+                                        {doc.documentAnalysis?.documentType && (() => {
+                                            const aiTypeLabels = {
+                                                prescription: 'Prescription',
+                                                lab_report: 'Lab Report',
+                                                ultrasound_report: 'Ultrasound Report',
+                                                blood_pressure_card: 'Blood Pressure Card',
+                                                other: 'Other Document',
+                                            };
+                                            const aiLabel = aiTypeLabels[doc.documentAnalysis.documentType];
+                                            // Only show if it adds information beyond the existing type badge
+                                            return aiLabel ? (
+                                                <span style={{
+                                                    fontSize: '0.72rem', color: 'var(--text-muted)',
+                                                    fontStyle: 'italic',
+                                                }}>
+                                                    AI identified: {aiLabel}
+                                                </span>
+                                            ) : null;
+                                        })()}
+                                    </div>
+
                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '6px' }}>
                                         {new Date(doc.uploadedAt).toLocaleDateString()}
                                         {doc.originalName ? ` · ${doc.originalName}` : ''}
@@ -152,6 +198,7 @@ export default function PatientDocumentsPage() {
                                     )}
                                 </div>
                             </div>
+
 
                             {doc.documentAnalysis ? (
                                 <div style={{ marginTop: '16px' }}>
