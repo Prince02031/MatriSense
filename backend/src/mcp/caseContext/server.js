@@ -13,7 +13,8 @@ const {
     getGuidedCareContext,
     getRecentTriageHistory,
     getPatientVisibleStatus,
-    getHealthWorkerCaseSummary
+    getHealthWorkerCaseSummary,
+    getDocumentAnalyses
 } = require('./services/caseContextService');
 
 const logOperation = (tool, requesterRole, targetId, status) => {
@@ -55,6 +56,15 @@ const schemas = {
             id: z.string(),
             role: z.enum(["HEALTH_WORKER", "ADMIN"])
         })
+    }),
+    case_analyze_medical_document: z.object({
+        documentId: z.string().optional(),
+        patientId: z.string().optional(),
+        sessionId: z.string().optional(),
+        limit: z.number().optional(),
+        requester: RequesterSchema.optional()
+    }).refine(d => d.documentId || d.patientId || d.sessionId, {
+        message: "One of documentId, patientId, or sessionId is required"
     })
 };
 
@@ -92,6 +102,11 @@ mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
                 name: "case_get_health_worker_case_summary",
                 description: "Returns detailed worker-only fields.",
                 inputSchema: { type: "object", properties: { sessionId: { type: "string" }, requester: { type: "object", properties: { id: { type: "string" }, role: { type: "string" } }, required: ["id", "role"] } }, required: ["sessionId", "requester"] }
+            },
+            {
+                name: "case_analyze_medical_document",
+                description: "Returns already-extracted Gemini Vision analysis (values, severity flags, summary) for a mother's uploaded medical document(s) — a specific document by documentId, or the most recently analyzed documents for a patientId/sessionId. Does not re-run analysis.",
+                inputSchema: { type: "object", properties: { documentId: { type: "string" }, patientId: { type: "string" }, sessionId: { type: "string" }, limit: { type: "number" }, requester: { type: "object" } } }
             }
         ]
     };
@@ -138,6 +153,13 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
             const parsed = schemas.case_get_health_worker_case_summary.parse(args);
             roleLog = parsed.requester.role;
             const data = await getHealthWorkerCaseSummary(parsed);
+            if (!data) throw new Error("Context unavailable or access denied");
+            result = data;
+        } else if (name === 'case_analyze_medical_document') {
+            const parsed = schemas.case_analyze_medical_document.parse(args);
+            pIdLog = parsed.documentId || parsed.sessionId || parsed.patientId;
+            roleLog = parsed.requester?.role || 'UNKNOWN';
+            const data = await getDocumentAnalyses(parsed);
             if (!data) throw new Error("Context unavailable or access denied");
             result = data;
         } else {
