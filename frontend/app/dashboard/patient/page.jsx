@@ -217,8 +217,34 @@ export default function PatientDashboard() {
                 </div>
             )}
 
+            {/* Status Cards — shown first so it's visible without scrolling past the actions */}
+            <h2 className="section-title">📊 {t.yourSummary}</h2>
+            <div className="summary-grid">
+                <div className="dash-card summary-card">
+                    <div className="dash-card-icon icon-indigo">🩺</div>
+                    <div>
+                        <div className="dash-card-value">{loading ? '...' : summary.totalSessions}</div>
+                        <div className="dash-card-sub">{t.triageSessions}</div>
+                    </div>
+                </div>
+                <div className="dash-card summary-card">
+                    <div className="dash-card-icon icon-teal">📅</div>
+                    <div>
+                        <div className="dash-card-value">{loading ? '...' : (summary.nextCheckupDate || summary.latestDate || '—')}</div>
+                        <div className="dash-card-sub">{t.nextCheckup}</div>
+                    </div>
+                </div>
+                <div className="dash-card summary-card">
+                    <div className="dash-card-icon icon-emerald">✅</div>
+                    <div>
+                        <div className="dash-card-value">{loading ? '...' : summary.latestRisk}</div>
+                        <div className="dash-card-sub">{t.currentRisk}</div>
+                    </div>
+                </div>
+            </div>
+
             {/* Quick Actions */}
-            <h2 className="section-title">⚡ {t.quickActions}</h2>
+            <h2 className="section-title" style={{ marginTop: '28px' }}>⚡ {t.quickActions}</h2>
             <div className="quick-actions">
                 <Link href="/triage/start" className="action-card">
                     <div className="action-icon icon-indigo">📝</div>
@@ -255,33 +281,6 @@ export default function PatientDashboard() {
                         <p>{t.emergencyHelpText}</p>
                     </div>
                 </a>
-            </div>
-
-            {/* Status Cards */}
-            <h2 className="section-title" style={{ marginTop: '32px' }}>📊 {t.yourSummary}</h2>
-            <div className="dash-grid">
-                <div className="dash-card">
-                    <div className="dash-card-header">
-                        <div className="dash-card-icon icon-indigo">🩺</div>
-                        <span className="badge badge-success">{t.active}</span>
-                    </div>
-                    <div className="dash-card-value">{loading ? '...' : summary.totalSessions}</div>
-                    <div className="dash-card-sub">{t.triageSessions}</div>
-                </div>
-                <div className="dash-card">
-                    <div className="dash-card-header">
-                        <div className="dash-card-icon icon-teal">📅</div>
-                    </div>
-                    <div className="dash-card-value">{loading ? '...' : (summary.nextCheckupDate || summary.latestDate || '—')}</div>
-                    <div className="dash-card-sub">{t.nextCheckup}</div>
-                </div>
-                <div className="dash-card">
-                    <div className="dash-card-header">
-                        <div className="dash-card-icon icon-emerald">✅</div>
-                    </div>
-                    <div className="dash-card-value">{loading ? '...' : summary.latestRisk}</div>
-                    <div className="dash-card-sub">{t.currentRisk}</div>
-                </div>
             </div>
         </>
     );
