@@ -413,15 +413,28 @@ router.delete('/me/documents/:documentId', protect, async (req, res) => {
     doc.isActive = false;
     await doc.save();
 
+    // --- Optionally cascade-delete the ClinicalDataPoint rows this ---
+    // --- document produced (patient opt-in, off by default). ---
+    const deleteClinicalData = req.query.deleteClinicalData === 'true';
+    let clinicalDataDeleted = 0;
+    if (deleteClinicalData) {
+      const result = await ClinicalDataPoint.updateMany(
+        { sourceDocumentId: doc._id, patientId: patient._id, isActive: true },
+        { isActive: false }
+      );
+      clinicalDataDeleted = result.modifiedCount || 0;
+    }
+
     // --- Audit ---
     await logAction(null, 'PATIENT_DOCUMENT_DELETED', 'PATIENT', {
       patientId: patient._id,
       documentId: doc._id,
       documentType: doc.documentType,
       originalName: doc.originalName,
+      clinicalDataDeleted,
     }, req.user._id);
 
-    res.json({ success: true, message: 'Document deleted successfully.' });
+    res.json({ success: true, message: 'Document deleted successfully.', clinicalDataDeleted });
   } catch (error) {
     console.error('[PatientRoutes] DELETE /me/documents/:documentId error:', error.message);
     res.status(500).json({

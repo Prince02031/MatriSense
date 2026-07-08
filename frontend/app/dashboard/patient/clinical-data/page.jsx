@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import { getMyClinicalData } from '../../../api/patientApi';
 import ClinicalParameterDetail from '../../../components/dashboard/ClinicalParameterDetail';
 
@@ -16,11 +17,6 @@ const SEVERITY_ICON = {
     NORMAL: '✅',
     WARNING: '⚠️',
     CRITICAL: '🚨',
-};
-
-const SOURCE_LABEL = {
-    DOCUMENT_UPLOAD: '📄 Document',
-    CHAT_SCAN: '💬 Chat Scan',
 };
 
 // One card per distinct parameter (e.g. "creatinine"), latest reading on top,
@@ -50,6 +46,11 @@ const groupByParameter = (dataPoints) => {
 
 export default function ClinicalDataPage() {
     const { user } = useAuth();
+    const { t, language } = useLanguage();
+    const ct = t.clinicalDataPage || {};
+    const SEVERITY_LABEL = { NORMAL: ct.normal, WARNING: ct.warning, CRITICAL: ct.critical };
+    const SOURCE_LABEL = { DOCUMENT_UPLOAD: ct.sourceDocument, CHAT_SCAN: ct.sourceChatScan };
+
     const [dataPoints, setDataPoints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -64,11 +65,11 @@ export default function ClinicalDataPage() {
                 if (data.success) {
                     setDataPoints(data.dataPoints || []);
                 } else {
-                    setError(data.error || 'Failed to load clinical data.');
+                    setError(data.error || ct.errorLoading);
                 }
             } catch (err) {
                 console.error('[ClinicalDataPage] fetch error:', err);
-                setError('Failed to load clinical data.');
+                setError(ct.errorLoading);
             } finally {
                 setLoading(false);
             }
@@ -84,25 +85,23 @@ export default function ClinicalDataPage() {
     return (
         <div className="dashboard-container" style={{ maxWidth: '960px', margin: '0 auto', padding: '20px' }}>
             <Link href="/dashboard/patient" style={{ color: 'var(--primary)', marginBottom: '20px', display: 'inline-block' }}>
-                ← Back to Dashboard
+                {ct.backToDashboard || '← Back to Dashboard'}
             </Link>
 
-            <h1 style={{ marginTop: '20px', marginBottom: '10px' }}>🩺 My Clinical Data</h1>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>
-                One card per clinical value, showing your latest reading. Click a card to see its full history and trend over time.
-            </p>
+            <h1 style={{ marginTop: '20px', marginBottom: '10px' }}>{ct.title || '🩺 My Clinical Data'}</h1>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>{ct.subtitle}</p>
 
             {loading ? (
-                <p>Loading clinical data...</p>
+                <p>{ct.loading || 'Loading clinical data...'}</p>
             ) : error ? (
                 <div style={{ color: 'var(--red-600)', padding: '16px', backgroundColor: 'var(--red-50)', borderRadius: '8px' }}>
                     {error}
                 </div>
             ) : groups.length === 0 ? (
                 <div className="dash-card" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <p>No clinical data collected yet.</p>
+                    <p>{ct.noData || 'No clinical data collected yet.'}</p>
                     <Link href="/dashboard/patient/documents" style={{ color: 'var(--primary)', marginTop: '16px', display: 'inline-block' }}>
-                        Upload a document →
+                        {ct.uploadCta || 'Upload a document →'}
                     </Link>
                 </div>
             ) : (
@@ -120,10 +119,12 @@ export default function ClinicalDataPage() {
                             }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{group.displayName}</div>
+                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    {language === 'bn' && group.displayNameBn ? group.displayNameBn : group.displayName}
+                                </div>
                                 {group.latest.severity && (
                                     <span className={`badge ${SEVERITY_BADGE[group.latest.severity]}`}>
-                                        {SEVERITY_ICON[group.latest.severity]} {group.latest.severity}
+                                        {SEVERITY_ICON[group.latest.severity]} {SEVERITY_LABEL[group.latest.severity] || group.latest.severity}
                                     </span>
                                 )}
                             </div>
@@ -139,7 +140,7 @@ export default function ClinicalDataPage() {
                                 {SOURCE_LABEL[group.latest.source] || group.latest.source} · {new Date(group.latest.recordedAt).toLocaleDateString()}
                             </div>
                             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                {group.history.length} record{group.history.length > 1 ? 's' : ''} · click for history &amp; trend
+                                {group.history.length} {group.history.length > 1 ? (ct.records || 'records') : (ct.record || 'record')} · {ct.clickForHistory || 'click for history & trend'}
                             </div>
                         </div>
                     ))}

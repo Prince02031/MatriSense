@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 const SEVERITY_COLOR = {
     NORMAL: 'var(--accent-emerald)',
@@ -18,11 +19,6 @@ const SEVERITY_ICON = {
     NORMAL: '✅',
     WARNING: '⚠️',
     CRITICAL: '🚨',
-};
-
-const SOURCE_LABEL = {
-    DOCUMENT_UPLOAD: '📄 Document',
-    CHAT_SCAN: '💬 Chat Scan',
 };
 
 const CHART_WIDTH = 640;
@@ -59,6 +55,11 @@ function niceTicks(min, max, count = 4) {
  * plus the full record list underneath as an always-available table view.
  */
 export default function ClinicalParameterDetail({ group, onClose }) {
+    const { t, language } = useLanguage();
+    const ct = t.clinicalDataPage || {};
+    const SEVERITY_LABEL = { NORMAL: ct.normal, WARNING: ct.warning, CRITICAL: ct.critical };
+    const SOURCE_LABEL = { DOCUMENT_UPLOAD: ct.sourceDocument, CHAT_SCAN: ct.sourceChatScan };
+
     const [hoverIdx, setHoverIdx] = useState(null);
     const svgRef = useRef(null);
 
@@ -137,8 +138,13 @@ export default function ClinicalParameterDetail({ group, onClose }) {
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <h3 style={{ margin: 0 }}>{group.displayName}</h3>
-                        {group.displayNameBn && (
+                        <h3 style={{ margin: 0 }}>
+                            {language === 'bn' && group.displayNameBn ? group.displayNameBn : group.displayName}
+                        </h3>
+                        {language === 'bn' && group.displayNameBn && group.displayName && (
+                            <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{group.displayName}</p>
+                        )}
+                        {language !== 'bn' && group.displayNameBn && (
                             <p style={{ margin: '2px 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{group.displayNameBn}</p>
                         )}
                     </div>
@@ -153,9 +159,9 @@ export default function ClinicalParameterDetail({ group, onClose }) {
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', marginTop: '14px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                    <span className="badge badge-success">✅ Normal</span>
-                    <span className="badge badge-warning">⚠️ Warning</span>
-                    <span className="badge badge-danger">🚨 Critical</span>
+                    <span className="badge badge-success">✅ {ct.normal || 'Normal'}</span>
+                    <span className="badge badge-warning">⚠️ {ct.warning || 'Warning'}</span>
+                    <span className="badge badge-danger">🚨 {ct.critical || 'Critical'}</span>
                 </div>
 
                 {hasChart ? (
@@ -231,18 +237,18 @@ export default function ClinicalParameterDetail({ group, onClose }) {
                             <span style={{ color: 'var(--text-muted)' }}>{hovered ? new Date(hovered.dp.recordedAt).toLocaleDateString() : '—'}</span>
                             <strong>{hovered ? `${hovered.dp.value} ${hovered.dp.unit || ''}` : '—'}</strong>
                             <span className={`badge ${hovered ? SEVERITY_BADGE[hovered.dp.severity] : ''}`}>
-                                {hovered ? `${SEVERITY_ICON[hovered.dp.severity] || ''} ${hovered.dp.severity || 'N/A'}` : ''}
+                                {hovered ? `${SEVERITY_ICON[hovered.dp.severity] || ''} ${SEVERITY_LABEL[hovered.dp.severity] || hovered.dp.severity || ''}` : ''}
                             </span>
                         </div>
                     </div>
                 ) : (
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '8px' }}>
-                        Not enough numeric readings yet to plot a trend.
+                        {ct.notEnoughData || 'Not enough numeric readings yet to plot a trend.'}
                     </p>
                 )}
 
                 <h4 style={{ marginTop: '20px', marginBottom: '10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    Full history ({group.history.length})
+                    {ct.fullHistory || 'Full history'} ({group.history.length})
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {group.history.map((dp) => (
@@ -276,7 +282,7 @@ export default function ClinicalParameterDetail({ group, onClose }) {
                                 )}
                                 {dp.severity && (
                                     <span className={`badge ${SEVERITY_BADGE[dp.severity]}`}>
-                                        {SEVERITY_ICON[dp.severity]} {dp.severity}
+                                        {SEVERITY_ICON[dp.severity]} {SEVERITY_LABEL[dp.severity] || dp.severity}
                                     </span>
                                 )}
                                 <span className={`badge ${dp.confirmedByPatient ? 'badge-success' : 'badge-warning'}`}>
