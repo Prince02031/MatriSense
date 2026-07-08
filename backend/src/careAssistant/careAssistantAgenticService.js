@@ -6,7 +6,7 @@ const axios = require('axios');
 
 const TriageSession = require('../models/TriageSession');
 const Patient = require('../models/Patient');
-const { getGuidedCareContext, getRecentTriageHistory, getPatientVisibleStatus } = require('../mcp/caseContext/services/caseContextService');
+const { getGuidedCareContext, getRecentTriageHistory, getPatientVisibleStatus, getDocumentAnalyses } = require('../mcp/caseContext/services/caseContextService');
 const {
   referralGetReferralStatus,
   referralGetAssignedHospital,
@@ -49,6 +49,17 @@ const toolDeclarations = [
         sessionId: { type: 'STRING', description: 'The official triage session ID' }
       },
       required: ['sessionId']
+    }
+  },
+  {
+    name: 'case_analyze_medical_document',
+    description: 'Use when the user asks about values from an uploaded medical document photo (lab report, prescription, blood pressure card) — what values were extracted, whether anything was abnormal, or a summary of what a document showed.',
+    parameters: {
+      type: 'OBJECT',
+      properties: {
+        patientId: { type: 'STRING', description: 'The official patient ID' }
+      },
+      required: ['patientId']
     }
   },
   {
@@ -459,6 +470,18 @@ INSTRUCTIONS:
             toolResults.statusData = resultPayload;
             executedTools.push(name);
           } 
+          else if (name === 'case_analyze_medical_document') {
+            if (!patientId) {
+              resultPayload = { error: 'No patientId associated with this session' };
+            } else {
+              resultPayload = await getDocumentAnalyses({
+                patientId: patientId, // Force official patientId
+                requester: { role: 'INTERNAL' }
+              });
+              toolResults.documentAnalyses = resultPayload;
+              executedTools.push(name);
+            }
+          }
           else if (name === 'rag_get_safe_guidance_context') {
             const knowledgeCardsPath = path.join(__dirname, '../rag/knowledgeCards.json');
             const knowledgeCards = JSON.parse(fs.readFileSync(knowledgeCardsPath, 'utf-8'));
@@ -616,6 +639,21 @@ INSTRUCTIONS:
     const sd = toolResults.statusData;
     assembledContext.workerStatus = sd.caseStatus || assembledContext.workerStatus;
     assembledContext.assignedHospital = sd.assignedHospitalName || assembledContext.assignedHospital;
+  }
+
+  if (toolResults.documentAnalyses?.documents?.length) {
+    assembledContext.documentUploadSummary = toolResults.documentAnalyses.documents.map(d => ({
+      documentType: d.documentType,
+      analyzedAt: d.analyzedAt,
+      summary: d.analysis?.summary || null,
+      extractedValues: (d.analysis?.extractedValues || []).map(v => ({
+        displayName: v.displayName,
+        value: v.value,
+        unit: v.unit,
+        severity: v.severity
+      })),
+      riskFactorsDetected: d.analysis?.riskFactorsDetected || []
+    }));
   }
 
   // Load basic patient profile if needed for formatting, keeping PII hidden normally
