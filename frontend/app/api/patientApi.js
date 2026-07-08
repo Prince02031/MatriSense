@@ -96,6 +96,15 @@ export const deletePatientDocument = async (documentId) => {
 };
 
 /**
+ * Unified clinical history across all sources (documents today, chat
+ * scans later) — GET /api/patients/me/clinical-data.
+ */
+export const getMyClinicalData = async () => {
+  const res = await authFetch(`${API_BASE}/api/patients/me/clinical-data`);
+  return res.json();
+};
+
+/**
  * Upload a medical document photo for Gemini Vision analysis
  * (POST /api/documents/analyze). Same multipart convention as
  * uploadPatientDocument — no manual Content-Type so the browser

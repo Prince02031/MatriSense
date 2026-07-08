@@ -339,6 +339,42 @@ router.get('/me/documents', protect, async (req, res) => {
 });
 
 // ============================================================================
+// GET /api/patients/me/clinical-data — Unified clinical history for the
+// logged-in patient, across all sources (documents today, chat scans later).
+// ============================================================================
+router.get('/me/clinical-data', protect, async (req, res) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        error: 'No patient profile found for this user.',
+      });
+    }
+
+    const dataPoints = await ClinicalDataPoint.find({
+      patientId: patient._id,
+      isActive: true,
+    })
+      .sort({ recordedAt: -1 })
+      .populate('sourceDocumentId', 'documentType originalName');
+
+    res.json({
+      success: true,
+      dataPoints,
+      total: dataPoints.length,
+    });
+  } catch (error) {
+    console.error('[PatientRoutes] GET /me/clinical-data error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve clinical data',
+      message: error.message,
+    });
+  }
+});
+
+// ============================================================================
 // DELETE /api/patients/me/documents/:documentId — Soft-delete a patient document
 // ============================================================================
 router.delete('/me/documents/:documentId', protect, async (req, res) => {
