@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '../../../context/AuthContext';
 import { getMyPatientDocuments } from '../../../api/patientApi';
 import ExtractedValuesList from '../../../components/dashboard/ExtractedValuesList';
+import MedicalDocumentUpload from '../../../components/dashboard/MedicalDocumentUpload';
 
 const DOC_TYPE_LABELS = {
     PRESCRIPTION: 'Prescription',
@@ -29,25 +30,24 @@ export default function PatientDocumentsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const fetchDocuments = async () => {
+        try {
+            const data = await getMyPatientDocuments();
+            if (data.success) {
+                setDocuments(data.documents || []);
+            } else {
+                setError(data.error || 'Failed to load documents.');
+            }
+        } catch (err) {
+            console.error('[PatientDocumentsPage] fetch error:', err);
+            setError('Failed to load documents.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (!user) return;
-
-        const fetchDocuments = async () => {
-            try {
-                const data = await getMyPatientDocuments();
-                if (data.success) {
-                    setDocuments(data.documents || []);
-                } else {
-                    setError(data.error || 'Failed to load documents.');
-                }
-            } catch (err) {
-                console.error('[PatientDocumentsPage] fetch error:', err);
-                setError('Failed to load documents.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchDocuments();
     }, [user]);
 
@@ -64,6 +64,10 @@ export default function PatientDocumentsPage() {
                 Every document you've uploaded, along with what our AI extracted from it.
             </p>
 
+            <div style={{ marginBottom: '32px' }}>
+                <MedicalDocumentUpload onSaved={fetchDocuments} />
+            </div>
+
             {loading ? (
                 <p>Loading documents...</p>
             ) : error ? (
@@ -72,10 +76,7 @@ export default function PatientDocumentsPage() {
                 </div>
             ) : documents.length === 0 ? (
                 <div className="dash-card" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <p>No documents uploaded yet.</p>
-                    <Link href="/dashboard/patient" style={{ color: 'var(--primary)', marginTop: '16px', display: 'inline-block' }}>
-                        Upload a document →
-                    </Link>
+                    <p>No documents uploaded yet. Use the form above to upload your first one.</p>
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
