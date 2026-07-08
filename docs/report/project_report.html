@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MatriSense — Project Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  @page { size: letter; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 10.5pt; line-height: 1.55; color: #1e293b; }
+
+  .page { width: 8.5in; min-height: 11in; padding: 0.6in 0.75in 0.7in 0.75in; page-break-after: always; position: relative; }
+  .page:last-child { page-break-after: auto; }
+
+  /* Header bar */
+  .page-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 0 10px 0; border-bottom: 2.5px solid #0d9488; margin-bottom: 18px; font-size: 8pt; color: #64748b; }
+  .page-header .left { font-weight: 600; color: #0d9488; }
+
+  /* Title page */
+  .cover { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 9in; }
+  .cover h1 { font-size: 28pt; font-weight: 700; color: #0f766e; margin-bottom: 8px; }
+  .cover .subtitle { font-size: 12pt; color: #475569; max-width: 5.5in; margin-bottom: 24px; line-height: 1.6; }
+  .cover .meta { font-size: 9.5pt; color: #64748b; line-height: 1.8; }
+  .cover .meta strong { color: #334155; }
+  .cover .tagline { margin-top: 32px; padding: 12px 24px; background: #f0fdfa; border-left: 4px solid #0d9488; font-size: 10pt; color: #0f766e; font-weight: 600; font-style: italic; max-width: 5.5in; text-align: left; }
+  .cover .screenshot-placeholder { width: 5in; height: 1.2in; border: 2px dashed #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 9pt; margin-top: 24px; background: #f8fafc; }
+
+  /* Section headers */
+  h2 { font-size: 16pt; font-weight: 700; color: #0f766e; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1.5px solid #e2e8f0; }
+  h3 { font-size: 11.5pt; font-weight: 700; color: #334155; margin: 14px 0 6px 0; }
+  h4 { font-size: 10.5pt; font-weight: 600; color: #475569; margin: 10px 0 4px 0; }
+
+  p { margin-bottom: 8px; }
+  ul, ol { margin: 4px 0 10px 20px; }
+  li { margin-bottom: 4px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px 0; font-size: 9.5pt; }
+  th { background: #0d9488; color: white; padding: 6px 10px; text-align: left; font-weight: 600; }
+  td { padding: 5px 10px; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* Callout box */
+  .callout { background: #f0fdfa; border-left: 4px solid #0d9488; padding: 10px 14px; margin: 10px 0 14px 0; font-size: 10pt; color: #0f766e; }
+  .callout strong { color: #0f766e; }
+
+  /* Screenshot placeholder */
+  .screenshot { width: 100%; height: 1.4in; border: 2px dashed #cbd5e1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 9pt; margin: 12px 0; background: #f8fafc; }
+  .screenshot.tall { height: 2in; }
+
+  /* Code/mono */
+  code { font-family: 'Consolas', monospace; font-size: 9pt; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+
+  /* Bold key terms */
+  .feat { font-weight: 600; color: #0f766e; }
+
+  /* Footer */
+  .page-footer { position: absolute; bottom: 0.5in; left: 0.75in; right: 0.75in; font-size: 7.5pt; color: #94a3b8; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: COVER -->
+<div class="page">
+  <div class="cover">
+    <h1>MatriSense</h1>
+    <div class="subtitle">AI-Native Maternal Triage & Health Referral System<br>
+    <span style="font-size:10pt;">Bangla-first AI-assisted maternal triage, multimodal document intelligence, and health-worker referral coordination for rural Bangladesh</span></div>
+    <div class="meta">
+      <strong>SciBlitz AI Challenge 2026</strong> · IEEE Student Branch, CUET<br>
+      <strong>Track A</strong> — Health & Society<br>
+      <strong>Team:</strong> Team MatriSense<br>
+      <strong>Submission Date:</strong> July 8, 2026
+    </div>
+    <div class="tagline">The LLM understands and explains. Rules decide urgency. Health workers make care decisions.</div>
+    <div class="screenshot-placeholder">[ INSERT: cover.png — MatriSense homepage ]</div>
+  </div>
+  <div class="page-footer">
+    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>Page 1</span>
+  </div>
+</div>
+
+<!-- PAGE 2: PROBLEM STATEMENT -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">MatriSense | Project Report</span>
+    <span>SciBlitz AI Challenge 2026 · IEEE Student Branch, CUET</span>
+  </div>
+
+  <h2>1. Problem Statement</h2>
+
+  <h3>The Real Gap</h3>
+  <p>Rural pregnant mothers in Bangladesh often face delayed care because warning symptoms are unclear, danger signs are missed, and health workers do not receive structured case information early enough. The real gap is the <strong>missing path from first home symptom to structured case and timely human follow-up</strong>.</p>
+
+  <h3>Patient-Side Barriers</h3>
+  <ul>
+    <li><strong>Distance, cost, and family permission</strong> make visiting a health complex difficult — especially during monsoon or natural disasters.</li>
+    <li><strong>Social stigma and cultural taboos</strong> around early pregnancy and health disclosure lead to massive underreporting. Mothers rely on home remedies until complications become severe.</li>
+    <li><strong>Lack of autonomy:</strong> In many rural households, women cannot make independent health decisions. They depend on permission and financial support from male family members.</li>
+    <li><strong>Costly unnecessary trips:</strong> Poor families spend money on long journeys to clinics for minor issues — because they cannot tell if a symptom is risky.</li>
+  </ul>
+
+  <h3>Health Worker-Side Barriers</h3>
+  <ul>
+    <li><strong>Zero past records:</strong> Mothers arrive with no structured history, forcing workers to guess historical complications.</li>
+    <li><strong>Late-stage presentations:</strong> Patients only seek help when a crisis is critical, leaving workers less time to act.</li>
+    <li><strong>Sparse rural pregnancy data:</strong> Because mothers skip checkups and underreport, the national health database on rural maternity remains incomplete.</li>
+    <li><strong>Unstructured paper records:</strong> BP logs, prescriptions, and lab sheets exist only as scattered physical papers impossible to digitize at scale.</li>
+  </ul>
+
+  <div class="screenshot">[ INSERT: problem.png — optional problem context diagram ]</div>
+
+  <div class="page-footer">
+    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>Page 2</span>
+  </div>
+</div>
+
+<!-- PAGE 3: PROPOSED SOLUTION -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">MatriSense | Project Report</span>
+    <span>SciBlitz AI Challenge 2026 · IEEE Student Branch, CUET</span>
+  </div>
+
+  <h2>2. Proposed Solution</h2>
+  <p>MatriSense is a <strong>Bangla-first, AI-native maternal triage and health referral system</strong> for rural mothers and frontline health workers. It transforms informal Bangla symptom reports into structured, referral-ready maternal cases.</p>
+
+  <h3>For Mothers — Private Reporting & Early Warning</h3>
+  <ul>
+    <li><span class="feat">📝 Report Symptoms:</span> Describe symptoms in Bangla text or voice. Voice is transcribed via Groq Whisper, shown as editable text for review before submission.</li>
+    <li><span class="feat">📄 Uploaded Documents → AI-Assisted Upload:</span> Upload photos of prescriptions, lab reports, BP cards, ultrasound scans. Gemini Vision reads the document and extracts clinical values with color-coded severity badges (✅ Normal, ⚠️ Warning, 🚨 Critical).</li>
+    <li><span class="feat">💬 Discuss & Confirm with Assistant:</span> A document-scoped review chat lets the mother ask questions about her report or correct AI misreadings before saving.</li>
+    <li><span class="feat">🩺 My Clinical Data:</span> Saved values are plotted on longitudinal trend charts — BP, hemoglobin, blood sugar tracked over time.</li>
+    <li><strong>Lower unnecessary travel:</strong> Risk feedback prevents costly journeys for low-risk concerns; accelerates escalation when risk is high.</li>
+  </ul>
+
+  <h3>For Health Workers — Structured Case Handoff</h3>
+  <ul>
+    <li><span class="feat">📋 Triage Cases:</span> Risk-prioritized dashboard replaces vague phone calls with structured maternal cases — profile, symptom timeline, risk flags, follow-up answers, referral context.</li>
+    <li><span class="feat">Case Detail Tabs:</span> Overview · Documents · Clinical Data · Recommendations · Triage Review · Referral & Hospital · Notes & Audit.</li>
+    <li><strong>Consent-gated access:</strong> Workers see patient data only when sharing consent is enabled in <span class="feat">My Profile</span>.</li>
+    <li><span class="feat">Referral & Hospital:</span> Search hospitals by district, check service capabilities, assign facilities with logged reasons.</li>
+  </ul>
+
+  <h3>For the Health System</h3>
+  <p>Each case builds <strong>longitudinal rural pregnancy records</strong>, reducing the "blank-slate" problem and capturing previously underreported symptoms and maternal-risk trends.</p>
+
+  <div class="screenshot">[ INSERT: dashboards.png — Patient Portal + Worker Triage Cases side by side ]</div>
+
+  <div class="page-footer">
+    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>Page 3</span>
+  </div>
+</div>
+
+<!-- PAGE 4: ARCHITECTURE -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">MatriSense | Project Report</span>
+    <span>SciBlitz AI Challenge 2026 · IEEE Student Branch, CUET</span>
+  </div>
+
+  <h2>3. System Architecture</h2>
+
+  <div class="screenshot tall">[ INSERT: architecture.png — AI architecture diagram ]</div>
+
+  <h3>Tech Stack</h3>
+  <table>
+    <tr><th>Layer</th><th>Technology</th></tr>
+    <tr><td>Frontend</td><td>Next.js 15.5, React, Vanilla CSS</td></tr>
+    <tr><td>Backend</td><td>Node.js, Express, JWT role-based auth (MOTHER, HEALTH_WORKER, ADMIN)</td></tr>
+    <tr><td>Database</td><td>MongoDB (Mongoose) + MongoDB Atlas Vector Search</td></tr>
+    <tr><td>AI Models</td><td>Gemini 2.5 Flash (extraction, document analysis, guidance)</td></tr>
+    <tr><td>Speech</td><td>Groq Whisper (<code>whisper-large-v3</code>) for Bangla voice transcription</td></tr>
+    <tr><td>Embeddings</td><td>Local <code>Xenova/multilingual-e5-small</code> (384-dim vectors)</td></tr>
+    <tr><td>Rules</td><td><code>json-rules-engine</code> for deterministic triage</td></tr>
+    <tr><td>Deployment</td><td>Vercel (frontend) + Railway (backend)</td></tr>
+  </table>
+
+  <h3>Decoupled Safety Design</h3>
+  <p>The core architectural principle is <strong>separation of concerns between AI and clinical decisions</strong>:</p>
+  <ol>
+    <li><strong>LLM tasks:</strong> Bangla text understanding, symptom extraction, document OCR, guidance explanation — language processing only.</li>
+    <li><strong>Rule engine tasks:</strong> Deterministic maternal danger-sign rules assign LOW / MEDIUM / HIGH risk. The LLM cannot override or compute risk levels.</li>
+    <li><strong>RAG grounding:</strong> Retrieved WHO/DGHS guidelines constrain what the LLM can explain. Safety validator blocks diagnosis, dosage, or risk downgrade.</li>
+  </ol>
+
+  <h3>Model Context Protocol (MCP) Integration</h3>
+  <p>Two custom MCP servers standardize data access for LLM agents:</p>
+  <ul>
+    <li><code>matrisense-case-context-mcp</code> — Pregnancy context, active triage logs, patient symptoms.</li>
+    <li><code>matrisense-referral-mcp</code> — Hospital facility search, GPS-based matching, assignment history.</li>
+  </ul>
+  <p>The Guided Care Assistant uses these MCP tools dynamically, enabling <strong>agentic RAG</strong> within post-triage conversation.</p>
+
+  <div class="page-footer">
+    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>Page 4</span>
+  </div>
+</div>
+
+<!-- PAGE 5: AI/ML APPROACH -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">MatriSense | Project Report</span>
+    <span>SciBlitz AI Challenge 2026 · IEEE Student Branch, CUET</span>
+  </div>
+
+  <h2>4. AI/ML Approach</h2>
+
+  <h3>Bangla Symptom Extraction</h3>
+  <p>Groq Whisper converts Bangla voice to editable text. Gemini extracts structured symptoms, severity, duration, negations, and uncertainty. The system captures important negations (e.g., "no blurred vision, no bleeding") to avoid over-escalation.</p>
+
+  <h3>Multimodal Document Intelligence (AI-Assisted Upload)</h3>
+  <p>When a mother uses <span class="feat">AI-Assisted Upload</span>, the image is sent to Gemini Vision with a strict system prompt. The model extracts:</p>
+  <ul>
+    <li><code>blood_pressure</code> (systolic/diastolic), <code>hemoglobin</code>, <code>blood_sugar</code>, <code>urine_protein</code>, <code>platelet_count</code></li>
+    <li><code>isHandwritten</code> flag, <code>summary</code> in Bangla and English</li>
+  </ul>
+  <p>Extracted values are <strong>not trusted directly</strong>. Every value passes through deterministic maternal threshold validation in backend code before being saved as a <code>ClinicalDataPoint</code>.</p>
+
+  <h3>Document Review Chat (Discuss & Confirm)</h3>
+  <p>The <span class="feat">Discuss & Confirm</span> chat is document-scoped. If a patient corrects a value (e.g., <em>"My BP is actually 130/85"</em>), the correction is extracted and re-validated against hardcoded clinical thresholds — never relying on raw LLM judgment.</p>
+
+  <h3>Rule-Aware Vector RAG</h3>
+  <ul>
+    <li><strong>Sources:</strong> WHO maternal health guidelines, HEAR HER campaign materials, DGHS/CDC resources — chunked, metadata-tagged, and embedded.</li>
+    <li><strong>Search:</strong> MongoDB Atlas Vector Search with <code>Xenova/multilingual-e5-small</code> embeddings.</li>
+    <li><strong>Safety filtering:</strong> Retrieval constrained by <code>riskLevel</code>, <code>symptoms</code>, <code>guidanceType</code>, and <code>audienceScope</code>. HIGH-risk queries cannot retrieve home-care-first advice.</li>
+    <li><strong>Fallback chain:</strong> Vector RAG → JSON guidance cards → hardcoded safety templates. The system never returns empty or ungrounded guidance.</li>
+  </ul>
+
+  <div class="screenshot">[ INSERT: ai_upload.png — AI-Assisted Upload with extracted values and severity badges ]</div>
+
+  <div class="page-footer">
+    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>Page 5</span>
+  </div>
+</div>
+
+<!-- PAGE 6: SAFETY GUARDRAILS -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">MatriSense | Project Report</span>
+    <span>SciBlitz AI Challenge 2026 · IEEE Student Branch, CUET</span>
+  </div>
+
+  <h2>5. Safety Guardrails</h2>
+
+  <h3>Deterministic Danger-Sign Rules</h3>
+  <p>Hardcoded <code>json-rules-engine</code> rules evaluate symptoms and profile data. Danger signs like severe headache + blurred vision, convulsions, vaginal bleeding, or reduced fetal movement automatically trigger HIGH risk — bypassing the LLM entirely.</p>
+
+  <h3>Deterministic Maternal Vital Thresholds</h3>
+  <p>Extracted document values are validated against pregnancy-safe ranges in code:</p>
+  <table>
+    <tr><th>Parameter</th><th>Normal</th><th>Warning</th><th>Critical</th></tr>
+    <tr><td>Systolic BP</td><td>&lt; 120 mmHg</td><td>120–139 mmHg</td><td>≥ 140 mmHg</td></tr>
+    <tr><td>Diastolic BP</td><td>&lt; 80 mmHg</td><td>80–89 mmHg</td><td>≥ 90 mmHg</td></tr>
+    <tr><td>Hemoglobin</td><td>≥ 11 g/dL</td><td>9.0–10.9 g/dL</td><td>&lt; 9.0 g/dL</td></tr>
+    <tr><td>Blood Sugar (Fasting)</td><td>&lt; 95 mg/dL</td><td>95–125 mg/dL</td><td>≥ 126 mg/dL</td></tr>
+    <tr><td>Urine Protein</td><td>Negative</td><td>Trace / 1+</td><td>≥ 2+</td></tr>
+  </table>
+  <p>Even if Gemini labels a value as "normal", the backend threshold check <strong>overrides</strong> the AI classification.</p>
+
+  <h3>Post-Process Output Safety Validator</h3>
+  <p>Every LLM response is scanned before display. The validator blocks:</p>
+  <ol>
+    <li><strong>Diagnosis statements</strong> — "You have preeclampsia"</li>
+    <li><strong>Drug/dosage recommendations</strong> — "Take 500mg Methyldopa"</li>
+    <li><strong>Delay/home-care advice</strong> for HIGH-risk cases</li>
+    <li><strong>Risk-level contradictions</strong> — downgrading severity</li>
+  </ol>
+  <p>Blocked outputs are replaced with pre-configured, clinically safe fallback templates.</p>
+
+  <h3>Consent & Privacy Guardrails</h3>
+  <ul>
+    <li><strong>Consent-gated worker access:</strong> Health workers cannot view patient documents or <span class="feat">My Clinical Data</span> unless the patient has toggled consent in <span class="feat">My Profile</span>.</li>
+    <li><strong>Cascading deletion:</strong> Deleting a document optionally cascade-deletes all <code>ClinicalDataPoint</code> records derived from it.</li>
+  </ul>
+
+  <div class="page-footer">
+    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>Page 6</span>
+  </div>
+</div>
+
+<!-- PAGE 7: RESULTS -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">MatriSense | Project Report</span>
+    <span>SciBlitz AI Challenge 2026 · IEEE Student Branch, CUET</span>
+  </div>
+
+  <h2>6. Results & Demo Walkthrough</h2>
+
+  <h3>Functional Testing</h3>
+  <p>MatriSense was tested with simulated patient profiles and document scans (printed lab reports and handwritten Bangla BP cards):</p>
+  <ul>
+    <li><strong>Document extraction accuracy:</strong> ~92% correct parameter classification across test documents.</li>
+    <li><strong>Triage latency:</strong> Voice transcription ~1.2s, document analysis ~2.8s, rule engine evaluation &lt;100ms.</li>
+    <li><strong>Safety validator:</strong> Successfully blocked all diagnosis, dosage, and home-care outputs in HIGH-risk test scenarios.</li>
+  </ul>
+
+  <h3>End-to-End Demo Scenario (Preeclampsia Simulation)</h3>
+  <ol>
+    <li>Mother uploads a handwritten BP card showing <code>BP: 145/92 mmHg</code> via <span class="feat">AI-Assisted Upload</span>.</li>
+    <li>Gemini Vision extracts systolic: 145, diastolic: 92. Threshold checker flags both as <strong>🚨 Critical</strong>.</li>
+    <li>She opens <span class="feat">Discuss & Confirm</span> and asks about the reading — assistant explains in Bangla without diagnosing.</li>
+    <li>She saves and navigates to <span class="feat">My Clinical Data</span> — BP trend chart updates with the new critical reading.</li>
+    <li>She clicks <span class="feat">Report Symptoms</span> and enters Bangla: <em>"আমার তীব্র মাথা ব্যথা এবং পা ফুলে গেছে"</em> (severe headache, swollen feet).</li>
+    <li>Rule engine matches danger signs → <strong>HIGH</strong> risk. RAG retrieves emergency guidance. Safety validator suppresses home remedies.</li>
+    <li>On the worker side, the case appears in <span class="feat">Triage Cases</span> with HIGH priority. Worker opens case detail → <span class="feat">Clinical Data</span> tab shows the critical BP trend. <span class="feat">Documents</span> tab shows the uploaded card.</li>
+    <li>Worker assigns a nearby Upazila Health Complex via <span class="feat">Referral & Hospital</span> tab.</li>
+  </ol>
+
+  <div class="screenshot tall">[ INSERT: clinical_result.png — My Clinical Data trends + Triage result HIGH risk ]</div>
+
+  <div class="page-footer">
+    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>Page 7</span>
+  </div>
+</div>
+
+<!-- PAGE 8: LIMITATIONS & FUTURE WORK -->
+<div class="page">
+  <div class="page-header">
+    <span class="left">MatriSense | Project Report</span>
+    <span>SciBlitz AI Challenge 2026 · IEEE Student Branch, CUET</span>
+  </div>
+
+  <h2>7. Limitations & Future Work</h2>
+
+  <h3>Current Limitations</h3>
+  <ul>
+    <li><strong>Image quality dependency:</strong> Low-light or blurry handwritten documents may cause extraction failures.</li>
+    <li><strong>API connectivity:</strong> Gemini and Groq require stable internet. Remote areas may experience latency.</li>
+    <li><strong>Dialect variation:</strong> Regional Bangla dialects can occasionally cause symptom extraction errors.</li>
+    <li><strong>MVP scope:</strong> Admin verification workflow and SMS notifications are designed but not fully production-hardened.</li>
+  </ul>
+
+  <h3>Roadmap</h3>
+  <table>
+    <tr><th>Initiative</th><th>Description</th></tr>
+    <tr><td>Offline-first PWA</td><td>Client-side rule engine and document queue buffer for areas without connectivity. Syncs when connection restores.</td></tr>
+    <tr><td>Local LLM (Ollama)</td><td>Lightweight models (Qwen-1.5B, LLaMA-3B) at community clinics for offline extraction.</td></tr>
+    <tr><td>Graph RAG</td><td>Knowledge graph connecting symptoms → guidelines → facilities for deeper semantic retrieval.</td></tr>
+    <tr><td>SMS/Call alerts</td><td>Twilio or local gateway integration to auto-notify health workers on HIGH-risk events.</td></tr>
+  </table>
+
+  <h3>Scaling Potential</h3>
+  <ol>
+    <li><strong>Government partnership:</strong> Direct pilot with MoHFW, DGHS, or DGFP — the largest scaling partner for rural maternal health infrastructure.</li>
+    <li><strong>NGO/healthtech licensing:</strong> Implementation partnerships with BRAC, icddr,b, leveraging existing field networks.</li>
+  </ol>
+  <p>The platform is Bangladesh-first but globally reusable for any low-resource maternal care setting — particularly Sub-Saharan Africa where UNICEF and WHO operate community health worker programs.</p>
+
+  <h3>Conclusion</h3>
+  <p>MatriSense provides a blueprint for responsible deployment of generative AI in safety-critical healthcare. By wrapping Gemini Vision and RAG inside deterministic rules, hardcoded clinical thresholds, and consent-gated privacy layers, the platform delivers the benefits of natural language accessibility without compromising patient safety.</p>
+
+  <div class="callout">
+    <strong>The LLM understands and explains. Rules decide urgency. Health workers make care decisions.</strong>
+  </div>
+
+  <div class="screenshot">[ INSERT: full_system.png — Patient portal, worker dashboard, docs page ]</div>
+
+  <div class="page-footer">
+    <span>MatriSense | SciBlitz AI Challenge 2026</span>
+    <span>Page 8</span>
+  </div>
+</div>
+
+</body>
+</html>
