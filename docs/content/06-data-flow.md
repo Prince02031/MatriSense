@@ -6,7 +6,7 @@ The MatriSense triage journey turns a Bangla symptom report into a structured ma
 
 1.  **Profile Context:** The system loads available pregnancy profile data such as trimester, gestational week, known risk factors, last checkup date, age, contact details, district/upazila/address, optional location, and consent-based uploaded documents.
 
-2.  **Consent-Based Documents:** Patients may optionally upload profile images, ID papers, prescriptions, certificates, or previous medical reports. These documents support health-worker verification and referral review. They are not used as autonomous diagnosis inputs.
+2.  **Consent-Based Documents & AI Analysis:** Patients may optionally upload document images (handwritten blood pressure cards, prescriptions, lab reports, ultrasound scans). For AI-assisted uploads, Gemini Vision parses the image to extract structured values (e.g. BP, hemoglobin, blood sugar, urine protein), validates them against deterministic pregnancy thresholds, and displays color-coded severity badges. A conversational Review Chat lets the patient discuss or correct values before they are saved to their profile and integrated as risk factors in the triage pipeline.
 
 3.  **Symptom Entry:** The patient reports symptoms in Bangla text or voice. Voice input is transcribed into editable text first, and the user can review or correct it before submitting.
 
@@ -52,7 +52,7 @@ The MatriSense triage journey turns a Bangla symptom report into a structured ma
 
 ### Health Worker and Referral Flow
 
-21. **Health Worker Case:** Relevant cases appear in the health-worker dashboard with patient profile snapshot, raw symptom input, extracted symptoms, follow-up answers, matched rules, RAG guidance, safety status, and result summary.
+21. **Health Worker Case Review:** Relevant cases appear in the health-worker dashboard. The case detail page features a **tabbed layout** (Overview, Triage Review, Documents, Clinical Data, Recommendations, Referral & Hospital, Notes & Audit) surfacing the patient's uploaded documents and unified clinical history/trend charts, strictly gated by patient consent.
 
 22. **District Filtering:** Worker case lists can be filtered by risk level, status, district, upazila, and worker coverage.
 
@@ -72,7 +72,7 @@ The MatriSense triage journey turns a Bangla symptom report into a structured ma
 
 ### Data Persistence
 
-29. **MongoDB App Data:** Users, patient profiles, triage sessions, worker cases, referral notes, hospitals, assignments, audit/status history, uploaded document references, and docs configuration are stored in MongoDB.
+29. **MongoDB App Data:** Users, patient profiles, triage sessions, worker cases, referral notes, hospitals, assignments, audit/status history, uploaded document references, clinical data points, and docs configuration are stored in MongoDB.
 
 30. **Vector Knowledge Store:** Embedded maternal-health chunks and retrieval metadata are stored in MongoDB Atlas Vector Search.
 

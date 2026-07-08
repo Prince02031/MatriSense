@@ -5,6 +5,10 @@
 *   **Bangla Voice/Text Input:** Symptoms recorded in native Bangla (voice transcribed dynamically).
 *   **AI Symptom Extraction:** Converts Bangla input into standardized clinical symptom facts.
 *   **Deterministic Rule-Based Triage:** Classifies urgency (LOW/MEDIUM/HIGH) via danger signs, bypassing LLMs for safety-critical decisions.
+*   **Multimodal Medical Document Intelligence:** Parses prescriptions, lab reports, ultrasound reports, and handwritten blood pressure cards using Gemini Vision.
+*   **Document-Scoped Review Assistant:** Chat interface that lets patients review and correct AI extractions, validating changes with deterministic clinical rules.
+*   **Unified Clinical History & Trends:** Dynamic charts for both patients and health workers showing longitudinal readings (BP, hemoglobin, etc.) color-coded by severity.
+*   **Consent-Gated Clinical Access:** Strict privacy checks that block health workers from viewing patient documents or clinical trend history if the patient's sharing consent is disabled.
 *   **Rule-Aware RAG Guidance:** Dual Vector and JSON/Card retrieval grounding, constrained by active urgency levels.
 *   **Output Safety Validator:** Layer checking for forbidden inputs (diagnoses, dosages, risk downgrades, or unsafe delay advice).
 *   **AI Guided Care Assistant:** Chatbot assisting with triage queries, emotional support, and emergency escalations.

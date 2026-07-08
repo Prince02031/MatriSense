@@ -67,3 +67,35 @@ MatriSense uses MongoDB/Mongoose-style models to store user accounts, patient pr
 *   `sessionId` / `patientId` — Related case and patient.
 *   `metadata` — Extra action details.
 *   `createdAt` — Timestamp.
+
+### UploadedDocument
+*   `ownerType` — Owner role type (`PATIENT` or `HEALTH_WORKER`).
+*   `ownerId` — Reference to the Patient or Health Worker profile ID.
+*   `uploadedByUserId` — Reference to the User who uploaded the file.
+*   `relatedSessionId` — Optional reference to a TriageSession.
+*   `documentType` — Kind of document (e.g. `PRESCRIPTION`, `LAB_REPORT`, `ULTRASOUND_REPORT`, `NATIONAL_ID`).
+*   `title` / `description` — Descriptive user tags.
+*   `originalName` / `storedFileName` — File naming tracking.
+*   `storagePath` / `mimeType` / `sizeBytes` — Physical disk storage data.
+*   `accessScope` — Who can view the file.
+*   `verificationStatus` — Certification review status (`NOT_REQUIRED`, `PENDING`, `VERIFIED`, `REJECTED`).
+*   `isActive` — Soft delete toggle.
+*   `uploadedAt` — Date of upload.
+
+### ClinicalDataPoint
+*   `patientId` — Reference to the Patient.
+*   `parameter` — Clinical indicator identifier (e.g., `blood_pressure_systolic`, `hemoglobin`).
+*   `displayName` / `displayNameBn` — Localized display names.
+*   `value` — Numerical value or reading data.
+*   `unit` — Unit of measurement (e.g., `mmHg`, `g/dL`).
+*   `severity` — Calculated danger status (`NORMAL`, `WARNING`, `CRITICAL`).
+*   `isAbnormal` — Boolean danger flag.
+*   `knownRiskFactorFlag` — Mapped risk factor string.
+*   `source` — Data origin method (`DOCUMENT_UPLOAD` or `CHAT_SCAN`).
+*   `sourceDocumentId` — Link to the originating UploadedDocument.
+*   `sourceContext` — Snippet of text or proof context.
+*   `confidence` — AI extraction confidence score.
+*   `confirmedByPatient` — Patient verification flag.
+*   `confirmedAt` — Date patient confirmed the data.
+*   `recordedAt` — Date recorded.
+*   `isActive` — Soft delete toggle.
