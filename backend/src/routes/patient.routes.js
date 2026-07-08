@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Patient = require('../models/Patient');
 const UploadedDocument = require('../models/UploadedDocument');
+const ClinicalDataPoint = require('../models/ClinicalDataPoint');
 const { protect } = require('../middleware/authMiddleware');
 const { handleUploadErrors } = require('../middleware/uploadMiddleware');
 
@@ -76,6 +77,10 @@ const SAFE_DOC_FIELDS = [
   'verificationStatus',
   'isActive',
   'uploadedAt',
+  // Included here because this route is patient-self-scoped only — a patient
+  // seeing their own AI-extracted values is safe (see plan §3).
+  'documentAnalysis',
+  'analyzedAt',
 ];
 
 // --- Helpers ---
@@ -245,8 +250,8 @@ router.post(
         title: title || req.file.originalname,
         description: description || '',
         originalName: req.file.originalname,
-        storedFileName: req.file.filename,
-        storagePath: req.file.path,
+        storedFileName: req.file.generatedFileName,
+        fileData: req.file.buffer,
         mimeType: req.file.mimetype,
         sizeBytes: req.file.size,
         accessScope: 'PATIENT_AND_ASSIGNED_HEALTH_WORKER',
@@ -296,9 +301,31 @@ router.get('/me/documents', protect, async (req, res) => {
       isActive: true,
     }).sort({ uploadedAt: -1 });
 
+    // --- Compute per-document confirmation status from ClinicalDataPoint rows ---
+    const dataPoints = await ClinicalDataPoint.find({
+      patientId: patient._id,
+      sourceDocumentId: { $in: docs.map((d) => d._id) },
+      isActive: true,
+    }).select('sourceDocumentId confirmedByPatient');
+
+    const confirmationByDoc = {};
+    dataPoints.forEach((dp) => {
+      const key = dp.sourceDocumentId.toString();
+      if (!confirmationByDoc[key]) confirmationByDoc[key] = { total: 0, confirmed: 0 };
+      confirmationByDoc[key].total += 1;
+      if (dp.confirmedByPatient) confirmationByDoc[key].confirmed += 1;
+    });
+
+    const documentsWithStatus = docs.map((d) => {
+      const safe = toSafeDoc(d);
+      const stats = confirmationByDoc[d._id.toString()];
+      safe.allValuesConfirmed = stats ? stats.confirmed === stats.total : false;
+      return safe;
+    });
+
     res.json({
       success: true,
-      documents: docs.map(toSafeDoc),
+      documents: documentsWithStatus,
       total: docs.length,
     });
   } catch (error) {
@@ -306,6 +333,42 @@ router.get('/me/documents', protect, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve documents',
+      message: error.message,
+    });
+  }
+});
+
+// ============================================================================
+// GET /api/patients/me/clinical-data — Unified clinical history for the
+// logged-in patient, across all sources (documents today, chat scans later).
+// ============================================================================
+router.get('/me/clinical-data', protect, async (req, res) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        error: 'No patient profile found for this user.',
+      });
+    }
+
+    const dataPoints = await ClinicalDataPoint.find({
+      patientId: patient._id,
+      isActive: true,
+    })
+      .sort({ recordedAt: -1 })
+      .populate('sourceDocumentId', 'documentType originalName');
+
+    res.json({
+      success: true,
+      dataPoints,
+      total: dataPoints.length,
+    });
+  } catch (error) {
+    console.error('[PatientRoutes] GET /me/clinical-data error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve clinical data',
       message: error.message,
     });
   }
@@ -350,15 +413,28 @@ router.delete('/me/documents/:documentId', protect, async (req, res) => {
     doc.isActive = false;
     await doc.save();
 
+    // --- Optionally cascade-delete the ClinicalDataPoint rows this ---
+    // --- document produced (patient opt-in, off by default). ---
+    const deleteClinicalData = req.query.deleteClinicalData === 'true';
+    let clinicalDataDeleted = 0;
+    if (deleteClinicalData) {
+      const result = await ClinicalDataPoint.updateMany(
+        { sourceDocumentId: doc._id, patientId: patient._id, isActive: true },
+        { isActive: false }
+      );
+      clinicalDataDeleted = result.modifiedCount || 0;
+    }
+
     // --- Audit ---
     await logAction(null, 'PATIENT_DOCUMENT_DELETED', 'PATIENT', {
       patientId: patient._id,
       documentId: doc._id,
       documentType: doc.documentType,
       originalName: doc.originalName,
+      clinicalDataDeleted,
     }, req.user._id);
 
-    res.json({ success: true, message: 'Document deleted successfully.' });
+    res.json({ success: true, message: 'Document deleted successfully.', clinicalDataDeleted });
   } catch (error) {
     console.error('[PatientRoutes] DELETE /me/documents/:documentId error:', error.message);
     res.status(500).json({

@@ -9,8 +9,8 @@ MatriSense uses a layered web architecture designed to isolate generative langua
 ![For Final Round](/ai_architecture_final_2_clear.png)
 
 ### Frontend Layer
-*   **Patient Portal:** Bangla symptom input (speech/text), extraction verification, danger-sign follow-up questionnaires, and a result page. Includes the **8-Step Guided Care Assistant** panel with an interactive clinic/hospital search, map viewer, and hospital preference submission.
-*   **Health Worker Dashboard:** Filterable triage inbox, patient dossiers, GPS location maps, and clinical audit records. Enables workers to review RAG evidence logs and manage regional referral hospital assignments.
+*   **Patient Portal:** Bangla symptom input (speech/text), extraction verification, danger-sign follow-up questionnaires, and a result page. Includes the **8-Step Guided Care Assistant** panel with an interactive clinic/hospital search, map viewer, and hospital preference submission. Features the **Uploaded Documents** page and **My Clinical Data** (longitudinal trends and charts) page, with a **Review Chat** panel.
+*   **Health Worker Dashboard:** Filterable triage inbox, patient dossiers, GPS location maps, and clinical audit records. Enables workers to review RAG evidence logs and manage regional referral hospital assignments. Updated with a **tabbed case detail layout** displaying the patient's documents and clinical data history.
 *   **Admin Control Console:** Security config triggers to control public documentation visibility, along with credentials review dashboards for health worker verification.
 *   **Docs Portal:** Live system documentation pages, API indexes, and clinical evidence library.
 
@@ -18,6 +18,7 @@ MatriSense uses a layered web architecture designed to isolate generative langua
 *   **Auth API:** Role-based JWT session security (Patient, Health Worker, Admin).
 *   **Patient API:** Health profile snapshots, upload consent records, and triage history.
 *   **Triage API:** Multi-stage symptom ingestion, structured confirmation steps, and danger-sign questionnaires.
+*   **Document Analysis API:** Multi-format document upload (NID, prescriptions, lab reports, ultrasound cards), Gemini Vision parsing, maternal threshold checks, and `ClinicalDataPoint` persistence.
 *   **Guided Care Assistant API:** Multi-step chat orchestrator leveraging triage sessions, RAG contexts, and assigned hospital capacities.
 *   **Speech API:** Audio transcription wrapper matching the client-side voice recorder.
 *   **Referral & Hospital API:** Hospital registries, same-district location filtering, and reassignment log audits.
@@ -25,6 +26,7 @@ MatriSense uses a layered web architecture designed to isolate generative langua
 
 ### AI and Safety Layer
 *   **LLM Extractor:** Translates raw Bangla symptom descriptions into structured clinical codes and negate/duration tags.
+*   **Gemini Vision Analyzer:** Extracts medical parameters and text from images and handwritten documents, validating outputs using deterministic clinical thresholds.
 *   **Follow-up Selector:** Queries danger-sign logic tables to present targeted follow-up options.
 *   **Rule Engine (`json-rules-engine`):** Evaluates case state inputs against clinical rules to output LOW/MEDIUM/HIGH risk levels. The LLM cannot override or calculate this risk.
 *   **Decision Builder:** Packages rule outputs, evidence tags, allowed guidance scopes, and safety boundaries.

@@ -88,9 +88,53 @@ export const getMyPatientDocuments = async () => {
   return res.json();
 };
 
-export const deletePatientDocument = async (documentId) => {
-  const res = await authFetch(`${API_BASE}/api/patients/me/documents/${documentId}`, {
+export const deletePatientDocument = async (documentId, { deleteClinicalData = false } = {}) => {
+  const query = deleteClinicalData ? '?deleteClinicalData=true' : '';
+  const res = await authFetch(`${API_BASE}/api/patients/me/documents/${documentId}${query}`, {
     method: 'DELETE',
+  });
+  return res.json();
+};
+
+/**
+ * Unified clinical history across all sources (documents today, chat
+ * scans later) — GET /api/patients/me/clinical-data.
+ */
+export const getMyClinicalData = async () => {
+  const res = await authFetch(`${API_BASE}/api/patients/me/clinical-data`);
+  return res.json();
+};
+
+/**
+ * Upload a medical document photo for Gemini Vision analysis
+ * (POST /api/documents/analyze). Same multipart convention as
+ * uploadPatientDocument — no manual Content-Type so the browser
+ * sets the multipart boundary.
+ */
+export const analyzeMedicalDocument = async (formData) => {
+  const token = getToken();
+
+  const response = await fetch(`${API_BASE}/api/documents/analyze`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  return response.json();
+};
+
+/**
+ * Send one turn to the standalone document-review chat
+ * (POST /api/documents/:documentId/review-chat). Stateless per call —
+ * pass the full chatHistory each time, same convention as the triage assistant.
+ */
+export const sendDocumentReviewMessage = async (documentId, { message, chatHistory, language }) => {
+  const res = await authFetch(`${API_BASE}/api/documents/${documentId}/review-chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, chatHistory, language }),
   });
   return res.json();
 };

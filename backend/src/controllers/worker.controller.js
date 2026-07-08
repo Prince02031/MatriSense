@@ -234,7 +234,7 @@ exports.getCaseDocuments = async (req, res) => {
             isActive: true
         }).sort({ uploadedAt: -1 });
 
-        // 3. Map to safe metadata
+        // 3. Map to safe metadata — include analysis data so workers can see extraction results
         const safeDocs = docs.map(d => ({
             _id: d._id,
             documentType: d.documentType,
@@ -243,14 +243,68 @@ exports.getCaseDocuments = async (req, res) => {
             originalName: d.originalName,
             mimeType: d.mimeType,
             sizeBytes: d.sizeBytes,
-            uploadedAt: d.uploadedAt
-            // storagePath is intentionally EXCLUDED
+            uploadedAt: d.uploadedAt,
+            analyzedAt: d.analyzedAt || null,
+            verificationStatus: d.verificationStatus || 'NOT_REQUIRED',
+            // Include full analysis (summary, extractedValues, medications, etc.)
+            documentAnalysis: d.documentAnalysis || null,
+            // Patient-side confirmation flag
+            allValuesConfirmed: d.documentAnalysis
+                ? (d.documentAnalysis.allValuesConfirmed || false)
+                : false,
+            // storagePath is intentionally EXCLUDED from the response
         }));
 
         res.json({ success: true, documents: safeDocs });
     } catch (error) {
         console.error('[Worker Controller] Failed to fetch case documents:', error);
         res.status(500).json({ success: false, error: 'Failed to fetch case documents' });
+    }
+};
+
+// ============================================================================
+// GET /api/worker/cases/:sessionId/clinical-data
+// Get the patient's unified clinical data history (document + chat-scan
+// derived). Gated behind the same document-sharing consent flag as
+// getCaseDocuments, since this history is derived from those documents.
+// ============================================================================
+exports.getCaseClinicalData = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+
+        const session = await TriageSession.findById(sessionId).populate('patientId');
+
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+
+        if (!session.patientId) {
+            return res.json({ success: true, dataPoints: [] });
+        }
+
+        const Patient = require('../models/Patient');
+        const patient = await Patient.findById(session.patientId._id);
+        if (!patient || !patient.consentToShareWithHealthWorker) {
+            return res.json({
+                success: true,
+                dataPoints: [],
+                consentDenied: true,
+                message: 'Patient has not granted consent to share clinical data with health workers.'
+            });
+        }
+
+        const ClinicalDataPoint = require('../models/ClinicalDataPoint');
+        const dataPoints = await ClinicalDataPoint.find({
+            patientId: patient._id,
+            isActive: true,
+        })
+            .sort({ recordedAt: -1 })
+            .populate('sourceDocumentId', 'documentType originalName');
+
+        res.json({ success: true, dataPoints });
+    } catch (error) {
+        console.error('[Worker Controller] Failed to fetch case clinical data:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch case clinical data' });
     }
 };
 
@@ -366,4 +420,155 @@ exports.logFetchSource = (req, res) => {
     const { source } = req.query;
     console.log(`\n[FETCH SOURCE] Patient List loaded from ${source?.toUpperCase() || 'UNKNOWN'}`);
     res.status(200).json({ success: true });
+};
+
+// ============================================================================
+// POST /api/worker/cases/:sessionId/documents/:documentId/analyze
+// Worker-triggered AI analysis on a document that was uploaded without analysis
+// (e.g. via the manual upload path). Uses the same Gemini Vision service as
+// the patient-side /api/documents/analyze route.
+// ============================================================================
+exports.analyzeDocumentForWorker = async (req, res) => {
+    try {
+        const { sessionId, documentId } = req.params;
+
+        // Verify the session exists
+        const session = await TriageSession.findById(sessionId).populate('patientId');
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+
+        // Verify patient consent
+        const Patient = require('../models/Patient');
+        const patient = await Patient.findById(session.patientId._id);
+        if (!patient || !patient.consentToShareWithHealthWorker) {
+            return res.status(403).json({ success: false, error: 'Patient has not granted consent to share documents.' });
+        }
+
+        // Fetch the document — must belong to this patient (fileData is
+        // select:false by default, so it must be requested explicitly)
+        const UploadedDocument = require('../models/UploadedDocument');
+        const doc = await UploadedDocument.findOne({
+            _id: documentId,
+            ownerId: patient._id,
+            ownerType: 'PATIENT',
+            isActive: true,
+        }).select('+fileData');
+
+        if (!doc) {
+            return res.status(404).json({ success: false, error: 'Document not found or access denied.' });
+        }
+
+        // Only analyze documents whose file bytes are actually stored
+        if (!doc.fileData || !doc.fileData.length) {
+            return res.status(422).json({
+                success: false,
+                error: 'The original file is no longer available on the server and cannot be re-analyzed.'
+            });
+        }
+
+        const { analyzeDocument } = require('../services/documentAnalysisService');
+        const analysis = await analyzeDocument({ imageBuffer: doc.fileData, mimeType: doc.mimeType });
+
+        // Map AI document type to the ENUM used by the upload system
+        const DOCUMENT_TYPE_TO_UPLOAD_ENUM = {
+            prescription: 'PRESCRIPTION',
+            lab_report: 'LAB_REPORT',
+            ultrasound_report: 'ULTRASOUND_REPORT',
+            blood_pressure_card: 'OTHER_MEDICAL_DOCUMENT',
+            other: 'OTHER_MEDICAL_DOCUMENT',
+        };
+
+        // Update the document with fresh analysis
+        doc.documentAnalysis = analysis;
+        doc.analyzedAt = new Date();
+        // If the document was manually uploaded without a specific type, update it
+        if (doc.documentType === 'OTHER_MEDICAL_DOCUMENT' || !doc.documentType) {
+            doc.documentType = DOCUMENT_TYPE_TO_UPLOAD_ENUM[analysis.documentType] || 'OTHER_MEDICAL_DOCUMENT';
+        }
+        await doc.save();
+
+        await logAction(sessionId, 'WORKER_DOCUMENT_ANALYZED', 'HEALTH_WORKER', {
+            documentId: doc._id,
+            documentType: doc.documentType,
+        }, req.user?._id);
+
+        res.json({
+            success: true,
+            documentId: doc._id,
+            documentType: doc.documentType,
+            analyzedAt: doc.analyzedAt,
+            analysis,
+        });
+    } catch (error) {
+        console.error('[Worker Controller] analyzeDocumentForWorker error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to analyze document.' });
+    }
+};
+
+// ============================================================================
+// PUT /api/worker/cases/:sessionId/documents/:documentId/verify
+// Health worker sets the verificationStatus on a patient document.
+// Body: { status: 'VERIFIED' | 'REJECTED' | 'PENDING', note?: string }
+// ============================================================================
+exports.verifyDocument = async (req, res) => {
+    try {
+        const { sessionId, documentId } = req.params;
+        const { status, note } = req.body;
+
+        const ALLOWED_STATUSES = ['VERIFIED', 'REJECTED', 'PENDING'];
+        if (!ALLOWED_STATUSES.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                error: `status must be one of: ${ALLOWED_STATUSES.join(', ')}`
+            });
+        }
+
+        // Verify the session exists
+        const session = await TriageSession.findById(sessionId).populate('patientId');
+        if (!session) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+
+        // Verify patient consent
+        const Patient = require('../models/Patient');
+        const patient = await Patient.findById(session.patientId._id);
+        if (!patient || !patient.consentToShareWithHealthWorker) {
+            return res.status(403).json({ success: false, error: 'Patient has not granted consent to share documents.' });
+        }
+
+        const UploadedDocument = require('../models/UploadedDocument');
+        const doc = await UploadedDocument.findOne({
+            _id: documentId,
+            ownerId: patient._id,
+            ownerType: 'PATIENT',
+            isActive: true,
+        });
+
+        if (!doc) {
+            return res.status(404).json({ success: false, error: 'Document not found or access denied.' });
+        }
+
+        doc.verificationStatus = status;
+        doc.reviewedAt = new Date();
+        doc.reviewedByAdminId = req.user?._id;
+        if (note) doc.reviewNote = note;
+        await doc.save();
+
+        await logAction(sessionId, 'WORKER_DOCUMENT_VERIFIED', 'HEALTH_WORKER', {
+            documentId: doc._id,
+            verificationStatus: status,
+            note: note || '',
+        }, req.user?._id);
+
+        res.json({
+            success: true,
+            documentId: doc._id,
+            verificationStatus: doc.verificationStatus,
+            reviewedAt: doc.reviewedAt,
+        });
+    } catch (error) {
+        console.error('[Worker Controller] verifyDocument error:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to update verification status.' });
+    }
 };

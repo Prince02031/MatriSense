@@ -79,6 +79,9 @@ router.get('/cases/:sessionId/audit', workerController.getAuditLogs);
 // GET /api/worker/cases/:sessionId/documents — get patient documents for case
 router.get('/cases/:sessionId/documents', workerController.getCaseDocuments);
 
+// GET /api/worker/cases/:sessionId/clinical-data — get patient clinical data history for case
+router.get('/cases/:sessionId/clinical-data', workerController.getCaseClinicalData);
+
 // PUT /api/worker/cases/:sessionId/hospital — assign or reassign hospital
 router.put('/cases/:sessionId/hospital', workerController.assignHospital);
 
@@ -88,4 +91,21 @@ router.post('/cases/:sessionId/request-gps', workerController.requestGPS);
 // POST /api/worker/cases/:sessionId/deliver-referral — deliver referral to patient
 router.post('/cases/:sessionId/deliver-referral', workerController.deliverReferral);
 
+// POST /api/worker/cases/:sessionId/documents/:documentId/analyze — worker-triggered AI analysis
+router.post(
+    '/cases/:sessionId/documents/:documentId/analyze',
+    protect,
+    authorizeRoles('HEALTH_WORKER', 'ADMIN'),
+    workerController.analyzeDocumentForWorker
+);
+
+// PUT /api/worker/cases/:sessionId/documents/:documentId/verify — set verification status
+router.put(
+    '/cases/:sessionId/documents/:documentId/verify',
+    protect,
+    authorizeRoles('HEALTH_WORKER', 'ADMIN'),
+    workerController.verifyDocument
+);
+
 module.exports = router;
+
