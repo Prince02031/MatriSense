@@ -94,3 +94,23 @@ export const deletePatientDocument = async (documentId) => {
   });
   return res.json();
 };
+
+/**
+ * Upload a medical document photo for Gemini Vision analysis
+ * (POST /api/documents/analyze). Same multipart convention as
+ * uploadPatientDocument — no manual Content-Type so the browser
+ * sets the multipart boundary.
+ */
+export const analyzeMedicalDocument = async (formData) => {
+  const token = getToken();
+
+  const response = await fetch(`${API_BASE}/api/documents/analyze`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  return response.json();
+};

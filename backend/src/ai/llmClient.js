@@ -14,11 +14,26 @@ const generateJson = async ({ systemInstruction, userPrompt, responseSchema, tem
   }
 };
 
+/**
+ * Structured JSON extraction from an image (vision). Gemini-only for now —
+ * the local provider does not have a multimodal path wired up.
+ */
+const generateJsonFromImage = async ({ systemInstruction, userPrompt, responseSchema, temperature, imageBase64, mimeType }) => {
+  const providerType = process.env.LLM_PROVIDER || 'gemini';
+
+  if (providerType.toLowerCase() !== 'gemini') {
+    throw new Error(`Document image analysis requires LLM_PROVIDER=gemini (current: ${providerType})`);
+  }
+
+  return geminiProvider.generateJsonWithGeminiVision({ systemInstruction, userPrompt, responseSchema, temperature, imageBase64, mimeType });
+};
+
 const getProviderName = () => {
   return process.env.LLM_PROVIDER || 'gemini';
 };
 
 module.exports = {
   generateJson,
+  generateJsonFromImage,
   getProviderName
 };

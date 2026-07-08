@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useState, useEffect } from 'react';
+import MedicalDocumentUpload from '../../components/dashboard/MedicalDocumentUpload';
 
 export default function PatientDashboard() {
     const { user } = useAuth();
@@ -282,6 +283,11 @@ export default function PatientDashboard() {
                     <div className="dash-card-value">{loading ? '...' : summary.latestRisk}</div>
                     <div className="dash-card-sub">{t.currentRisk}</div>
                 </div>
+            </div>
+
+            {/* Medical Document Intelligence (experimental) */}
+            <div style={{ marginTop: '32px' }}>
+                <MedicalDocumentUpload />
             </div>
         </>
     );
