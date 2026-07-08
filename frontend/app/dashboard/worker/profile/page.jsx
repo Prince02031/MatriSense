@@ -220,7 +220,7 @@ export default function WorkerProfilePage() {
                 {/* 1. Basic Info */}
                 <div className="card">
                     <h2>Basic Information</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                    <div className="wgrid-2" style={{ marginTop: '16px' }}>
                         <div><label>Name</label><input name="name" value={formData.name} onChange={handleProfileChange} required className="input-field" /></div>
                         <div><label>Phone</label><input type="tel" name="phone" value={formData.phone} onChange={handleProfileChange} required className="input-field" /></div>
                         <div style={{ gridColumn: '1 / -1' }}><label>Email</label><input type="email" name="email" value={formData.email} onChange={handleProfileChange} className="input-field" /></div>
@@ -230,7 +230,7 @@ export default function WorkerProfilePage() {
                 {/* 2. Professional Info */}
                 <div className="card">
                     <h2>Professional Information</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                    <div className="wgrid-2" style={{ marginTop: '16px' }}>
                         <div><label>Professional Title</label><input name="professionalTitle" value={formData.professionalTitle} onChange={handleProfileChange} className="input-field" placeholder="e.g. Registered Nurse" /></div>
                         <div><label>Organization Name</label><input name="organizationName" value={formData.organizationName} onChange={handleProfileChange} className="input-field" /></div>
                         <div><label>Workplace / Clinic Name</label><input name="workplaceName" value={formData.workplaceName} onChange={handleProfileChange} className="input-field" /></div>
@@ -243,7 +243,7 @@ export default function WorkerProfilePage() {
                 {/* 3. Coverage Area */}
                 <div className="card">
                     <h2>Coverage Area (Comma separated)</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                    <div className="wgrid-2" style={{ marginTop: '16px' }}>
                         <div><label>Districts</label><input name="coverageDistricts" value={formData.coverageDistricts} onChange={handleProfileChange} className="input-field" placeholder="Dhaka, Gazipur" /></div>
                         <div><label>Upazilas</label><input name="coverageUpazilas" value={formData.coverageUpazilas} onChange={handleProfileChange} className="input-field" placeholder="Tejgaon, Savar" /></div>
                     </div>
@@ -273,7 +273,7 @@ export default function WorkerProfilePage() {
                 )}
 
                 <form onSubmit={handleUploadUpload} style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="wgrid-2">
                         <div>
                             <label>Document Type</label>
                             <select name="documentType" value={docForm.documentType} onChange={handleDocChange} className="input-field" required>

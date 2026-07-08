@@ -119,7 +119,7 @@ export default function WorkerDashboard() {
             {/* Filters and Controls */}
             <div className="dash-card" style={{ marginBottom: '24px' }}>
                 <h3 style={{ marginBottom: '16px' }}>🔍 Filter & Sort Options</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div className="wgrid-3">
                     <div>
                         <label style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', display: 'block' }}>
                             District Filter

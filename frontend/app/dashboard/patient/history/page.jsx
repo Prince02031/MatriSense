@@ -54,94 +54,61 @@ export default function PatientHistoryPage() {
 
   if (!user) return null;
 
+  const riskBadgeClass = (risk) =>
+    risk === 'HIGH' ? 'badge-danger' : risk === 'MEDIUM' ? 'badge-warning' : 'badge-success';
+
+  const riskIcon = (risk) => (risk === 'HIGH' ? '🚨' : risk === 'MEDIUM' ? '⚠️' : '✅');
+
   return (
     <div className="dashboard-container" style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
-      <Link href="/dashboard/patient" style={{ color: 'var(--primary)', marginBottom: '20px', display: 'inline-block' }}>
+      <Link href="/dashboard/patient" style={{ color: 'var(--accent-primary)', marginBottom: '20px', display: 'inline-block' }}>
         ← Back to Dashboard
       </Link>
 
       <h1 style={{ marginTop: '20px', marginBottom: '10px' }}>📋 Triage History</h1>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>
-        View all your past triage results and assessments
+      <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
+        Every past triage result and assessment, most recent first.
       </p>
 
       {loading ? (
         <p>Loading history...</p>
       ) : error ? (
-        <div style={{ color: 'var(--red-600)', padding: '16px', backgroundColor: 'var(--red-50)', borderRadius: '8px' }}>
+        <div style={{ color: 'var(--accent-rose)', padding: '16px', background: 'rgba(251, 113, 133, 0.1)', borderRadius: 'var(--radius-md)' }}>
           {error}
         </div>
       ) : history.length === 0 ? (
-        <div style={{ 
-          padding: '32px', 
-          backgroundColor: 'var(--surface)', 
-          borderRadius: '8px', 
-          textAlign: 'center',
-          color: 'var(--text-muted)'
-        }}>
+        <div className="dash-card" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
           <p>No triage sessions yet.</p>
-          <Link href="/triage/start" style={{ color: 'var(--primary)', marginTop: '16px', display: 'inline-block' }}>
+          <Link href="/triage/start" style={{ color: 'var(--accent-primary)', marginTop: '16px', display: 'inline-block' }}>
             Start a new triage →
           </Link>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {history.map((session) => (
-            <div
-              key={session.sessionId}
-              style={{
-                padding: '16px',
-                border: '1px solid var(--border)',
-                borderRadius: '8px',
-                backgroundColor: 'var(--surface)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+            <div key={session.sessionId} className="dash-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     {session.triageDate}
                   </div>
-                  <div style={{ 
-                    fontSize: '18px', 
-                    fontWeight: '600', 
-                    marginTop: '4px',
-                    color: session.riskLevel === 'HIGH' ? 'var(--red-600)' : 
-                           session.riskLevel === 'MEDIUM' ? 'var(--yellow-600)' : 
-                           'var(--green-600)'
-                  }}>
-                    Risk Level: {session.riskLevel}
+                  <div style={{ marginTop: '6px' }}>
+                    <span className={`badge ${riskBadgeClass(session.riskLevel)}`}>
+                      {riskIcon(session.riskLevel)} {session.riskLevel} risk
+                    </span>
                   </div>
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '4px 8px',
-                    backgroundColor: session.status === 'completed' ? 'var(--green-100)' : 'var(--yellow-100)',
-                    color: session.status === 'completed' ? 'var(--green-700)' : 'var(--yellow-700)',
-                    borderRadius: '4px'
-                  }}>
-                    {session.status}
-                  </span>
-                </div>
+                <span className="badge badge-info">{session.status}</span>
               </div>
 
               {session.symptoms.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    Reported Symptoms:
+                <div style={{ marginTop: '14px' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>
+                    Reported Symptoms
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {session.symptoms.map((symptom, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          fontSize: '12px',
-                          padding: '4px 8px',
-                          backgroundColor: 'var(--indigo-100)',
-                          color: 'var(--indigo-700)',
-                          borderRadius: '4px'
-                        }}
-                      >
+                      <span key={i} className="badge badge-info">
                         {symptom}
                       </span>
                     ))}
@@ -149,9 +116,11 @@ export default function PatientHistoryPage() {
                 </div>
               )}
 
-              <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-                {session.recommendedAction}
-              </div>
+              {session.recommendedAction && (
+                <div style={{ marginTop: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  {session.recommendedAction}
+                </div>
+              )}
             </div>
           ))}
         </div>
