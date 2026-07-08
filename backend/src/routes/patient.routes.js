@@ -339,6 +339,42 @@ router.get('/me/documents', protect, async (req, res) => {
 });
 
 // ============================================================================
+// GET /api/patients/me/clinical-data — Unified clinical history for the
+// logged-in patient, across all sources (documents today, chat scans later).
+// ============================================================================
+router.get('/me/clinical-data', protect, async (req, res) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        error: 'No patient profile found for this user.',
+      });
+    }
+
+    const dataPoints = await ClinicalDataPoint.find({
+      patientId: patient._id,
+      isActive: true,
+    })
+      .sort({ recordedAt: -1 })
+      .populate('sourceDocumentId', 'documentType originalName');
+
+    res.json({
+      success: true,
+      dataPoints,
+      total: dataPoints.length,
+    });
+  } catch (error) {
+    console.error('[PatientRoutes] GET /me/clinical-data error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve clinical data',
+      message: error.message,
+    });
+  }
+});
+
+// ============================================================================
 // DELETE /api/patients/me/documents/:documentId — Soft-delete a patient document
 // ============================================================================
 router.delete('/me/documents/:documentId', protect, async (req, res) => {
@@ -377,15 +413,28 @@ router.delete('/me/documents/:documentId', protect, async (req, res) => {
     doc.isActive = false;
     await doc.save();
 
+    // --- Optionally cascade-delete the ClinicalDataPoint rows this ---
+    // --- document produced (patient opt-in, off by default). ---
+    const deleteClinicalData = req.query.deleteClinicalData === 'true';
+    let clinicalDataDeleted = 0;
+    if (deleteClinicalData) {
+      const result = await ClinicalDataPoint.updateMany(
+        { sourceDocumentId: doc._id, patientId: patient._id, isActive: true },
+        { isActive: false }
+      );
+      clinicalDataDeleted = result.modifiedCount || 0;
+    }
+
     // --- Audit ---
     await logAction(null, 'PATIENT_DOCUMENT_DELETED', 'PATIENT', {
       patientId: patient._id,
       documentId: doc._id,
       documentType: doc.documentType,
       originalName: doc.originalName,
+      clinicalDataDeleted,
     }, req.user._id);
 
-    res.json({ success: true, message: 'Document deleted successfully.' });
+    res.json({ success: true, message: 'Document deleted successfully.', clinicalDataDeleted });
   } catch (error) {
     console.error('[PatientRoutes] DELETE /me/documents/:documentId error:', error.message);
     res.status(500).json({

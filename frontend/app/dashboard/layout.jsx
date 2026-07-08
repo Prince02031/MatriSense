@@ -20,6 +20,7 @@ const navConfig = {
                     { href: '/dashboard/patient#symptoms', icon: '📝', label: 'Report Symptoms' },
                     { href: '/dashboard/patient#history', icon: '📋', label: 'My History' },
                     { href: '/dashboard/patient/documents', icon: '📄', label: 'Uploaded Documents' },
+                    { href: '/dashboard/patient/clinical-data', icon: '🩺', label: 'My Clinical Data' },
                     { href: '/dashboard/patient#profile', icon: '👤', label: 'My Profile' },
                 ],
             },

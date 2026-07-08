@@ -8,9 +8,6 @@ import {
     createPatient,
     getMyPatient,
     updatePatient,
-    uploadPatientDocument,
-    getMyPatientDocuments,
-    deletePatientDocument
 } from '../../../api/patientApi';
 
 /**
@@ -59,27 +56,6 @@ export default function PatientProfilePage() {
         consentToUseLocationForReferral: false,
         consentToStoreDocuments: false
     });
-
-    // --- Documents State ---
-    const [documents, setDocuments] = useState([]);
-    const [uploadingDoc, setUploadingDoc] = useState(false);
-    const [docForm, setDocForm] = useState({
-        documentType: 'PREVIOUS_MEDICAL_REPORT',
-        title: '',
-        description: '',
-        file: null
-    });
-
-    // --- Allowed Document Types ---
-    const DOC_TYPES = [
-        { value: 'NATIONAL_ID', label: 'National ID' },
-        { value: 'BIRTH_CERTIFICATE', label: 'Birth Certificate' },
-        { value: 'PREVIOUS_MEDICAL_REPORT', label: 'Previous Medical Report' },
-        { value: 'PRESCRIPTION', label: 'Prescription' },
-        { value: 'ULTRASOUND_REPORT', label: 'Ultrasound Report' },
-        { value: 'LAB_REPORT', label: 'Lab Report' },
-        { value: 'OTHER_MEDICAL_DOCUMENT', label: 'Other Document' }
-    ];
 
     // --- GPS State ---
     const [gpsEnabled, setGpsEnabled] = useState(false);
@@ -235,12 +211,6 @@ export default function PatientProfilePage() {
                     consentToUseLocationForReferral: !!p.consentToUseLocationForReferral,
                     consentToStoreDocuments: !!p.consentToStoreDocuments
                 });
-
-                // Then load documents
-                const docsRes = await getMyPatientDocuments();
-                if (docsRes.success) {
-                    setDocuments(docsRes.documents || []);
-                }
             } else {
                 setMessage('Profile not found. Please complete the triage flow to create a profile.');
             }
@@ -299,75 +269,6 @@ export default function PatientProfilePage() {
             setMessage(`❌ ${pt.errorSaving}`);
         } finally {
             setSaving(false);
-        }
-    };
-
-    // --- Document Handlers ---
-    const handleDocChange = (e) => {
-        const { name, value, files } = e.target;
-        if (name === 'file') {
-            setDocForm(prev => ({ ...prev, file: files[0] }));
-        } else {
-            setDocForm(prev => ({ ...prev, [name]: value }));
-        }
-    };
-
-    const handleUploadDocument = async (e) => {
-        e.preventDefault();
-        if (!docForm.file) {
-            alert('Please select a file to upload.');
-            return;
-        }
-
-        setUploadingDoc(true);
-        try {
-            const data = new FormData();
-            data.append('file', docForm.file);
-            data.append('documentType', docForm.documentType);
-            if (docForm.title) data.append('title', docForm.title);
-            if (docForm.description) data.append('description', docForm.description);
-
-            const res = await uploadPatientDocument(data);
-
-            if (res.success) {
-                // Prepend new doc to list
-                setDocuments(prev => [res.document, ...prev]);
-                // Reset form
-                setDocForm({
-                    documentType: 'PREVIOUS_MEDICAL_REPORT',
-                    title: '',
-                    description: '',
-                    file: null
-                });
-
-                // Reset file input element visually
-                const fileInput = document.getElementById('file-upload');
-                if (fileInput) fileInput.value = '';
-
-            } else {
-                alert(`Upload failed: ${res.error}`);
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            alert('An error occurred during upload.');
-        } finally {
-            setUploadingDoc(false);
-        }
-    };
-
-    const handleDeleteDocument = async (docId) => {
-        if (!confirm(pt.confirmDeleteDoc)) return;
-
-        try {
-            const res = await deletePatientDocument(docId);
-            if (res.success) {
-                setDocuments(prev => prev.filter(d => d._id !== docId));
-            } else {
-                alert(`Delete failed: ${res.error}`);
-            }
-        } catch (error) {
-            console.error(error);
-            alert('An error occurred while deleting.');
         }
     };
 
@@ -544,80 +445,7 @@ export default function PatientProfilePage() {
 
             <hr style={{ margin: '48px 0', border: 'none', borderTop: '2px solid #e2e8f0' }} />
 
-            {/* 7. Documents Section */}
-            <div className="card" style={{ marginBottom: '40px' }}>
-                <h2>{pt.documentsTitle}</h2>
-                <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '16px', borderRadius: '8px', marginTop: '16px' }}>
-                    <strong>Note:</strong> {pt.documentsHelper}
-                </div>
-
-                {/* Upload Form */}
-                <form onSubmit={handleUploadDocument} style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                            <label>{pt.docType}</label>
-                            <select name="documentType" value={docForm.documentType} onChange={handleDocChange} className="input-field" required>
-                                {DOC_TYPES.map(tOption => <option key={tOption.value} value={tOption.value}>{pt.docTypes[tOption.value] || tOption.label}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label>{pt.docTitle}</label>
-                            <input name="title" value={docForm.title} onChange={handleDocChange} className="input-field" placeholder={pt.docTitlePlaceholder} />
-                        </div>
-                    </div>
-                    <div>
-                        <label>{pt.selectFile}</label>
-                        <input id="file-upload" type="file" name="file" onChange={handleDocChange} className="input-field" required accept=".jpg,.jpeg,.png,.webp,.pdf" />
-                    </div>
-                    <button type="submit" className="button button-outline" disabled={uploadingDoc} style={{ alignSelf: 'flex-start', marginTop: '8px' }}>
-                        {uploadingDoc ? pt.uploadingButton : pt.uploadButton}
-                    </button>
-                </form>
-
-                {/* List Documents */}
-                <div style={{ marginTop: '32px' }}>
-                    <h3 style={{ fontSize: '1.2rem', marginBottom: '16px' }}>{pt.uploadedDocsList} ({documents.length})</h3>
-                    {documents.length === 0 ? (
-                        <p style={{ color: '#64748b', fontStyle: 'italic' }}>{pt.noDocs}</p>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {documents.map(doc => (
-                                <div key={doc._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                                    <div>
-                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{doc.title || doc.originalName}</div>
-                                        <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>
-                                            {pt.docTypes[doc.documentType] || doc.documentType} •
-                                            {(doc.sizeBytes / 1024 / 1024).toFixed(2)} MB •
-                                            {new Date(doc.uploadedAt).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <a
-                                            href={`${API_BASE}/api/documents/${doc._id}/download?token=${localStorage.getItem('matrisense_token') || ''}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="badge badge-success"
-                                            style={{ textDecoration: 'none', cursor: 'pointer' }}
-                                        >
-                                            {pt.viewDoc}
-                                        </a>
-                                        <button
-                                            onClick={() => handleDeleteDocument(doc._id)}
-                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}
-                                        >
-                                            {pt.deleteDoc}
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <hr style={{ margin: '48px 0', border: 'none', borderTop: '2px solid #e2e8f0' }} />
-
-            {/* 8. Danger Zone */}
+            {/* Danger Zone */}
             <div className="card" style={{ marginBottom: '40px', border: '1px solid #fecaca' }}>
                 <h2 style={{ color: '#dc2626' }}>{pt.dangerZone}</h2>
                 <p style={{ color: '#64748b', marginTop: '8px', marginBottom: '16px' }}>
