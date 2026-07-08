@@ -1,6 +1,4 @@
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const router = express.Router();
 
 const UploadedDocument = require('../models/UploadedDocument');
@@ -73,8 +71,7 @@ router.post(
 
             let analysis;
             try {
-                const imageBuffer = fs.readFileSync(req.file.path);
-                analysis = await analyzeDocument({ imageBuffer, mimeType: req.file.mimetype });
+                analysis = await analyzeDocument({ imageBuffer: req.file.buffer, mimeType: req.file.mimetype });
             } catch (analysisError) {
                 console.error('[DocumentRoutes] Analysis failure:', analysisError.message);
                 return res.status(502).json({
@@ -91,8 +88,8 @@ router.post(
                 documentType: DOCUMENT_TYPE_TO_UPLOAD_ENUM[analysis.documentType] || 'OTHER_MEDICAL_DOCUMENT',
                 title: req.file.originalname,
                 originalName: req.file.originalname,
-                storedFileName: req.file.filename,
-                storagePath: req.file.path,
+                storedFileName: req.file.generatedFileName,
+                fileData: req.file.buffer,
                 mimeType: req.file.mimetype,
                 sizeBytes: req.file.size,
                 accessScope: 'PATIENT_AND_ASSIGNED_HEALTH_WORKER',
@@ -223,8 +220,8 @@ router.get('/:documentId/download', protect, async (req, res) => {
         const { documentId } = req.params;
         const user = req.user;
 
-        // --- Find document ---
-        const doc = await UploadedDocument.findById(documentId);
+        // --- Find document (fileData is select:false by default) ---
+        const doc = await UploadedDocument.findById(documentId).select('+fileData');
 
         if (!doc) {
             return res.status(404).json({
@@ -250,12 +247,10 @@ router.get('/:documentId/download', protect, async (req, res) => {
             });
         }
 
-        // --- Verify physical file exists ---
-        const filePath = doc.storagePath;
-
-        if (!filePath || !fs.existsSync(filePath)) {
+        // --- Verify the file bytes are actually stored ---
+        if (!doc.fileData || !doc.fileData.length) {
             console.error(
-                `[DocumentRoutes] File missing on disk for document ${documentId}`
+                `[DocumentRoutes] fileData missing for document ${documentId}`
             );
             return res.status(404).json({
                 success: false,
@@ -281,18 +276,7 @@ router.get('/:documentId/download', protect, async (req, res) => {
             `inline; filename="${encodeURIComponent(downloadName)}"`
         );
 
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.on('error', (err) => {
-            console.error(`[DocumentRoutes] Stream error for document ${documentId}:`, err.message);
-            if (!res.headersSent) {
-                res.status(500).json({
-                    success: false,
-                    error: 'Failed to read file.',
-                });
-            }
-        });
-
-        fileStream.pipe(res);
+        res.send(doc.fileData);
     } catch (error) {
         console.error('[DocumentRoutes] GET /:documentId/download error:', error.message);
         res.status(500).json({

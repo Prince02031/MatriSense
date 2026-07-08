@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import { openDocumentInNewTab } from '../../../../src/utils/documentView';
 import {
     getMyWorkerProfile,
     updateMyWorkerProfile,
@@ -10,12 +11,13 @@ import {
 } from '../../../api/workerApi';
 
 export default function WorkerProfilePage() {
-    const { user } = useAuth();
+    const { user, authFetch } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [profile, setProfile] = useState(null);
+    const [viewingDocId, setViewingDocId] = useState(null);
 
     // --- Profile Form State ---
     const [formData, setFormData] = useState({
@@ -134,6 +136,17 @@ export default function WorkerProfilePage() {
             setDocForm(prev => ({ ...prev, file: files[0] }));
         } else {
             setDocForm(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleViewDocument = async (documentId) => {
+        setViewingDocId(documentId);
+        try {
+            await openDocumentInNewTab(authFetch, API_BASE, documentId);
+        } catch (err) {
+            setMessage(`❌ ${err.message || 'Failed to open document.'}`);
+        } finally {
+            setViewingDocId(null);
         }
     };
 
@@ -312,7 +325,15 @@ export default function WorkerProfilePage() {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <a href={`${API_BASE}/api/documents/${doc._id}/download`} target="_blank" rel="noopener noreferrer" className="badge badge-success" style={{ textDecoration: 'none', cursor: 'pointer' }}>View</a>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleViewDocument(doc._id)}
+                                            disabled={viewingDocId === doc._id}
+                                            className="badge badge-success"
+                                            style={{ border: 'none', cursor: viewingDocId === doc._id ? 'not-allowed' : 'pointer' }}
+                                        >
+                                            {viewingDocId === doc._id ? 'Opening…' : 'View'}
+                                        </button>
                                     </div>
                                 </div>
                             ))}

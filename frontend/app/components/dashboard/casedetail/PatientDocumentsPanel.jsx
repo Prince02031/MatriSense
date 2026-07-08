@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { getCaseDocuments, analyzeDocumentAsWorker, verifyPatientDocument } from '../../../api/workerApi';
+import { useAuth } from '../../../context/AuthContext';
+import { openDocumentInNewTab } from '../../../../src/utils/documentView';
 import ExtractedValuesList from '../ExtractedValuesList';
 
 // Document type display labels — matches manual upload vocabulary
@@ -72,10 +74,6 @@ const formatDate = (d) => {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-const getDocViewUrl = (docId) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('matrisense_token') || '' : '';
-    return `${API_BASE}/api/documents/${docId}/download?token=${token}`;
-};
 
 // ─── Verification Badge ───────────────────────────────────────────────────────
 function VerificationBadge({ status }) {
@@ -220,16 +218,30 @@ function DocumentListView({ documents, onSelectDoc }) {
 
 // ─── Document Detail View ─────────────────────────────────────────────────────
 function DocumentDetailView({ doc: initialDoc, sessionId, onBack }) {
+    const { authFetch } = useAuth();
     const [doc, setDoc] = useState(initialDoc);
     const [analyzing, setAnalyzing] = useState(false);
     const [verifying, setVerifying] = useState(null);
     const [error, setError] = useState(null);
     const [analyzeSuccess, setAnalyzeSuccess] = useState(false);
+    const [viewingFile, setViewingFile] = useState(false);
 
     const analysis = doc.documentAnalysis;
     const hasAnalysis = !!analysis;
     const typeLabel = DOC_TYPE_LABELS[doc.documentType] || doc.documentType;
     const icon = DOC_TYPE_ICONS[doc.documentType] || '📄';
+
+    const handleViewFile = async () => {
+        setError(null);
+        setViewingFile(true);
+        try {
+            await openDocumentInNewTab(authFetch, API_BASE, doc._id);
+        } catch (err) {
+            setError(err.message || 'Failed to open document.');
+        } finally {
+            setViewingFile(false);
+        }
+    };
 
     const handleAnalyze = async () => {
         setError(null);
@@ -366,20 +378,21 @@ function DocumentDetailView({ doc: initialDoc, sessionId, onBack }) {
                 </div>
 
                 {/* View button */}
-                <a
-                    href={getDocViewUrl(doc._id)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <button
+                    type="button"
+                    onClick={handleViewFile}
+                    disabled={viewingFile}
                     style={{
                         flexShrink: 0, padding: '8px 16px',
                         fontSize: '0.85rem', fontWeight: 600,
                         background: 'rgba(20,184,166,0.1)', color: '#0d9488',
                         border: '1px solid rgba(20,184,166,0.3)', borderRadius: '8px',
-                        textDecoration: 'none',
+                        cursor: viewingFile ? 'not-allowed' : 'pointer',
+                        opacity: viewingFile ? 0.6 : 1,
                     }}
                 >
-                    👁 View File
-                </a>
+                    {viewingFile ? '⏳ Opening…' : '👁 View File'}
+                </button>
             </div>
 
             {/* ── Analysis section ── */}

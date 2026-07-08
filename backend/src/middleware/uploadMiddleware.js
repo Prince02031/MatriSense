@@ -1,11 +1,13 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const crypto = require('crypto');
 
 // --- Constants ---
-const UPLOADS_ROOT = path.join(__dirname, '../../uploads');
-
+// Historical sub-folder labels, kept only as a namespace for generated
+// filenames (pt_/hw_ prefixes) — files themselves are no longer written to
+// disk, they're stored as Buffer data on the UploadedDocument record so
+// they're available from any machine sharing the Atlas cluster instead of
+// only the machine that received the upload.
 const SUB_DIRS = {
     PATIENT: 'patient-documents',
     HEALTH_WORKER: 'healthworker-certifications',
@@ -20,19 +22,6 @@ const ALLOWED_MIME_TYPES = [
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
-// --- Ensure upload directories exist ---
-const ensureUploadDirs = () => {
-    Object.values(SUB_DIRS).forEach((sub) => {
-        const dirPath = path.join(UPLOADS_ROOT, sub);
-        if (!fs.existsSync(dirPath)) {
-            fs.mkdirSync(dirPath, { recursive: true });
-        }
-    });
-};
-
-// Create directories on module load
-ensureUploadDirs();
-
 // --- Safe filename generator ---
 // Format: <prefix>_<timestamp>_<random8chars><ext>
 const generateSafeFilename = (ownerType, originalName) => {
@@ -44,27 +33,9 @@ const generateSafeFilename = (ownerType, originalName) => {
 };
 
 // --- Storage engine ---
-const storage = multer.diskStorage({
-    destination: (req, _file, cb) => {
-        // Determine subfolder from req.body.ownerType or default to patient
-        const ownerType = req.body?.ownerType || 'PATIENT';
-        const subDir = SUB_DIRS[ownerType] || SUB_DIRS.PATIENT;
-        const destPath = path.join(UPLOADS_ROOT, subDir);
-
-        // Ensure dir exists (idempotent)
-        if (!fs.existsSync(destPath)) {
-            fs.mkdirSync(destPath, { recursive: true });
-        }
-
-        cb(null, destPath);
-    },
-
-    filename: (req, file, cb) => {
-        const ownerType = req.body?.ownerType || 'PATIENT';
-        const safeName = generateSafeFilename(ownerType, file.originalname);
-        cb(null, safeName);
-    },
-});
+// In-memory: multer buffers the upload as `file.buffer`, which routes then
+// persist to `UploadedDocument.fileData` themselves.
+const storage = multer.memoryStorage();
 
 // --- File filter ---
 const fileFilter = (_req, file, cb) => {
@@ -108,6 +79,15 @@ const handleUploadErrors = (fieldName = 'file') => {
                 // Custom file-filter errors or other errors
                 return res.status(400).json({ success: false, error: err.message });
             }
+
+            // Attach a generated storage filename (display/reference only —
+            // no longer a real path on disk) for routes to persist as
+            // storedFileName, same naming convention as before.
+            if (req.file) {
+                const ownerType = req.body?.ownerType || 'PATIENT';
+                req.file.generatedFileName = generateSafeFilename(ownerType, req.file.originalname);
+            }
+
             next();
         });
     };
@@ -117,10 +97,8 @@ const handleUploadErrors = (fieldName = 'file') => {
 module.exports = {
     upload,
     handleUploadErrors,
-    UPLOADS_ROOT,
     SUB_DIRS,
     ALLOWED_MIME_TYPES,
     MAX_FILE_SIZE,
     generateSafeFilename,
-    ensureUploadDirs,
 };
