@@ -13,6 +13,16 @@ const DOC_TYPE_LABELS = {
     other: 'Other Document',
 };
 
+// Icon per type
+const DOC_TYPE_ICONS = {
+    prescription: '💊',
+    lab_report: '🔬',
+    ultrasound_report: '🩻',
+    blood_pressure_card: '❤️‍🩹',
+    other: '📄',
+};
+
+
 export default function MedicalDocumentUpload({ onSaved }) {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -192,13 +202,36 @@ export default function MedicalDocumentUpload({ onSaved }) {
                         🤖 AI-extracted from your photo. Always double check with your health worker.
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                        <span className="badge badge-info">
-                            {DOC_TYPE_LABELS[result.documentType] || result.documentType}
+                    {/* Prominent document type label */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: '12px 16px',
+                        background: 'rgba(99,102,241,0.07)',
+                        border: '1px solid rgba(99,102,241,0.2)',
+                        borderRadius: '10px',
+                        marginBottom: '14px',
+                    }}>
+                        <span style={{ fontSize: '1.5rem' }}>
+                            {DOC_TYPE_ICONS[result.documentType] || '📄'}
                         </span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                            {result.isReadable ? 'Readable ✓' : 'Low quality image ⚠️'}
-                        </span>
+                        <div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#4338ca', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                AI Identified Document Type
+                            </div>
+                            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {DOC_TYPE_LABELS[result.documentType] || result.documentType}
+                            </div>
+                        </div>
+                        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                            <span style={{
+                                fontSize: '0.8rem', fontWeight: 600,
+                                color: result.isReadable ? '#059669' : '#d97706',
+                                background: result.isReadable ? 'rgba(5,150,105,0.1)' : 'rgba(217,119,6,0.1)',
+                                padding: '3px 10px', borderRadius: '999px',
+                            }}>
+                                {result.isReadable ? '✓ Readable' : '⚠️ Low quality'}
+                            </span>
+                        </div>
                     </div>
 
                     <ExtractedValuesList values={result.extractedValues} />
