@@ -88,10 +88,20 @@ export const getMyPatientDocuments = async () => {
   return res.json();
 };
 
-export const deletePatientDocument = async (documentId) => {
-  const res = await authFetch(`${API_BASE}/api/patients/me/documents/${documentId}`, {
+export const deletePatientDocument = async (documentId, { deleteClinicalData = false } = {}) => {
+  const query = deleteClinicalData ? '?deleteClinicalData=true' : '';
+  const res = await authFetch(`${API_BASE}/api/patients/me/documents/${documentId}${query}`, {
     method: 'DELETE',
   });
+  return res.json();
+};
+
+/**
+ * Unified clinical history across all sources (documents today, chat
+ * scans later) — GET /api/patients/me/clinical-data.
+ */
+export const getMyClinicalData = async () => {
+  const res = await authFetch(`${API_BASE}/api/patients/me/clinical-data`);
   return res.json();
 };
 

@@ -13,7 +13,7 @@ const DOC_TYPE_LABELS = {
     other: 'Other Document',
 };
 
-export default function MedicalDocumentUpload() {
+export default function MedicalDocumentUpload({ onSaved }) {
     const [previewUrl, setPreviewUrl] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [stage, setStage] = useState('idle'); // idle | preview | analyzing | result | confirmed
@@ -65,6 +65,7 @@ export default function MedicalDocumentUpload() {
         // Risk factors are already merged into Patient.knownRiskFactors by
         // the backend during /analyze — this just acknowledges the result.
         setStage('confirmed');
+        onSaved?.();
     };
 
     const handleReset = () => {
