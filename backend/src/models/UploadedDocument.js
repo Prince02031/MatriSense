@@ -31,9 +31,14 @@ const UploadedDocumentSchema = new mongoose.Schema({
     description: { type: String },
 
     // --- File storage info ---
+    // The file itself lives in Mongo (fileData) rather than local disk, so
+    // it's available from any machine/instance sharing this Atlas cluster —
+    // uploads are capped at 5MB (see uploadMiddleware.js), well under the
+    // 16MB single-document limit, so no GridFS chunking is needed.
     originalName: { type: String },
     storedFileName: { type: String },
     storagePath: { type: String },
+    fileData: { type: Buffer, select: false },
     mimeType: { type: String },
     sizeBytes: { type: Number },
 

@@ -1,4 +1,3 @@
-const fs = require('fs');
 const TriageSession = require('../models/TriageSession');
 const AuditLog = require('../models/AuditLog');
 const { logAction } = require('../services/auditService');
@@ -446,21 +445,22 @@ exports.analyzeDocumentForWorker = async (req, res) => {
             return res.status(403).json({ success: false, error: 'Patient has not granted consent to share documents.' });
         }
 
-        // Fetch the document — must belong to this patient
+        // Fetch the document — must belong to this patient (fileData is
+        // select:false by default, so it must be requested explicitly)
         const UploadedDocument = require('../models/UploadedDocument');
         const doc = await UploadedDocument.findOne({
             _id: documentId,
             ownerId: patient._id,
             ownerType: 'PATIENT',
             isActive: true,
-        });
+        }).select('+fileData');
 
         if (!doc) {
             return res.status(404).json({ success: false, error: 'Document not found or access denied.' });
         }
 
-        // Only analyze documents that do not yet have analysis OR re-analyze on demand
-        if (!doc.storagePath || !fs.existsSync(doc.storagePath)) {
+        // Only analyze documents whose file bytes are actually stored
+        if (!doc.fileData || !doc.fileData.length) {
             return res.status(422).json({
                 success: false,
                 error: 'The original file is no longer available on the server and cannot be re-analyzed.'
@@ -468,8 +468,7 @@ exports.analyzeDocumentForWorker = async (req, res) => {
         }
 
         const { analyzeDocument } = require('../services/documentAnalysisService');
-        const imageBuffer = fs.readFileSync(doc.storagePath);
-        const analysis = await analyzeDocument({ imageBuffer, mimeType: doc.mimeType });
+        const analysis = await analyzeDocument({ imageBuffer: doc.fileData, mimeType: doc.mimeType });
 
         // Map AI document type to the ENUM used by the upload system
         const DOCUMENT_TYPE_TO_UPLOAD_ENUM = {

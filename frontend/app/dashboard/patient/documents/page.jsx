@@ -5,17 +5,13 @@ import Link from 'next/link';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { getMyPatientDocuments, deletePatientDocument } from '../../../api/patientApi';
+import { openDocumentInNewTab } from '../../../../src/utils/documentView';
 import ExtractedValuesList from '../../../components/dashboard/ExtractedValuesList';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-const getDocumentViewUrl = (documentId) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('matrisense_token') : '';
-    return `${API_BASE}/api/documents/${documentId}/download?token=${token || ''}`;
-};
-
 export default function PatientDocumentsPage() {
-    const { user } = useAuth();
+    const { user, authFetch } = useAuth();
     const { t } = useLanguage();
     const dt = t.documentsPage || {};
     const docTypeLabels = t.profile?.docTypes || {};
@@ -27,6 +23,7 @@ export default function PatientDocumentsPage() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleteAlsoClinicalData, setDeleteAlsoClinicalData] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [viewingDocId, setViewingDocId] = useState(null);
 
     const fetchDocuments = async () => {
         try {
@@ -50,6 +47,19 @@ export default function PatientDocumentsPage() {
     }, [user]);
 
     if (!user) return null;
+
+    const handleViewDocument = async (documentId) => {
+        setError(null);
+        setViewingDocId(documentId);
+        try {
+            await openDocumentInNewTab(authFetch, API_BASE, documentId);
+        } catch (err) {
+            console.error('[PatientDocumentsPage] view error:', err);
+            setError(err.message || dt.errorLoading);
+        } finally {
+            setViewingDocId(null);
+        }
+    };
 
     const handleConfirmDelete = async () => {
         if (!deleteTarget) return;
@@ -179,14 +189,14 @@ export default function PatientDocumentsPage() {
                                             {doc.allValuesConfirmed ? (dt.confirmed || '✓ Confirmed') : (dt.pendingConfirmation || '⏳ Pending confirmation')}
                                         </span>
                                     )}
-                                    <a
-                                        href={getDocumentViewUrl(doc._id)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
+                                        type="button"
                                         className="btn btn-teal btn-sm"
+                                        onClick={() => handleViewDocument(doc._id)}
+                                        disabled={viewingDocId === doc._id}
                                     >
-                                        {dt.viewButton || '🩺 View Document'}
-                                    </a>
+                                        {viewingDocId === doc._id ? '⏳ Opening…' : (dt.viewButton || '🩺 View Document')}
+                                    </button>
                                     {manageMode && (
                                         <button
                                             type="button"
