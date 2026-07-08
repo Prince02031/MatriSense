@@ -104,7 +104,7 @@ export default function PatientProfilePanel({ patient, decision, caseState, next
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 👤 Patient Profile
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="wgrid-2">
                 <div>
                     <p><strong>Name:</strong> {name}</p>
                     <p><strong>Age:</strong> {age}</p>
@@ -173,7 +173,7 @@ export default function PatientProfilePanel({ patient, decision, caseState, next
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="wgrid-2">
                     <div>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}><strong>Division:</strong></p>
                         <p style={{ color: division === 'N/A' ? 'var(--text-muted)' : 'var(--text-primary)' }}>{division}</p>

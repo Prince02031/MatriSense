@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import { openDocumentInNewTab } from '../../../../src/utils/documentView';
 import {
     getMyWorkerProfile,
     updateMyWorkerProfile,
@@ -10,12 +11,13 @@ import {
 } from '../../../api/workerApi';
 
 export default function WorkerProfilePage() {
-    const { user } = useAuth();
+    const { user, authFetch } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [profile, setProfile] = useState(null);
+    const [viewingDocId, setViewingDocId] = useState(null);
 
     // --- Profile Form State ---
     const [formData, setFormData] = useState({
@@ -137,6 +139,17 @@ export default function WorkerProfilePage() {
         }
     };
 
+    const handleViewDocument = async (documentId) => {
+        setViewingDocId(documentId);
+        try {
+            await openDocumentInNewTab(authFetch, API_BASE, documentId);
+        } catch (err) {
+            setMessage(`❌ ${err.message || 'Failed to open document.'}`);
+        } finally {
+            setViewingDocId(null);
+        }
+    };
+
     const handleUploadUpload = async (e) => {
         e.preventDefault();
         if (!docForm.file) {
@@ -220,7 +233,7 @@ export default function WorkerProfilePage() {
                 {/* 1. Basic Info */}
                 <div className="card">
                     <h2>Basic Information</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                    <div className="wgrid-2" style={{ marginTop: '16px' }}>
                         <div><label>Name</label><input name="name" value={formData.name} onChange={handleProfileChange} required className="input-field" /></div>
                         <div><label>Phone</label><input type="tel" name="phone" value={formData.phone} onChange={handleProfileChange} required className="input-field" /></div>
                         <div style={{ gridColumn: '1 / -1' }}><label>Email</label><input type="email" name="email" value={formData.email} onChange={handleProfileChange} className="input-field" /></div>
@@ -230,7 +243,7 @@ export default function WorkerProfilePage() {
                 {/* 2. Professional Info */}
                 <div className="card">
                     <h2>Professional Information</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                    <div className="wgrid-2" style={{ marginTop: '16px' }}>
                         <div><label>Professional Title</label><input name="professionalTitle" value={formData.professionalTitle} onChange={handleProfileChange} className="input-field" placeholder="e.g. Registered Nurse" /></div>
                         <div><label>Organization Name</label><input name="organizationName" value={formData.organizationName} onChange={handleProfileChange} className="input-field" /></div>
                         <div><label>Workplace / Clinic Name</label><input name="workplaceName" value={formData.workplaceName} onChange={handleProfileChange} className="input-field" /></div>
@@ -243,7 +256,7 @@ export default function WorkerProfilePage() {
                 {/* 3. Coverage Area */}
                 <div className="card">
                     <h2>Coverage Area (Comma separated)</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+                    <div className="wgrid-2" style={{ marginTop: '16px' }}>
                         <div><label>Districts</label><input name="coverageDistricts" value={formData.coverageDistricts} onChange={handleProfileChange} className="input-field" placeholder="Dhaka, Gazipur" /></div>
                         <div><label>Upazilas</label><input name="coverageUpazilas" value={formData.coverageUpazilas} onChange={handleProfileChange} className="input-field" placeholder="Tejgaon, Savar" /></div>
                     </div>
@@ -273,7 +286,7 @@ export default function WorkerProfilePage() {
                 )}
 
                 <form onSubmit={handleUploadUpload} style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="wgrid-2">
                         <div>
                             <label>Document Type</label>
                             <select name="documentType" value={docForm.documentType} onChange={handleDocChange} className="input-field" required>
@@ -312,7 +325,15 @@ export default function WorkerProfilePage() {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <a href={`${API_BASE}/api/documents/${doc._id}/download`} target="_blank" rel="noopener noreferrer" className="badge badge-success" style={{ textDecoration: 'none', cursor: 'pointer' }}>View</a>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleViewDocument(doc._id)}
+                                            disabled={viewingDocId === doc._id}
+                                            className="badge badge-success"
+                                            style={{ border: 'none', cursor: viewingDocId === doc._id ? 'not-allowed' : 'pointer' }}
+                                        >
+                                            {viewingDocId === doc._id ? 'Opening…' : 'View'}
+                                        </button>
                                     </div>
                                 </div>
                             ))}

@@ -9,6 +9,16 @@ Step-by-step walkthrough of the MatriSense patient triage and health worker revi
 4.  Review or fill pregnancy stage, gestational week, known risk factors, emergency contact, and optional district/upazila/address.
 5.  If document support is enabled, show optional identity or previous report fields without making them required for emergency triage.
 
+### 1b. Mother Side: Multimodal Document Upload & AI Reading (New Feature)
+1.  Navigate to the **Uploaded Documents** page.
+2.  Click **+ Upload Document** and select the **AI-Assisted** tab.
+3.  Choose a sample document from the gallery or capture one (e.g., a blood pressure card with "BP: 150/95 mmHg" or a lab report with "Hemoglobin: 9.5 g/dL").
+4.  Click **Analyze Document**.
+5.  Show that the AI (Gemini Vision) extracts key values and displays them with color-coded severity badges (✅ NORMAL, ⚠️ WARNING, 🚨 CRITICAL) matching pregnancy thresholds.
+6.  Click **Discuss & Confirm with Assistant** to converse with the document review assistant (e.g. ask questions about anemia or modify a value like *"actually, my BP was 130/85"*).
+7.  Click **Done discussing — Save** to commit the extracted values.
+8.  Navigate to **My Clinical Data** to show the saved values plotted on longitudinal trend charts.
+
 ### 2. Mother Side: Report Symptoms
 1.  Click **Start New Triage**.
 2.  Enter a Bangla symptom report, for example: `আমার মাথা খুব ব্যথা করছে আর চোখে ঝাপসা দেখছি`.
@@ -42,8 +52,11 @@ Step-by-step walkthrough of the MatriSense patient triage and health worker revi
 
 ### 8. Health Worker Case Review
 1.  Open the mother’s case detail page.
-2.  Review the patient profile snapshot, original Bangla input, extracted symptoms, follow-up answers, risk level, matched rules, reasons, RAG evidence labels, and guidance shown to the patient.
-3.  Explain that the health worker sees structured information instead of starting from zero.
+2.  Notice the clean **tabbed layout** (Overview, Triage Review, Documents, Clinical Data, Recommendations, Referral & Hospital, Notes & Audit).
+3.  Click the **Clinical Data** tab to view the patient's unified clinical trends (hemoglobin, blood pressure) matching what the mother sees.
+4.  Click the **Documents** tab to view files the patient uploaded.
+5.  Explain the **Consent-Gated** logic: Show that if the patient turns off consent on her profile, these tabs instantly display *"Consent Not Granted"* instead of sensitive data.
+6.  Explain that the health worker sees structured information instead of starting from zero.
 
 ### 9. Status Update or Referral Note
 1.  Update the case status, for example `CONTACTED`, `REFERRED`, `FOLLOW_UP_NEEDED`, or the statuses supported by the current backend.
@@ -62,4 +75,4 @@ Step-by-step walkthrough of the MatriSense patient triage and health worker revi
 3.  Show that previous triage sessions are stored and can be reviewed.
 
 ### 12. Key Message for Judges
-MatriSense is not a generic chatbot. It is a structured maternal triage and referral workflow: LLM for Bangla extraction and explanation, rule engine for risk decision, RAG for source-grounded guidance, safety validator for guardrails, and health workers for final human-led action.
+MatriSense is not a generic chatbot. It is a structured maternal triage and referral workflow: LLM for Bangla extraction and explanation, rule engine for risk decision, RAG for source-grounded guidance, safety validator for guardrails, health workers for final human-led action, and multimodal AI (Gemini Vision) to unlock paper document intelligence safely under consent controls.

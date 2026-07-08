@@ -84,7 +84,9 @@ if (mongoose.connection.readyState === 1) {
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://127.0.0.1:3000'
+  'http://localhost:3007',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3007'
 ];
 
 if (process.env.CLIENT_URL) {
