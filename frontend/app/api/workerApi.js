@@ -278,3 +278,25 @@ export async function deliverReferralToPatient(sessionId, hospitalId, reason) {
     return handleResponse(res);
 }
 
+// 11. Worker-triggered AI analysis on an unanalyzed patient document
+export async function analyzeDocumentAsWorker(sessionId, documentId) {
+    if (!sessionId) throw new Error("Local Error: Cannot analyze document without Session ID.");
+    if (!documentId) throw new Error("Local Error: Cannot analyze document without Document ID.");
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/documents/${documentId}/analyze`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+}
+
+// 12. Set verification status on a patient document
+export async function verifyPatientDocument(sessionId, documentId, status, note = '') {
+    if (!sessionId) throw new Error("Local Error: Cannot verify document without Session ID.");
+    if (!documentId) throw new Error("Local Error: Cannot verify document without Document ID.");
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/documents/${documentId}/verify`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status, note }),
+    });
+    return handleResponse(res);
+}
