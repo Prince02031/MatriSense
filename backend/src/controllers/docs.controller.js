@@ -43,7 +43,7 @@ const getDocsStatus = async (req, res) => {
     }
 
     const now = new Date();
-    const isAvailableNow = config.isPublic && now >= config.availableFrom && now <= config.availableUntil;
+    const isAvailableNow = config.isPublic; // Keep it unlocked as long as isPublic is true (bypassing date expiration)
 
     res.json({
       isPublic: config.isPublic,
