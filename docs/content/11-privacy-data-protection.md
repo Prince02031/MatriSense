@@ -17,6 +17,8 @@ MatriSense handles sensitive maternal health information, so privacy must be par
 *   **Role-Based Access:** Mothers should only access their own profile, triage history, and results. Health workers should access assigned or permitted cases. Admin access should be limited and auditable.
 *   **Optional GPS:** GPS must be permission-based and should never be required to complete emergency triage.
 *   **Optional Patient Documents:** Identity and medical documents should support case review and referral decisions, but they should not be mandatory for emergency symptom reporting.
+*   **Consent-Gated Clinical Trends:** The health worker's view of a patient's uploaded documents and clinical data history is strictly gated behind the patient's "share with health worker" consent flag. If this consent is turned off, the health worker is blocked from viewing any documents or clinical data points.
+*   **Cascading Clinical Data Deletion:** When a patient deletes an uploaded document, they can choose to cascade-delete all clinical data points (e.g. extracted blood pressure or hemoglobin records) that were produced from that document, preventing any residual tracking.
 *   **Regional Access:** District/upazila-based case filtering is planned or in progress to reduce unnecessary exposure of patient records.
 *   **Audit Logs:** Important actions such as status changes, referral notes, hospital assignment, and verification updates should be logged.
 
