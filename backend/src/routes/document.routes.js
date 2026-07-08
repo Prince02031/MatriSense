@@ -4,11 +4,215 @@ const fs = require('fs');
 const router = express.Router();
 
 const UploadedDocument = require('../models/UploadedDocument');
+const ClinicalDataPoint = require('../models/ClinicalDataPoint');
 const Patient = require('../models/Patient');
 const TriageSession = require('../models/TriageSession');
 const { protect } = require('../middleware/authMiddleware');
+const { handleUploadErrors } = require('../middleware/uploadMiddleware');
+const { analyzeDocument } = require('../services/documentAnalysisService');
+const { runDocumentReviewChat } = require('../services/documentReviewChatService');
 
 const { logAction } = require('../services/auditService');
+
+// Maps the AI's documentType classification onto the enum patient.routes.js
+// uses for manually-tagged uploads, so both flows share one vocabulary.
+const DOCUMENT_TYPE_TO_UPLOAD_ENUM = {
+    prescription: 'PRESCRIPTION',
+    lab_report: 'LAB_REPORT',
+    ultrasound_report: 'ULTRASOUND_REPORT',
+    blood_pressure_card: 'OTHER_MEDICAL_DOCUMENT',
+    other: 'OTHER_MEDICAL_DOCUMENT',
+};
+
+/**
+ * Pre-multer middleware: inject ownerType=PATIENT into the body so that
+ * uploadMiddleware routes the file to the patient-documents subfolder.
+ */
+const injectPatientOwnerType = (req, _res, next) => {
+    if (!req.body) req.body = {};
+    req.body.ownerType = 'PATIENT';
+    next();
+};
+
+// ============================================================================
+// POST /api/documents/analyze
+// Mother photographs a prescription/lab report/BP card. Gemini Vision
+// extracts the values, flags maternal danger thresholds, and merges any
+// recognized risk factors into the patient's profile.
+// ============================================================================
+router.post(
+    '/analyze',
+    protect,
+    injectPatientOwnerType,
+    handleUploadErrors('file'),
+    async (req, res) => {
+        try {
+            if (req.user.role !== 'MOTHER') {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Only patients can upload documents for analysis.',
+                });
+            }
+
+            const patient = await Patient.findOne({ userId: req.user._id });
+            if (!patient) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'No patient profile found. Create a profile before uploading documents.',
+                });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'No file uploaded. Send an image in the "file" field.',
+                });
+            }
+
+            const { relatedSessionId } = req.body;
+
+            let analysis;
+            try {
+                const imageBuffer = fs.readFileSync(req.file.path);
+                analysis = await analyzeDocument({ imageBuffer, mimeType: req.file.mimetype });
+            } catch (analysisError) {
+                console.error('[DocumentRoutes] Analysis failure:', analysisError.message);
+                return res.status(502).json({
+                    success: false,
+                    error: 'Failed to analyze the document. Please try again or upload a clearer photo.',
+                });
+            }
+
+            const doc = await UploadedDocument.create({
+                ownerType: 'PATIENT',
+                ownerId: patient._id,
+                uploadedByUserId: req.user._id,
+                relatedSessionId: relatedSessionId || undefined,
+                documentType: DOCUMENT_TYPE_TO_UPLOAD_ENUM[analysis.documentType] || 'OTHER_MEDICAL_DOCUMENT',
+                title: req.file.originalname,
+                originalName: req.file.originalname,
+                storedFileName: req.file.filename,
+                storagePath: req.file.path,
+                mimeType: req.file.mimetype,
+                sizeBytes: req.file.size,
+                accessScope: 'PATIENT_AND_ASSIGNED_HEALTH_WORKER',
+                verificationStatus: 'PENDING',
+                isActive: true,
+                documentAnalysis: analysis,
+                analyzedAt: new Date(),
+            });
+
+            // --- Merge recognized risk factors into the patient's known risk factors ---
+            const newFlags = analysis.knownRiskFactorFlags || {};
+            if (Object.keys(newFlags).length > 0) {
+                patient.knownRiskFactors = {
+                    ...(patient.knownRiskFactors || {}),
+                    ...newFlags,
+                };
+                patient.markModified('knownRiskFactors');
+                await patient.save();
+            }
+
+            // --- Write one ClinicalDataPoint per extracted value, for the ---
+            // --- unified cross-source clinical history view.               ---
+            if (Array.isArray(analysis.extractedValues) && analysis.extractedValues.length > 0) {
+                const rows = analysis.extractedValues.map((v) => ({
+                    patientId: patient._id,
+                    parameter: v.parameter,
+                    displayName: v.displayName,
+                    displayNameBn: v.displayNameBn,
+                    value: v.value,
+                    unit: v.unit,
+                    severity: v.severity,
+                    isAbnormal: v.isAbnormal,
+                    source: 'DOCUMENT_UPLOAD',
+                    sourceDocumentId: doc._id,
+                    sourceContext: analysis.summary || '',
+                    confidence: v.confidence,
+                    confirmedByPatient: false,
+                    recordedAt: new Date(),
+                }));
+                await ClinicalDataPoint.insertMany(rows);
+            }
+
+            await logAction(null, 'PATIENT_DOCUMENT_ANALYZED', 'PATIENT', {
+                patientId: patient._id,
+                documentId: doc._id,
+                documentType: doc.documentType,
+                riskFactorsDetected: analysis.riskFactorsDetected,
+            }, req.user._id);
+
+            res.status(201).json({
+                success: true,
+                documentId: doc._id,
+                analysis,
+                riskFactorsApplied: newFlags,
+            });
+        } catch (error) {
+            console.error('[DocumentRoutes] POST /analyze error:', error.message);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to process document.',
+            });
+        }
+    }
+);
+
+// ============================================================================
+// POST /api/documents/:documentId/review-chat
+// Standalone, document-scoped chat that helps the patient confirm/correct
+// the values Gemini Vision extracted. Independent of the triage assistant —
+// no TriageSession involved. Stateless per turn (frontend resends chatHistory).
+// ============================================================================
+router.post('/:documentId/review-chat', protect, async (req, res) => {
+    try {
+        if (req.user.role !== 'MOTHER') {
+            return res.status(403).json({
+                success: false,
+                error: 'Only patients can use the document review chat.',
+            });
+        }
+
+        const patient = await Patient.findOne({ userId: req.user._id });
+        if (!patient) {
+            return res.status(404).json({
+                success: false,
+                error: 'No patient profile found.',
+            });
+        }
+
+        const { message, chatHistory, language } = req.body;
+        if (!message || typeof message !== 'string') {
+            return res.status(400).json({ success: false, error: 'message is required.' });
+        }
+
+        const { documentId } = req.params;
+
+        try {
+            const { reply, updatedValues } = await runDocumentReviewChat({
+                documentId,
+                patientId: patient._id,
+                message,
+                chatHistory,
+                language,
+            });
+
+            res.json({ success: true, reply, updatedValues });
+        } catch (chatError) {
+            console.error('[DocumentRoutes] review-chat error:', chatError.message);
+            const status = chatError.message.includes('not found') || chatError.message.includes('access')
+                ? 404
+                : 502;
+            res.status(status).json({ success: false, error: chatError.message });
+        }
+    } catch (error) {
+        console.error('[DocumentRoutes] POST /:documentId/review-chat error:', error.message);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to process review chat message.',
+        });
+    }
+});
 
 // ============================================================================
 // GET /api/documents/:documentId/download

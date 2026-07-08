@@ -117,6 +117,18 @@ export async function getCaseDocuments(sessionId) {
     return handleResponse(res);
 }
 
+// 6b. Get patient clinical data history related to a case (consent-gated)
+export async function getCaseClinicalData(sessionId) {
+    if (!sessionId) throw new Error("Local Error: Cannot fetch clinical data without Session ID.");
+
+    const res = await fetch(`${apiBase}/api/worker/cases/${sessionId}/clinical-data`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        cache: 'no-store'
+    });
+    return handleResponse(res);
+}
+
 // ============================================================================
 // PROFILE & CERTIFICATION ENDPOINTS
 // ============================================================================

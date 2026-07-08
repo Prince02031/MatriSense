@@ -44,6 +44,11 @@ const UploadedDocumentSchema = new mongoose.Schema({
         enum: ['NOT_REQUIRED', 'PENDING', 'VERIFIED', 'REJECTED'],
         default: 'NOT_REQUIRED',
     },
+
+    // --- AI document analysis (Gemini Vision extraction result, if run) ---
+    documentAnalysis: { type: mongoose.Schema.Types.Mixed },
+    analyzedAt: { type: Date },
+
     isActive: {
         type: Boolean,
         default: true,
